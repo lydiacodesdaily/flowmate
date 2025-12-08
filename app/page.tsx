@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 
 type SessionType = "focus" | "break";
-type SessionDuration = 30 | 60 | 90 | 180;
+type SessionDuration = 30 | 60 | 90 | 120 | 180;
+type TimerMode = "pomodoro" | "flowclub";
 
 interface PomodoroSession {
   type: SessionType;
@@ -14,6 +15,7 @@ const FOCUS_DURATION = 25 * 60; // 25 minutes in seconds
 const BREAK_DURATION = 5 * 60; // 5 minutes in seconds
 
 export default function Home() {
+  const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
   const [selectedDuration, setSelectedDuration] = useState<SessionDuration | null>(null);
   const [sessions, setSessions] = useState<PomodoroSession[]>([]);
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
@@ -21,19 +23,58 @@ export default function Home() {
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [muteBreak, setMuteBreak] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
   const lastMinuteAnnouncedRef = useRef<number>(-1);
 
-  // Generate sessions based on selected duration
+  // Generate sessions based on selected duration and mode
   const generateSessions = (totalMinutes: SessionDuration): PomodoroSession[] => {
-    const cycles = totalMinutes / 30; // Each cycle is 30 minutes (25 focus + 5 break)
     const sessionsList: PomodoroSession[] = [];
 
-    for (let i = 0; i < cycles; i++) {
-      sessionsList.push({ type: "focus", duration: FOCUS_DURATION });
-      sessionsList.push({ type: "break", duration: BREAK_DURATION });
+    if (timerMode === "pomodoro") {
+      const cycles = totalMinutes / 30; // Each cycle is 30 minutes (25 focus + 5 break)
+      for (let i = 0; i < cycles; i++) {
+        sessionsList.push({ type: "focus", duration: FOCUS_DURATION });
+        sessionsList.push({ type: "break", duration: BREAK_DURATION });
+      }
+    } else {
+      // Flow Club mode - breaks between focus sessions, last focus is always 20 min
+      if (totalMinutes === 30) {
+        // 30 min: 3 break, 24 focus, 3 break
+        sessionsList.push({ type: "break", duration: 3 * 60 });
+        sessionsList.push({ type: "focus", duration: 24 * 60 });
+        sessionsList.push({ type: "break", duration: 3 * 60 });
+      } else if (totalMinutes === 60) {
+        // 60 min: 5 break, 25 focus, 5 break, 20 focus, 5 break
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 25 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 20 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+      } else if (totalMinutes === 120) {
+        // 120 min: Repeat 60 min pattern twice
+        for (let i = 0; i < 2; i++) {
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 20 * 60 });
+        }
+        // Final break
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+      } else {
+        // 90/180 min: Repeat 60 min pattern (5 break, 25 focus, 5 break, 20 focus)
+        const cycles = Math.floor(totalMinutes / 60);
+        for (let i = 0; i < cycles; i++) {
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 20 * 60 });
+        }
+        // Final break
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+      }
     }
 
     return sessionsList;
@@ -104,6 +145,31 @@ export default function Home() {
     }
   };
 
+  // Initialize dark mode from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+      setIsDarkMode(savedDarkMode);
+      if (savedDarkMode) {
+        document.documentElement.classList.add('dark');
+      }
+    }
+  }, []);
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setIsDarkMode((prev) => {
+      const newValue = !prev;
+      if (newValue) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('darkMode', String(newValue));
+      return newValue;
+    });
+  };
+
   // Initialize Audio
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -158,7 +224,7 @@ export default function Home() {
           if (minutesRemaining >= 1) {
             // Greater than 1 minute: announce at the start of each minute
             if (secondsRemaining === 0 && lastMinuteAnnouncedRef.current !== minutesRemaining) {
-              speak(`T-${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`);
+              speak(`${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`);
               lastMinuteAnnouncedRef.current = minutesRemaining;
             }
           } else {
@@ -182,17 +248,25 @@ export default function Home() {
         // Session complete
         if (newTime <= 0) {
           const currentSession = sessions[currentSessionIndex];
-          speak(`${currentSession.type === "focus" ? "Focus" : "Break"} session complete`);
 
           // Move to next session
           const nextIndex = currentSessionIndex + 1;
           if (nextIndex < sessions.length) {
+            const nextSession = sessions[nextIndex];
+
+            // Announce next session
+            if (nextSession.type === "focus") {
+              speak("Focus.");
+            } else if (nextSession.type === "break") {
+              speak("Break.");
+            }
+
             setCurrentSessionIndex(nextIndex);
             lastMinuteAnnouncedRef.current = -1;
             return sessions[nextIndex].duration;
           } else {
             // All sessions complete
-            speak("All sessions complete. Great work!");
+            speak("Done.");
             setIsRunning(false);
             return 0;
           }
@@ -233,6 +307,23 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Dark mode toggle */}
+      <button
+        onClick={toggleDarkMode}
+        className="fixed top-4 right-4 p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-200 text-gray-800 dark:text-gray-200"
+        title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        {isDarkMode ? (
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+          </svg>
+        )}
+      </button>
+
       <div className="w-full max-w-2xl">
         <h1 className="text-5xl font-bold text-center mb-2 text-gray-800 dark:text-white">
           Flowmate
@@ -243,11 +334,40 @@ export default function Home() {
 
         {!selectedDuration ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+            {/* Tab Navigation */}
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-1 bg-gray-100 dark:bg-gray-900">
+                <button
+                  onClick={() => setTimerMode("pomodoro")}
+                  className={`px-6 py-2 rounded-md font-semibold transition-all duration-200 ${
+                    timerMode === "pomodoro"
+                      ? "bg-white dark:bg-gray-800 text-indigo-600 shadow"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  }`}
+                >
+                  Pomodoro
+                </button>
+                <button
+                  onClick={() => setTimerMode("flowclub")}
+                  className={`px-6 py-2 rounded-md font-semibold transition-all duration-200 ${
+                    timerMode === "flowclub"
+                      ? "bg-white dark:bg-gray-800 text-indigo-600 shadow"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  }`}
+                >
+                  Flow Club
+                </button>
+              </div>
+            </div>
+
             <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800 dark:text-white">
               Select Session Duration
             </h2>
             <div className="grid grid-cols-2 gap-4">
-              {[30, 60, 90, 180].map((duration) => (
+              {(timerMode === "pomodoro"
+                ? [30, 60, 90, 180]
+                : [30, 60, 90, 120, 180]
+              ).map((duration) => (
                 <button
                   key={duration}
                   onClick={() => startSession(duration as SessionDuration)}
@@ -255,7 +375,9 @@ export default function Home() {
                 >
                   <div className="text-3xl mb-2">{duration} min</div>
                   <div className="text-sm opacity-90">
-                    {duration / 30}x Pomodoro
+                    {timerMode === "pomodoro"
+                      ? `${duration / 30}x Pomodoro`
+                      : "Flow Club"}
                   </div>
                 </button>
               ))}
@@ -270,7 +392,8 @@ export default function Home() {
                   ? "bg-green-500"
                   : "bg-blue-500"
               }`}>
-                {sessions[currentSessionIndex]?.type === "focus" ? "Focus Time" : "Break Time"}
+                {sessions[currentSessionIndex]?.type === "focus" && "Focus Time"}
+                {sessions[currentSessionIndex]?.type === "break" && "Break Time"}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                 Session {currentSessionIndex + 1} of {sessions.length}
@@ -342,14 +465,16 @@ export default function Home() {
               </div>
 
               <div className="flex gap-4 items-center">
-                {/* Add more cycles button */}
-                <button
-                  onClick={() => addMoreCycles(1)}
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg transition-all duration-200 shadow"
-                  title="Add one more Pomodoro cycle (25 min focus + 5 min break)"
-                >
-                  + Add Pomodoro (25/5)
-                </button>
+                {/* Add more cycles button - only show in Pomodoro mode */}
+                {timerMode === "pomodoro" && (
+                  <button
+                    onClick={() => addMoreCycles(1)}
+                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg transition-all duration-200 shadow"
+                    title="Add one more Pomodoro cycle (25 min focus + 5 min break)"
+                  >
+                    + Add Pomodoro (25/5)
+                  </button>
+                )}
 
                 {/* Mute break toggle */}
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -372,24 +497,43 @@ export default function Home() {
                 Sessions Progress
               </h3>
               <div className="flex flex-wrap gap-2">
-                {sessions.map((session, index) => (
-                  <div
-                    key={index}
-                    className={`w-12 h-12 rounded-lg flex items-center justify-center text-xs font-bold ${
-                      index < currentSessionIndex
-                        ? "bg-gray-400 text-white"
-                        : index === currentSessionIndex
-                        ? session.type === "focus"
-                          ? "bg-green-500 text-white ring-4 ring-green-300"
-                          : "bg-blue-500 text-white ring-4 ring-blue-300"
-                        : session.type === "focus"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                        : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                    }`}
-                  >
-                    {session.type === "focus" ? "F" : "B"}
-                  </div>
-                ))}
+                {sessions.map((session, index) => {
+                  const getSessionColor = () => {
+                    if (index < currentSessionIndex) {
+                      return "bg-gray-400 text-white";
+                    }
+
+                    if (index === currentSessionIndex) {
+                      if (session.type === "focus") {
+                        return "bg-green-500 text-white ring-4 ring-green-300";
+                      } else {
+                        return "bg-blue-500 text-white ring-4 ring-blue-300";
+                      }
+                    }
+
+                    // Future sessions
+                    if (session.type === "focus") {
+                      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+                    } else {
+                      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+                    }
+                  };
+
+                  const getSessionLabel = () => {
+                    if (session.type === "focus") return "F";
+                    if (session.type === "break") return "B";
+                    return "?";
+                  };
+
+                  return (
+                    <div
+                      key={index}
+                      className={`w-12 h-12 rounded-lg flex items-center justify-center text-xs font-bold ${getSessionColor()}`}
+                    >
+                      {getSessionLabel()}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
