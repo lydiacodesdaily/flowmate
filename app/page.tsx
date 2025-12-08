@@ -23,6 +23,7 @@ export default function Home() {
   const [muteBreak, setMuteBreak] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
+  const tickAudioRef = useRef<HTMLAudioElement | null>(null);
   const lastMinuteAnnouncedRef = useRef<number>(-1);
 
   // Generate sessions based on selected duration
@@ -93,16 +94,26 @@ export default function Home() {
     }
   };
 
-  // Initialize Audio Context
+  // Initialize Audio
   useEffect(() => {
     if (typeof window !== 'undefined') {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+      // Initialize tick audio element
+      tickAudioRef.current = new Audio('/tick.m4a');
+      tickAudioRef.current.volume = 0.2;
+      tickAudioRef.current.preload = 'auto';
+
+      // Fallback: if file doesn't load, log error
+      tickAudioRef.current.onerror = () => {
+        console.log('Tick audio file not found');
+      };
     }
   }, []);
 
-  // Play tick sound using Web Audio API
+  // Play tick sound using audio file
   const playTick = () => {
-    if (!audioContextRef.current) return;
+    if (!tickAudioRef.current) return;
 
     // Check if we should mute during break sessions
     const currentSession = sessions[currentSessionIndex];
@@ -110,20 +121,12 @@ export default function Home() {
       return;
     }
 
-    const audioContext = audioContextRef.current;
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    // Create a subtle, gentle tick sound
-    oscillator.frequency.value = 850; // Lower frequency (was 1000Hz)
-    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); // Lower volume (was 0.3)
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.02); // Shorter duration (was 0.05)
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.02);
+    // Reset and play the audio
+    tickAudioRef.current.currentTime = 0;
+    tickAudioRef.current.play().catch(err => {
+      // Ignore errors (e.g., if user hasn't interacted with page yet)
+      console.log('Audio play failed:', err);
+    });
   };
 
   // Main timer effect
