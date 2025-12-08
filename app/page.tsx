@@ -20,6 +20,7 @@ export default function Home() {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [muteBreak, setMuteBreak] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const lastMinuteAnnouncedRef = useRef<number>(-1);
@@ -65,8 +66,24 @@ export default function Home() {
     setIsPaused(!isPaused);
   };
 
+  // Adjust time (add or subtract seconds)
+  const adjustTime = (seconds: number) => {
+    setTimeRemaining((prev) => {
+      const newTime = Math.max(0, prev + seconds);
+      // Reset announcement tracking when time is adjusted
+      lastMinuteAnnouncedRef.current = -1;
+      return newTime;
+    });
+  };
+
   // Speak text using Web Speech API
   const speak = (text: string) => {
+    // Check if we should mute during break sessions
+    const currentSession = sessions[currentSessionIndex];
+    if (muteBreak && currentSession?.type === "break") {
+      return;
+    }
+
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 1.0;
@@ -86,6 +103,12 @@ export default function Home() {
   // Play tick sound using Web Audio API
   const playTick = () => {
     if (!audioContextRef.current) return;
+
+    // Check if we should mute during break sessions
+    const currentSession = sessions[currentSessionIndex];
+    if (muteBreak && currentSession?.type === "break") {
+      return;
+    }
 
     const audioContext = audioContextRef.current;
     const oscillator = audioContext.createOscillator();
@@ -254,22 +277,69 @@ export default function Home() {
                   style={{ width: `${calculateProgress()}%` }}
                 />
               </div>
+
+              {/* Time adjustment controls */}
+              <div className="flex gap-2 justify-center mb-4">
+                <button
+                  onClick={() => adjustTime(-60 * 5)}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow text-sm"
+                  title="Subtract 5 minutes"
+                >
+                  -5m
+                </button>
+                <button
+                  onClick={() => adjustTime(-60)}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow text-sm"
+                  title="Subtract 1 minute"
+                >
+                  -1m
+                </button>
+                <button
+                  onClick={() => adjustTime(60)}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow text-sm"
+                  title="Add 1 minute"
+                >
+                  +1m
+                </button>
+                <button
+                  onClick={() => adjustTime(60 * 5)}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow text-sm"
+                  title="Add 5 minutes"
+                >
+                  +5m
+                </button>
+              </div>
             </div>
 
             {/* Controls */}
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={togglePause}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 shadow-lg"
-              >
-                {isPaused ? "Resume" : "Pause"}
-              </button>
-              <button
-                onClick={reset}
-                className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 shadow-lg"
-              >
-                Reset
-              </button>
+            <div className="flex flex-col gap-4 items-center">
+              <div className="flex gap-4 justify-center">
+                <button
+                  onClick={togglePause}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 shadow-lg"
+                >
+                  {isPaused ? "Resume" : "Pause"}
+                </button>
+                <button
+                  onClick={reset}
+                  className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 shadow-lg"
+                >
+                  Reset
+                </button>
+              </div>
+
+              {/* Mute break toggle */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={muteBreak}
+                  onChange={(e) => setMuteBreak(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Mute during breaks
+                </span>
+              </label>
             </div>
 
             {/* Session overview */}
