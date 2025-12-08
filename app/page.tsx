@@ -77,6 +77,16 @@ export default function Home() {
     });
   };
 
+  // Add more Pomodoro cycles (25 min focus + 5 min break)
+  const addMoreCycles = (numCycles: number = 1) => {
+    const newSessions: PomodoroSession[] = [];
+    for (let i = 0; i < numCycles; i++) {
+      newSessions.push({ type: "focus", duration: FOCUS_DURATION });
+      newSessions.push({ type: "break", duration: BREAK_DURATION });
+    }
+    setSessions((prev) => [...prev, ...newSessions]);
+  };
+
   // Speak text using Web Speech API
   const speak = (text: string) => {
     // Check if we should mute during break sessions
@@ -331,18 +341,29 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* Mute break toggle */}
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={muteBreak}
-                  onChange={(e) => setMuteBreak(e.target.checked)}
-                  className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Mute during breaks
-                </span>
-              </label>
+              <div className="flex gap-4 items-center">
+                {/* Add more cycles button */}
+                <button
+                  onClick={() => addMoreCycles(1)}
+                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg transition-all duration-200 shadow"
+                  title="Add one more Pomodoro cycle (25 min focus + 5 min break)"
+                >
+                  + Add Pomodoro (25/5)
+                </button>
+
+                {/* Mute break toggle */}
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={muteBreak}
+                    onChange={(e) => setMuteBreak(e.target.checked)}
+                    className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    Mute during breaks
+                  </span>
+                </label>
+              </div>
             </div>
 
             {/* Session overview */}
