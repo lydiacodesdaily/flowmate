@@ -23,11 +23,18 @@ export default function Home() {
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [muteBreak, setMuteBreak] = useState(false);
+  const [muteAll, setMuteAll] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
   const lastMinuteAnnouncedRef = useRef<number>(-1);
+  const muteAllRef = useRef<boolean>(false);
+
+  // Sync muteAllRef with muteAll state
+  useEffect(() => {
+    muteAllRef.current = muteAll;
+  }, [muteAll]);
 
   // Generate sessions based on selected duration and mode
   const generateSessions = (totalMinutes: SessionDuration): PomodoroSession[] => {
@@ -90,6 +97,14 @@ export default function Home() {
     setIsRunning(true);
     setIsPaused(false);
     lastMinuteAnnouncedRef.current = -1;
+
+    // Initialize speech synthesis on user interaction (Chrome requirement)
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // Clear any pending speech
+      // Speak empty string to "wake up" speech synthesis in Chrome
+      const utterance = new SpeechSynthesisUtterance('');
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   // Reset everything
@@ -130,6 +145,11 @@ export default function Home() {
 
   // Speak text using Web Speech API
   const speak = (text: string) => {
+    // Check if all sound is muted
+    if (muteAllRef.current) {
+      return;
+    }
+
     // Check if we should mute during break sessions
     const currentSession = sessions[currentSessionIndex];
     if (muteBreak && currentSession?.type === "break") {
@@ -141,6 +161,21 @@ export default function Home() {
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
+
+      // Try to use a better quality voice
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        // Prefer enhanced/premium voices (Samantha, Alex on Mac, or Google voices)
+        const preferredVoice = voices.find(voice =>
+          voice.name.includes('Samantha') ||
+          voice.name.includes('Google') ||
+          voice.name.includes('Alex') ||
+          (voice.lang.startsWith('en') && voice.localService === false)
+        ) || voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+
+        utterance.voice = preferredVoice;
+      }
+
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -153,6 +188,25 @@ export default function Home() {
       if (savedDarkMode) {
         document.documentElement.classList.add('dark');
       }
+    }
+  }, []);
+
+  // Initialize speech synthesis voices
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      // Load voices
+      const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        console.log('Speech synthesis voices loaded:', voices.length);
+      };
+
+      // Voices might load async, so we need to listen for the event
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+
+      // Try loading immediately too
+      loadVoices();
     }
   }, []);
 
@@ -190,6 +244,11 @@ export default function Home() {
   // Play tick sound using audio file
   const playTick = () => {
     if (!tickAudioRef.current) return;
+
+    // Check if all sound is muted
+    if (muteAllRef.current) {
+      return;
+    }
 
     // Check if we should mute during break sessions
     const currentSession = sessions[currentSessionIndex];
@@ -464,7 +523,7 @@ export default function Home() {
                 </button>
               </div>
 
-              <div className="flex gap-4 items-center">
+              <div className="flex flex-col gap-3 items-center">
                 {/* Add more cycles button - only show in Pomodoro mode */}
                 {timerMode === "pomodoro" && (
                   <button
@@ -476,18 +535,54 @@ export default function Home() {
                   </button>
                 )}
 
-                {/* Mute break toggle */}
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={muteBreak}
-                    onChange={(e) => setMuteBreak(e.target.checked)}
-                    className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    Mute during breaks
-                  </span>
-                </label>
+                <div className="flex gap-4 items-center">
+                  {/* Mute all button */}
+                  <button
+                    onClick={() => {
+                      setMuteAll(!muteAll);
+                      // Cancel any currently speaking audio when toggling mute
+                      if (!muteAll && 'speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                      }
+                    }}
+                    className={`${
+                      muteAll
+                        ? 'bg-gray-600 hover:bg-gray-700'
+                        : 'bg-gray-500 hover:bg-gray-600'
+                    } text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow flex items-center gap-2`}
+                    title={muteAll ? "Unmute all sounds" : "Mute all sounds"}
+                  >
+                    {muteAll ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.531V19.94a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.506-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.395C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                      </svg>
+                    )}
+                    <span className="text-sm">{muteAll ? 'Unmute' : 'Mute'}</span>
+                  </button>
+
+                  {/* Mute break toggle */}
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={muteBreak}
+                      onChange={(e) => {
+                        setMuteBreak(e.target.checked);
+                        // Cancel any currently speaking audio when toggling mute
+                        if (e.target.checked && 'speechSynthesis' in window) {
+                          window.speechSynthesis.cancel();
+                        }
+                      }}
+                      className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      Mute during breaks
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
 
