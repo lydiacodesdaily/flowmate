@@ -30,11 +30,230 @@ export default function Home() {
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
   const lastMinuteAnnouncedRef = useRef<number>(-1);
   const muteAllRef = useRef<boolean>(false);
+  const pipWindowRef = useRef<Window | null>(null);
+  const isPausedRef = useRef<boolean>(false);
+  const timeRemainingRef = useRef<number>(0);
+  const currentSessionIndexRef = useRef<number>(0);
+  const sessionsRef = useRef<PomodoroSession[]>([]);
 
-  // Sync muteAllRef with muteAll state
+  // Sync refs with state
   useEffect(() => {
     muteAllRef.current = muteAll;
   }, [muteAll]);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    timeRemainingRef.current = timeRemaining;
+  }, [timeRemaining]);
+
+  useEffect(() => {
+    currentSessionIndexRef.current = currentSessionIndex;
+  }, [currentSessionIndex]);
+
+  useEffect(() => {
+    sessionsRef.current = sessions;
+  }, [sessions]);
+
+  // Picture-in-Picture functions
+  const openPiP = async () => {
+    if (!('documentPictureInPicture' in window)) {
+      console.log('Document Picture-in-Picture API not supported');
+      return;
+    }
+
+    try {
+      // Close existing PiP window if any
+      if (pipWindowRef.current) {
+        pipWindowRef.current.close();
+      }
+
+      // Open PiP window
+      const pipWindow = await (window as any).documentPictureInPicture.requestWindow({
+        width: 300,
+        height: 200,
+      });
+
+      pipWindowRef.current = pipWindow;
+
+      // Copy styles to PiP window
+      const styleSheets = Array.from(document.styleSheets);
+      styleSheets.forEach((styleSheet) => {
+        try {
+          const cssRules = Array.from(styleSheet.cssRules).map((rule) => rule.cssText).join('');
+          const style = pipWindow.document.createElement('style');
+          style.textContent = cssRules;
+          pipWindow.document.head.appendChild(style);
+        } catch (e) {
+          // Handle cross-origin stylesheets
+          const link = pipWindow.document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = (styleSheet as any).href;
+          pipWindow.document.head.appendChild(link);
+        }
+      });
+
+      // Create PiP content
+      const container = pipWindow.document.createElement('div');
+      container.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-family: system-ui, -apple-system, sans-serif;
+        padding: 20px;
+      `;
+      container.id = 'pip-container';
+      pipWindow.document.body.appendChild(container);
+
+      // Create initial HTML structure with IDs for elements
+      const currentSession = sessions[currentSessionIndex];
+      const sessionType = currentSession?.type === "focus" ? "🎯 Focus Time" : "☕ Break Time";
+      const sessionColor = currentSession?.type === "focus" ? "#FFF" : "#2FC6A5";
+
+      container.innerHTML = `
+        <div style="text-align: center;">
+          <div id="pip-session-type" style="font-size: 18px; font-weight: 600; margin-bottom: 10px; color: ${sessionColor};">
+            ${sessionType}
+          </div>
+          <div id="pip-timer" style="font-size: 48px; font-weight: bold; font-family: 'SF Mono', 'Monaco', monospace; margin-bottom: 15px;">
+            ${formatTime(timeRemaining)}
+          </div>
+          <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="pip-pause-btn" style="
+              background: rgba(255, 255, 255, 0.2);
+              border: 2px solid white;
+              color: white;
+              padding: 8px 16px;
+              border-radius: 8px;
+              cursor: pointer;
+              font-weight: 600;
+              font-size: 14px;
+            ">
+              ${isPaused ? '▶️ Resume' : '⏸️ Pause'}
+            </button>
+            <button id="pip-mute-btn" style="
+              background: rgba(255, 255, 255, 0.2);
+              border: 2px solid white;
+              color: white;
+              padding: 8px 16px;
+              border-radius: 8px;
+              cursor: pointer;
+              font-weight: 600;
+              font-size: 14px;
+            ">
+              ${muteAll ? '🔊 Unmute' : '🔇 Mute'}
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Get references to elements
+      const sessionTypeEl = pipWindow.document.getElementById('pip-session-type');
+      const timerEl = pipWindow.document.getElementById('pip-timer');
+      const pauseBtn = pipWindow.document.getElementById('pip-pause-btn');
+      const muteBtn = pipWindow.document.getElementById('pip-mute-btn');
+
+      // Add event listeners ONCE
+      if (pauseBtn) {
+        pauseBtn.addEventListener('click', () => {
+          setIsPaused((prev) => !prev);
+        });
+      }
+
+      if (muteBtn) {
+        muteBtn.addEventListener('click', () => {
+          setMuteAll((prev) => !prev);
+          if (!muteAll && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+          }
+        });
+      }
+
+      // Update PiP content (only updates text, not the whole DOM)
+      const updatePiPContent = () => {
+        if (!pipWindow || pipWindow.closed) return;
+
+        const currentSession = sessionsRef.current[currentSessionIndexRef.current];
+        const sessionType = currentSession?.type === "focus" ? "🎯 Focus Time" : "☕ Break Time";
+        const sessionColor = currentSession?.type === "focus" ? "#10b981" : "#3b82f6";
+
+        // Update only the text content, not the entire structure
+        if (sessionTypeEl) {
+          sessionTypeEl.textContent = sessionType;
+          sessionTypeEl.style.color = sessionColor;
+        }
+        if (timerEl) {
+          timerEl.textContent = formatTime(timeRemainingRef.current);
+        }
+        if (pauseBtn) {
+          pauseBtn.textContent = isPausedRef.current ? '▶️ Resume' : '⏸️ Pause';
+        }
+        if (muteBtn) {
+          muteBtn.textContent = muteAllRef.current ? '🔊 Unmute' : '🔇 Mute';
+        }
+      };
+
+      // Set up interval to update PiP content
+      const updateInterval = setInterval(() => {
+        if (pipWindow.closed) {
+          clearInterval(updateInterval);
+          pipWindowRef.current = null;
+        } else {
+          updatePiPContent();
+        }
+      }, 100);
+
+      // Clean up when PiP window closes
+      pipWindow.addEventListener('pagehide', () => {
+        clearInterval(updateInterval);
+        pipWindowRef.current = null;
+      });
+
+    } catch (error) {
+      console.error('Failed to open PiP window:', error);
+    }
+  };
+
+  const closePiP = () => {
+    if (pipWindowRef.current && !pipWindowRef.current.closed) {
+      pipWindowRef.current.close();
+      pipWindowRef.current = null;
+    }
+  };
+
+  // Auto-open PiP when tab becomes hidden, close when visible
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && isRunning && !isPaused) {
+        // Tab is hidden, open PiP
+        openPiP();
+      } else if (!document.hidden) {
+        // Tab is visible, close PiP
+        closePiP();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isRunning, isPaused]);
+
+  // Clean up PiP window when component unmounts
+  useEffect(() => {
+    return () => {
+      closePiP();
+    };
+  }, []);
 
   // Generate sessions based on selected duration and mode
   const generateSessions = (totalMinutes: SessionDuration): PomodoroSession[] => {
