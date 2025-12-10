@@ -629,11 +629,11 @@ export default function Home() {
     if (!isRunning || isPaused || sessions.length === 0) return;
 
     const interval = setInterval(() => {
+      // Play tick sound at the start of each second
+      playTick();
+
       setTimeRemaining((prev) => {
         const newTime = prev - 1;
-
-        // Play tick sound every second
-        playTick();
 
         // Announce remaining time
         if (newTime > 0) {
