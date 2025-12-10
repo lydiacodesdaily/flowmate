@@ -32,6 +32,8 @@ export default function Home() {
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
+  const tokAudioRef = useRef<HTMLAudioElement | null>(null);
+  const useTickRef = useRef<boolean>(true); // For alternating tick/tok
   const lastMinuteAnnouncedRef = useRef<number>(-1);
   const muteAllRef = useRef<boolean>(false);
   const pipWindowRef = useRef<Window | null>(null);
@@ -499,15 +501,32 @@ export default function Home() {
   // Update tick audio when sound or volume changes
   useEffect(() => {
     if (typeof window !== 'undefined' && tickSound && tickVolume !== undefined) {
-      // Initialize tick audio element
-      tickAudioRef.current = new Audio(`/audio/effects/${tickSound}`);
-      tickAudioRef.current.volume = tickVolume;
-      tickAudioRef.current.preload = 'auto';
+      // Handle alternating tick-tok sound
+      if (tickSound === 'tick-tok-alternate.mp3') {
+        // Initialize both tick and tok audio elements
+        tickAudioRef.current = new Audio(`/audio/effects/tick1.mp3`);
+        tickAudioRef.current.volume = tickVolume;
+        tickAudioRef.current.preload = 'auto';
 
-      // Fallback: if file doesn't load, log error
-      tickAudioRef.current.onerror = () => {
-        console.log('Tick audio file not found');
-      };
+        tokAudioRef.current = new Audio(`/audio/effects/tok1.mp3`);
+        tokAudioRef.current.volume = tickVolume;
+        tokAudioRef.current.preload = 'auto';
+
+        tickAudioRef.current.onerror = () => console.log('tick1.mp3 not found');
+        tokAudioRef.current.onerror = () => console.log('tok1.mp3 not found');
+      } else {
+        // Initialize single tick audio element
+        tickAudioRef.current = new Audio(`/audio/effects/${tickSound}`);
+        tickAudioRef.current.volume = tickVolume;
+        tickAudioRef.current.preload = 'auto';
+
+        tickAudioRef.current.onerror = () => {
+          console.log('Tick audio file not found');
+        };
+
+        // Clear tok audio if it exists
+        tokAudioRef.current = null;
+      }
     }
   }, [tickSound, tickVolume]);
 
@@ -526,12 +545,23 @@ export default function Home() {
       return;
     }
 
-    // Reset and play the audio
-    tickAudioRef.current.currentTime = 0;
-    tickAudioRef.current.play().catch(err => {
-      // Ignore errors (e.g., if user hasn't interacted with page yet)
-      console.log('Audio play failed:', err);
-    });
+    // Handle alternating tick-tok
+    if (tokAudioRef.current) {
+      // Alternate between tick and tok
+      const audioToPlay = useTickRef.current ? tickAudioRef.current : tokAudioRef.current;
+      audioToPlay.currentTime = 0;
+      audioToPlay.play().catch(err => {
+        console.log('Audio play failed:', err);
+      });
+      // Toggle for next time
+      useTickRef.current = !useTickRef.current;
+    } else {
+      // Single tick sound
+      tickAudioRef.current.currentTime = 0;
+      tickAudioRef.current.play().catch(err => {
+        console.log('Audio play failed:', err);
+      });
+    }
   };
 
   // Main timer effect
@@ -687,6 +717,9 @@ export default function Home() {
                     <option value="tick.m4a">Tick (Original)</option>
                     <option value="beep1.mp3">Beep 1</option>
                     <option value="beep2.mp3">Beep 2</option>
+                    <option value="tick1.mp3">Tick 1</option>
+                    <option value="tok1.mp3">Tok 1</option>
+                    <option value="tick-tok-alternate.mp3">Tick-Tok (Alternating)</option>
                   </select>
                 </div>
 
