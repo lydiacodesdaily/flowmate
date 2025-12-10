@@ -19,13 +19,13 @@ export const TimerSelection = ({
   startCustomSession,
 }: TimerSelectionProps) => {
   return (
-    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl pt-10 px-10 pb-8 border border-white/20 dark:border-cyan-500/20">
+    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-2xl sm:rounded-3xl shadow-2xl pt-6 sm:pt-10 px-4 sm:px-10 pb-6 sm:pb-8 border border-white/20 dark:border-cyan-500/20">
       {/* Tab Navigation */}
-      <div className="flex justify-center mb-8">
-        <div className="inline-flex rounded-2xl border-2 border-slate-300 dark:border-cyan-500/40 p-1.5 bg-slate-100 dark:bg-slate-900/70 backdrop-blur-sm">
+      <div className="flex justify-center mb-6 sm:mb-8">
+        <div className="inline-flex rounded-xl sm:rounded-2xl border-2 border-slate-300 dark:border-cyan-500/40 p-1 sm:p-1.5 bg-slate-100 dark:bg-slate-900/70 backdrop-blur-sm overflow-x-auto">
           <button
             onClick={() => setTimerMode("pomodoro")}
-            className={`px-6 py-3 rounded-xl transition-all duration-300 ${
+            className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-xs sm:text-base whitespace-nowrap ${
               timerMode === "pomodoro"
                 ? "bg-white dark:bg-cyan-500/30 text-blue-700 dark:text-cyan-300 shadow-lg dark:shadow-cyan-500/30 font-bold scale-105"
                 : "text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-semibold"
@@ -35,17 +35,17 @@ export const TimerSelection = ({
           </button>
           <button
             onClick={() => setTimerMode("guided")}
-            className={`px-6 py-3 rounded-xl transition-all duration-300 ${
+            className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-xs sm:text-base whitespace-nowrap ${
               timerMode === "guided"
                 ? "bg-white dark:bg-cyan-500/30 text-blue-700 dark:text-cyan-300 shadow-lg dark:shadow-cyan-500/30 font-bold scale-105"
                 : "text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-semibold"
             }`}
           >
-            Guided Deep Work
+            Guided
           </button>
           <button
             onClick={() => setTimerMode("custom")}
-            className={`px-6 py-3 rounded-xl transition-all duration-300 ${
+            className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 text-xs sm:text-base whitespace-nowrap ${
               timerMode === "custom"
                 ? "bg-white dark:bg-cyan-500/30 text-blue-700 dark:text-cyan-300 shadow-lg dark:shadow-cyan-500/30 font-bold scale-105"
                 : "text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-semibold"
@@ -56,7 +56,7 @@ export const TimerSelection = ({
         </div>
       </div>
 
-      <h2 className="text-2xl font-semibold mb-6 text-center text-slate-800 dark:text-white">
+      <h2 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-center text-slate-800 dark:text-white">
         {timerMode === "custom" ? "Custom Timer" : "Select Session Duration"}
       </h2>
 
@@ -121,7 +121,7 @@ export const TimerSelection = ({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           {(timerMode === "pomodoro"
             ? [25, 55, 85, 145]
             : [30, 60, 90, 120, 180]
@@ -167,18 +167,18 @@ export const TimerSelection = ({
               <button
                 key={duration}
                 onClick={() => startSession(duration as SessionDuration)}
-                className={`${colors[index]} text-white font-bold py-6 px-8 rounded-2xl transition-all duration-200 transform hover:scale-105 hover:shadow-xl`}
+                className={`${colors[index]} text-white font-bold py-4 sm:py-6 px-4 sm:px-8 rounded-xl sm:rounded-2xl transition-all duration-200 transform hover:scale-105 hover:shadow-xl`}
                 style={{ boxShadow: '0px 8px 24px rgba(0,0,0,0.12)' }}
               >
                 {timerMode === "pomodoro" && (
-                  <div className="flex items-center justify-center gap-1.5 mb-2 mt-1">
+                  <div className="flex items-center justify-center gap-1 sm:gap-1.5 mb-1 sm:mb-2 mt-0.5 sm:mt-1">
                     {Array.from({ length: pomodoroCount }).map((_, i) => (
-                      <TomatoIcon key={i} className="drop-shadow-sm" />
+                      <TomatoIcon key={i} className="drop-shadow-sm w-4 h-4 sm:w-5 sm:h-5" />
                     ))}
                   </div>
                 )}
-                <div className="text-4xl mb-2">{duration} min</div>
-                <div className="text-xs opacity-75 mt-1">
+                <div className="text-2xl sm:text-3xl md:text-4xl mb-1 sm:mb-2">{duration} min</div>
+                <div className="text-[10px] sm:text-xs opacity-75 mt-0.5 sm:mt-1">
                   {taglines[index]}
                 </div>
               </button>

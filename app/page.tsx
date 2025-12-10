@@ -702,13 +702,13 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-[#E0F2FE] via-[#EEF2FF] to-[#93C5FD] dark:from-[#0F172A] dark:via-[#1E293B] dark:to-[#0F172A] transition-colors duration-500">
+    <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 bg-gradient-to-br from-[#E0F2FE] via-[#EEF2FF] to-[#93C5FD] dark:from-[#0F172A] dark:via-[#1E293B] dark:to-[#0F172A] transition-colors duration-500">
       {/* Back button - top left, only shown when timer is running */}
       {selectedDuration && (
-        <div className="fixed top-4 left-4 z-40">
+        <div className="fixed top-2 left-2 sm:top-4 sm:left-4 z-40">
           <button
             onClick={reset}
-            className="p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
+            className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
             title="Back to timer selection"
             aria-label="Back to timer selection"
           >
@@ -720,11 +720,11 @@ export default function Home() {
       )}
 
       {/* Top right buttons */}
-      <div className="fixed top-4 right-4 flex gap-3 z-40">
+      <div className="fixed top-2 right-2 sm:top-4 sm:right-4 flex gap-2 sm:gap-3 z-40">
         {/* Settings button */}
         <button
           onClick={() => setShowSettings(!showSettings)}
-          className="p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
+          className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
           title="Settings"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -736,7 +736,7 @@ export default function Home() {
         {/* Dark mode toggle */}
         <button
           onClick={toggleDarkMode}
-          className="p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
+          className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
           title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
         >
           {isDarkMode ? (
@@ -765,11 +765,11 @@ export default function Home() {
         setMuteBreak={setMuteBreak}
       />
 
-      <div className="w-full max-w-2xl">
-        <h1 className="text-5xl font-bold text-center mb-2 text-slate-800 dark:text-white drop-shadow-lg dark:drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] transition-all duration-500">
+      <div className="w-full max-w-2xl px-2 sm:px-0">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2 text-slate-800 dark:text-white drop-shadow-lg dark:drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] transition-all duration-500">
           Flowmate
         </h1>
-        <p className="text-center text-slate-600 dark:text-cyan-200/80 mb-8 text-base">
+        <p className="text-center text-slate-600 dark:text-cyan-200/80 mb-6 sm:mb-8 text-sm sm:text-base">
           Focus Timer with Audio Announcements
         </p>
 

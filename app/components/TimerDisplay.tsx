@@ -56,8 +56,8 @@ export const TimerDisplay = ({
       </div>
 
       {/* Timer display */}
-      <div className="text-center mb-8">
-        <div className={`text-9xl font-bold mb-4 font-mono transition-all duration-300 ${
+      <div className="text-center mb-6 sm:mb-8">
+        <div className={`text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold mb-3 sm:mb-4 font-mono transition-all duration-300 ${
           sessions[currentSessionIndex]?.type === "focus"
             ? "text-slate-800 dark:text-white dark:drop-shadow-[0_0_30px_rgba(34,211,238,0.6)]"
             : "text-[#2FC6A5] dark:text-[#2FC6A5] drop-shadow-[0_0_30px_rgba(47,198,165,0.5)]"
