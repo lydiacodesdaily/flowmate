@@ -274,10 +274,10 @@ export default function Home() {
     } else {
       // Guided Deep Work mode - settle-in and wrap-up periods around focus sessions
       if (totalMinutes === 30) {
-        // 30 min: 3 settle-in, 24 focus, 3 wrap-up
+        // 30 min: 3 settle-in, 25 focus, 2 wrap-up
         sessionsList.push({ type: "break", duration: 3 * 60 });
-        sessionsList.push({ type: "focus", duration: 24 * 60 });
-        sessionsList.push({ type: "break", duration: 3 * 60 });
+        sessionsList.push({ type: "focus", duration: 25 * 60 });
+        sessionsList.push({ type: "break", duration: 2 * 60 });
       } else if (totalMinutes === 60) {
         // 60 min: 5 settle-in, 25 focus, 5 break, 20 focus, 5 wrap-up
         sessionsList.push({ type: "break", duration: 5 * 60 });
@@ -652,12 +652,12 @@ export default function Home() {
       {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn" onClick={() => setShowSettings(false)}>
-          <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 border border-white/20 dark:border-cyan-500/20 animate-scaleIn" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 border border-slate-200 dark:border-slate-700 animate-scaleIn max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-800 dark:text-white dark:drop-shadow-[0_0_10px_rgba(34,211,238,0.3)]">Settings</h2>
+              <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Settings</h2>
               <button
                 onClick={() => setShowSettings(false)}
-                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all duration-200 text-slate-600 dark:text-cyan-400"
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 text-slate-600 dark:text-slate-400"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -668,11 +668,11 @@ export default function Home() {
             {/* Audio Settings */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-300 mb-4">Audio Settings</h3>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-400 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">Audio</h3>
 
                 {/* Tick Sound Selection */}
                 <div className="mb-5">
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Tick Sound
                   </label>
                   <select
@@ -682,7 +682,7 @@ export default function Home() {
                       setTickSound(newSound);
                       localStorage.setItem('tickSound', newSound);
                     }}
-                    className="w-full px-4 py-3 text-sm bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-cyan-500/30 rounded-xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-400 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200 backdrop-blur-sm"
+                    className="w-full px-4 py-3 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
                   >
                     <option value="tick.m4a">Tick (Original)</option>
                     <option value="beep1.mp3">Beep 1</option>
@@ -692,7 +692,7 @@ export default function Home() {
 
                 {/* Tick Volume Slider */}
                 <div className="mb-5">
-                  <label className="flex items-center justify-between text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
+                  <label className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                     <span>Tick Volume</span>
                     <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(tickVolume * 100)}%</span>
                   </label>
@@ -707,13 +707,16 @@ export default function Home() {
                       setTickVolume(newVolume);
                       localStorage.setItem('tickVolume', String(newVolume));
                     }}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 dark:accent-cyan-400 hover:accent-blue-600 dark:hover:accent-cyan-300 transition-all"
+                    className="w-full h-3 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all"
+                    style={{
+                      background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${tickVolume * 100}%, rgb(203, 213, 225) ${tickVolume * 100}%, rgb(203, 213, 225) 100%)`,
+                    }}
                   />
                 </div>
 
                 {/* Announcement Volume Slider */}
-                <div>
-                  <label className="flex items-center justify-between text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
+                <div className="mb-5">
+                  <label className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                     <span>Announcement Volume</span>
                     <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(announcementVolume * 100)}%</span>
                   </label>
@@ -728,7 +731,34 @@ export default function Home() {
                       setAnnouncementVolume(newVolume);
                       localStorage.setItem('announcementVolume', String(newVolume));
                     }}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 dark:accent-cyan-400 hover:accent-blue-600 dark:hover:accent-cyan-300 transition-all"
+                    className="w-full h-3 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all"
+                    style={{
+                      background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${announcementVolume * 100}%, rgb(203, 213, 225) ${announcementVolume * 100}%, rgb(203, 213, 225) 100%)`,
+                    }}
+                  />
+                </div>
+
+                {/* Mute During Breaks Toggle */}
+                <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-600 dark:text-slate-400">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                    <label htmlFor="mute-breaks" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                      Mute During Breaks
+                    </label>
+                  </div>
+                  <input
+                    id="mute-breaks"
+                    type="checkbox"
+                    checked={muteBreak}
+                    onChange={(e) => {
+                      setMuteBreak(e.target.checked);
+                      if (e.target.checked && 'speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                      }
+                    }}
+                    className="w-5 h-5 text-blue-600 dark:text-cyan-500 bg-slate-100 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-cyan-500 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 cursor-pointer"
                   />
                 </div>
               </div>
@@ -995,28 +1025,6 @@ export default function Home() {
                     </svg>
                   )}
                 </button>
-
-                {/* Mute during breaks - Icon + Checkbox */}
-                <label
-                  className="flex items-center gap-2 cursor-pointer bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 px-3 py-2 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
-                  title="Mute During Breaks"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-600 dark:text-slate-300">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                  </svg>
-                  <input
-                    type="checkbox"
-                    checked={muteBreak}
-                    onChange={(e) => {
-                      setMuteBreak(e.target.checked);
-                      if (e.target.checked && 'speechSynthesis' in window) {
-                        window.speechSynthesis.cancel();
-                      }
-                    }}
-                    className="w-4 h-4 text-blue-600 dark:text-cyan-500 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 dark:focus:ring-cyan-500 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-600 dark:border-slate-500"
-                    aria-label="Mute sounds during break sessions"
-                  />
-                </label>
 
                 {/* PiP button */}
                 <button
