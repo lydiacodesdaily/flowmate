@@ -314,6 +314,25 @@ export default function Home() {
     setIsPaused(false);
     lastMinuteAnnouncedRef.current = -1;
 
+    // Initialize audio on user interaction (required for mobile browsers)
+    initializeAudio();
+
+    // Play a silent tick to unlock audio on mobile
+    if (tickAudioRef.current) {
+      tickAudioRef.current.volume = 0;
+      tickAudioRef.current.play().then(() => {
+        // Restore actual volume after unlocking
+        if (tickAudioRef.current) {
+          tickAudioRef.current.volume = tickVolume;
+        }
+      }).catch(err => console.log('Audio unlock failed:', err));
+    }
+
+    // Also unlock announcement audio by playing a silent test sound
+    const testAnnouncement = new Audio('/audio/countdown/seconds/s01.mp3');
+    testAnnouncement.volume = 0;
+    testAnnouncement.play().catch(err => console.log('Announcement audio unlock failed:', err));
+
     // Initialize speech synthesis on user interaction (Chrome requirement)
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel(); // Clear any pending speech
@@ -333,6 +352,25 @@ export default function Home() {
     setIsRunning(true);
     setIsPaused(false);
     lastMinuteAnnouncedRef.current = -1;
+
+    // Initialize audio on user interaction (required for mobile browsers)
+    initializeAudio();
+
+    // Play a silent tick to unlock audio on mobile
+    if (tickAudioRef.current) {
+      tickAudioRef.current.volume = 0;
+      tickAudioRef.current.play().then(() => {
+        // Restore actual volume after unlocking
+        if (tickAudioRef.current) {
+          tickAudioRef.current.volume = tickVolume;
+        }
+      }).catch(err => console.log('Audio unlock failed:', err));
+    }
+
+    // Also unlock announcement audio by playing a silent test sound
+    const testAnnouncement = new Audio('/audio/countdown/seconds/s01.mp3');
+    testAnnouncement.volume = 0;
+    testAnnouncement.play().catch(err => console.log('Announcement audio unlock failed:', err));
 
     // Initialize speech synthesis on user interaction (Chrome requirement)
     if ('speechSynthesis' in window) {
@@ -514,36 +552,42 @@ export default function Home() {
     }
   }, []);
 
-  // Update tick audio when sound or volume changes
-  useEffect(() => {
+  // Initialize audio elements (prepare but don't load yet to avoid autoplay issues)
+  const initializeAudio = () => {
     if (typeof window !== 'undefined' && tickSound && tickVolume !== undefined) {
       // Handle alternating tick-tok sound
       if (tickSound === 'tick-tok-alternate.mp3') {
         // Initialize both tick and tok audio elements
-        tickAudioRef.current = new Audio(`/audio/effects/tick1.mp3`);
+        if (!tickAudioRef.current) {
+          tickAudioRef.current = new Audio(`/audio/effects/tick1.mp3`);
+          tickAudioRef.current.onerror = () => console.log('tick1.mp3 not found');
+        }
         tickAudioRef.current.volume = tickVolume;
-        tickAudioRef.current.preload = 'auto';
 
-        tokAudioRef.current = new Audio(`/audio/effects/tok1.mp3`);
+        if (!tokAudioRef.current) {
+          tokAudioRef.current = new Audio(`/audio/effects/tok1.mp3`);
+          tokAudioRef.current.onerror = () => console.log('tok1.mp3 not found');
+        }
         tokAudioRef.current.volume = tickVolume;
-        tokAudioRef.current.preload = 'auto';
-
-        tickAudioRef.current.onerror = () => console.log('tick1.mp3 not found');
-        tokAudioRef.current.onerror = () => console.log('tok1.mp3 not found');
       } else {
         // Initialize single tick audio element
-        tickAudioRef.current = new Audio(`/audio/effects/${tickSound}`);
+        if (!tickAudioRef.current || tickAudioRef.current.src !== `/audio/effects/${tickSound}`) {
+          tickAudioRef.current = new Audio(`/audio/effects/${tickSound}`);
+          tickAudioRef.current.onerror = () => {
+            console.log('Tick audio file not found');
+          };
+        }
         tickAudioRef.current.volume = tickVolume;
-        tickAudioRef.current.preload = 'auto';
-
-        tickAudioRef.current.onerror = () => {
-          console.log('Tick audio file not found');
-        };
 
         // Clear tok audio if it exists
         tokAudioRef.current = null;
       }
     }
+  };
+
+  // Update tick audio when sound or volume changes
+  useEffect(() => {
+    initializeAudio();
   }, [tickSound, tickVolume]);
 
   // Play tick sound using audio file
