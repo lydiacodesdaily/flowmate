@@ -14,6 +14,59 @@ interface PomodoroSession {
 const FOCUS_DURATION = 25 * 60; // 25 minutes in seconds
 const BREAK_DURATION = 5 * 60; // 5 minutes in seconds
 
+// Tomato Icon Component
+const TomatoIcon = ({ className = "" }: { className?: string }) => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    {/* Shadow / base */}
+    <ellipse cx="12" cy="18" rx="6.5" ry="2.2" fill="rgba(0,0,0,0.08)" />
+
+    {/* Tomato body */}
+    <circle cx="12" cy="12" r="7" fill="#FF4B4B" />
+
+    {/* Subtle highlight */}
+    <ellipse
+      cx="9"
+      cy="10"
+      rx="2.4"
+      ry="1.6"
+      fill="#FFFFFF"
+      opacity="0.35"
+    />
+
+    {/* Stem base */}
+    <circle cx="12" cy="7.4" r="2.1" fill="#2E7D32" />
+
+    {/* Leafy top */}
+    <path
+      d="M12 5.3
+         L10.7 6.5
+         L9.1 6.1
+         L9.6 7.7
+         L8.5 9
+         L10.2 9.1
+         L11.1 10.6
+         L12 9.2
+         L12.9 10.6
+         L13.8 9.1
+         L15.5 9
+         L14.4 7.7
+         L14.9 6.1
+         L13.3 6.5
+         Z"
+      fill="#388E3C"
+    />
+
+    {/* Tiny top highlight on stem */}
+    <circle cx="11.3" cy="6.8" r="0.45" fill="#FFFFFF" opacity="0.6" />
+  </svg>
+);
+
 export default function Home() {
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
   const [selectedDuration, setSelectedDuration] = useState<SessionDuration | null>(null);
@@ -25,7 +78,7 @@ export default function Home() {
   const [muteBreak, setMuteBreak] = useState(false);
   const [muteAll, setMuteAll] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [tickSound, setTickSound] = useState<string>('tick.m4a');
+  const [tickSound, setTickSound] = useState<string>('tick-tok-alternate.mp3');
   const [tickVolume, setTickVolume] = useState<number>(0.2);
   const [announcementVolume, setAnnouncementVolume] = useState<number>(1.0);
   const [showSettings, setShowSettings] = useState(false);
@@ -127,7 +180,7 @@ export default function Home() {
       // Create initial HTML structure with IDs for elements
       const currentSession = sessions[currentSessionIndex];
       const sessionType = currentSession?.type === "focus" ? "🎯 Focus Time" : "☕ Break Time";
-      const sessionColor = currentSession?.type === "focus" ? "#FFF" : "#2FC6A5";
+      const sessionColor = currentSession?.type === "focus" ? "#FFFFFF" : "#A5F3E3";
 
       container.innerHTML = `
         <div style="text-align: center;">
@@ -194,7 +247,7 @@ export default function Home() {
 
         const currentSession = sessionsRef.current[currentSessionIndexRef.current];
         const sessionType = currentSession?.type === "focus" ? "🎯 Focus Time" : "☕ Break Time";
-        const sessionColor = currentSession?.type === "focus" ? "#10b981" : "#3b82f6";
+        const sessionColor = currentSession?.type === "focus" ? "#FFFFFF" : "#A5F3E3";
 
         // Update only the text content, not the entire structure
         if (sessionTypeEl) {
@@ -690,6 +743,22 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-[#E0F2FE] via-[#EEF2FF] to-[#93C5FD] dark:from-[#0F172A] dark:via-[#1E293B] dark:to-[#0F172A] transition-colors duration-500">
+      {/* Back button - top left, only shown when timer is running */}
+      {selectedDuration && (
+        <div className="fixed top-4 left-4 z-40">
+          <button
+            onClick={reset}
+            className="p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
+            title="Back to timer selection"
+            aria-label="Back to timer selection"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Top right buttons */}
       <div className="fixed top-4 right-4 flex gap-3 z-40">
         {/* Settings button */}
@@ -743,10 +812,10 @@ export default function Home() {
               <div>
                 <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-400 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">Audio</h3>
 
-                {/* Tick Sound Selection */}
+                {/* Second Sound Selection */}
                 <div className="mb-5">
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Tick Sound
+                    Second Sound
                   </label>
                   <select
                     value={tickSound}
@@ -757,19 +826,19 @@ export default function Home() {
                     }}
                     className="w-full px-4 py-3 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
                   >
-                    <option value="tick.m4a">Tick (Original)</option>
-                    <option value="beep1.mp3">Beep 1</option>
-                    <option value="beep2.mp3">Beep 2</option>
-                    <option value="tick1.mp3">Tick 1</option>
-                    <option value="tok1.mp3">Tok 1</option>
-                    <option value="tick-tok-alternate.mp3">Tick-Tok (Alternating)</option>
+                    <option value="tick-tok-alternate.mp3">Tick-Tok Alternating</option>
+                    <option value="tick.m4a">Mechanical Tick</option>
+                    <option value="beep1.mp3">High Beep</option>
+                    <option value="beep2.mp3">Low Beep</option>
+                    <option value="tick1.mp3">Soft Tick</option>
+                    <option value="tok1.mp3">Soft Tok</option>
                   </select>
                 </div>
 
-                {/* Tick Volume Slider */}
+                {/* Second Volume Slider */}
                 <div className="mb-5">
                   <label className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                    <span>Tick Volume</span>
+                    <span>Second Volume</span>
                     <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(tickVolume * 100)}%</span>
                   </label>
                   <input
@@ -844,44 +913,44 @@ export default function Home() {
       )}
 
       <div className="w-full max-w-2xl">
-        <h1 className="text-6xl font-bold text-center mb-3 text-slate-800 dark:text-white drop-shadow-lg dark:drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] transition-all duration-500">
+        <h1 className="text-5xl font-bold text-center mb-2 text-slate-800 dark:text-white drop-shadow-lg dark:drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] transition-all duration-500">
           Flowmate
         </h1>
-        <p className="text-center text-slate-600 dark:text-cyan-200/80 mb-12 text-lg">
+        <p className="text-center text-slate-600 dark:text-cyan-200/80 mb-8 text-base">
           Focus Timer with Audio Announcements
         </p>
 
         {!selectedDuration ? (
-          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl p-10 border border-white/20 dark:border-cyan-500/20">
+          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl pt-10 px-10 pb-8 border border-white/20 dark:border-cyan-500/20">
             {/* Tab Navigation */}
             <div className="flex justify-center mb-8">
-              <div className="inline-flex rounded-2xl border border-slate-200 dark:border-cyan-500/30 p-1 bg-slate-100/50 dark:bg-slate-900/50 backdrop-blur-sm">
+              <div className="inline-flex rounded-2xl border-2 border-slate-300 dark:border-cyan-500/40 p-1.5 bg-slate-100 dark:bg-slate-900/70 backdrop-blur-sm">
                 <button
                   onClick={() => setTimerMode("pomodoro")}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                  className={`px-6 py-3 rounded-xl transition-all duration-300 ${
                     timerMode === "pomodoro"
-                      ? "bg-white dark:bg-cyan-500/20 text-blue-600 dark:text-cyan-400 shadow-lg dark:shadow-cyan-500/20"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-cyan-300"
+                      ? "bg-white dark:bg-cyan-500/30 text-blue-700 dark:text-cyan-300 shadow-lg dark:shadow-cyan-500/30 font-bold scale-105"
+                      : "text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-semibold"
                   }`}
                 >
                   Pomodoro
                 </button>
                 <button
                   onClick={() => setTimerMode("guided")}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                  className={`px-6 py-3 rounded-xl transition-all duration-300 ${
                     timerMode === "guided"
-                      ? "bg-white dark:bg-cyan-500/20 text-blue-600 dark:text-cyan-400 shadow-lg dark:shadow-cyan-500/20"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-cyan-300"
+                      ? "bg-white dark:bg-cyan-500/30 text-blue-700 dark:text-cyan-300 shadow-lg dark:shadow-cyan-500/30 font-bold scale-105"
+                      : "text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-semibold"
                   }`}
                 >
                   Guided Deep Work
                 </button>
                 <button
                   onClick={() => setTimerMode("custom")}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                  className={`px-6 py-3 rounded-xl transition-all duration-300 ${
                     timerMode === "custom"
-                      ? "bg-white dark:bg-cyan-500/20 text-blue-600 dark:text-cyan-400 shadow-lg dark:shadow-cyan-500/20"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-cyan-300"
+                      ? "bg-white dark:bg-cyan-500/30 text-blue-700 dark:text-cyan-300 shadow-lg dark:shadow-cyan-500/30 font-bold scale-105"
+                      : "text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-semibold"
                   }`}
                 >
                   Custom
@@ -958,23 +1027,61 @@ export default function Home() {
                 {(timerMode === "pomodoro"
                   ? [25, 55, 85, 145]
                   : [30, 60, 90, 120, 180]
-                ).map((duration) => {
+                ).map((duration, index) => {
                   // Calculate pomodoro count for display
                   const pomodoroCount = timerMode === "pomodoro"
                     ? Math.floor((duration + 5) / 30)
                     : 0;
 
+                  // Color progression for visual distinction
+                  const colors = timerMode === "pomodoro"
+                    ? [
+                        "bg-blue-400 hover:bg-blue-500 dark:bg-cyan-400 dark:hover:bg-cyan-500",
+                        "bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-600",
+                        "bg-blue-600 hover:bg-blue-700 dark:bg-cyan-600 dark:hover:bg-cyan-700",
+                        "bg-blue-700 hover:bg-blue-800 dark:bg-cyan-700 dark:hover:bg-cyan-800"
+                      ]
+                    : [
+                        "bg-blue-400 hover:bg-blue-500 dark:bg-cyan-400 dark:hover:bg-cyan-500",
+                        "bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-600",
+                        "bg-blue-600 hover:bg-blue-700 dark:bg-cyan-600 dark:hover:bg-cyan-700",
+                        "bg-blue-700 hover:bg-blue-800 dark:bg-cyan-700 dark:hover:bg-cyan-800",
+                        "bg-blue-800 hover:bg-blue-900 dark:bg-cyan-800 dark:hover:bg-cyan-900"
+                      ];
+
+                  // Taglines for context
+                  const taglines = timerMode === "pomodoro"
+                    ? [
+                        "Classic focus session",
+                        "Two rounds back-to-back",
+                        "Deep flow block",
+                        "Extended deep work"
+                      ]
+                    : [
+                        "Quick guided session",
+                        "Standard deep work",
+                        "Extended focus time",
+                        "Long work session",
+                        "Marathon focus"
+                      ];
+
                   return (
                     <button
                       key={duration}
                       onClick={() => startSession(duration as SessionDuration)}
-                      className="bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white font-bold py-6 px-8 rounded-2xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl dark:shadow-cyan-500/30"
+                      className={`${colors[index]} text-white font-bold py-6 px-8 rounded-2xl transition-all duration-200 transform hover:scale-105 hover:shadow-xl`}
+                      style={{ boxShadow: '0px 8px 24px rgba(0,0,0,0.12)' }}
                     >
+                      {timerMode === "pomodoro" && (
+                        <div className="flex items-center justify-center gap-1.5 mb-2 mt-1">
+                          {Array.from({ length: pomodoroCount }).map((_, i) => (
+                            <TomatoIcon key={i} className="drop-shadow-sm" />
+                          ))}
+                        </div>
+                      )}
                       <div className="text-4xl mb-2">{duration} min</div>
-                      <div className="text-sm opacity-90">
-                        {timerMode === "pomodoro"
-                          ? `${pomodoroCount} Pomodoro${pomodoroCount > 1 ? 's' : ''}`
-                          : "Guided Session"}
+                      <div className="text-xs opacity-75 mt-1">
+                        {taglines[index]}
                       </div>
                     </button>
                   );
@@ -1003,7 +1110,15 @@ export default function Home() {
 
             {/* Timer display */}
             <div className="text-center mb-8">
-              {/* Time adjustment controls - moved above timer */}
+              <div className={`text-9xl font-bold mb-4 font-mono transition-all duration-300 ${
+                sessions[currentSessionIndex]?.type === "focus"
+                  ? "text-slate-800 dark:text-white dark:drop-shadow-[0_0_30px_rgba(34,211,238,0.6)]"
+                  : "text-[#2FC6A5] dark:text-[#2FC6A5] drop-shadow-[0_0_30px_rgba(47,198,165,0.5)]"
+              }`}>
+                {formatTime(timeRemaining)}
+              </div>
+
+              {/* Time adjustment controls - below timer */}
               <div className="flex gap-2 justify-center mb-4">
                 <button
                   onClick={() => adjustTime(-60 * 5)}
@@ -1037,10 +1152,6 @@ export default function Home() {
                 >
                   +5m
                 </button>
-              </div>
-
-              <div className="text-9xl font-bold text-slate-800 dark:text-white mb-6 font-mono dark:drop-shadow-[0_0_30px_rgba(34,211,238,0.6)] transition-all duration-300">
-                {formatTime(timeRemaining)}
               </div>
 
               {/* Segmented Progress bar */}
@@ -1083,7 +1194,7 @@ export default function Home() {
                     <div
                       key={index}
                       style={{ flex: `${sessionPercentage} 1 0%` }}
-                      className={`relative h-4 overflow-hidden ${borderRadiusClass} cursor-pointer hover:scale-105 transition-transform duration-200`}
+                      className={`relative h-4 overflow-hidden ${borderRadiusClass} cursor-pointer`}
                       title={tooltipText}
                     >
                       {/* Background (unfilled) */}
@@ -1110,7 +1221,7 @@ export default function Home() {
 
             {/* Controls */}
             <div className="flex flex-col gap-5 items-center">
-              {/* Primary Controls - Icon Buttons */}
+              {/* Primary Controls - Pause Button */}
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={togglePause}
@@ -1127,16 +1238,6 @@ export default function Home() {
                       <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" clipRule="evenodd" />
                     </svg>
                   )}
-                </button>
-                <button
-                  onClick={reset}
-                  className="bg-slate-400 hover:bg-slate-500 dark:bg-slate-600 dark:hover:bg-slate-500 text-white font-semibold p-4 rounded-2xl transition-all duration-200 shadow-md hover:shadow-lg"
-                  aria-label="Reset timer"
-                  title="Reset Timer"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
-                    <path fillRule="evenodd" d="M4.755 10.059a7.5 7.5 0 0112.548-3.364l1.903 1.903h-3.183a.75.75 0 100 1.5h4.992a.75.75 0 00.75-.75V4.356a.75.75 0 00-1.5 0v3.18l-1.9-1.9A9 9 0 003.306 9.67a.75.75 0 101.45.388zm15.408 3.352a.75.75 0 00-.919.53 7.5 7.5 0 01-12.548 3.364l-1.902-1.903h3.183a.75.75 0 000-1.5H2.984a.75.75 0 00-.75.75v4.992a.75.75 0 001.5 0v-3.18l1.9 1.9a9 9 0 0015.059-4.035.75.75 0 00-.53-.918z" clipRule="evenodd" />
-                  </svg>
                 </button>
               </div>
 
