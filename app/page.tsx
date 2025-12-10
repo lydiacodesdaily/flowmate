@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 
 type SessionType = "focus" | "break";
-type SessionDuration = 30 | 60 | 90 | 120 | 180;
-type TimerMode = "pomodoro" | "flowclub";
+type SessionDuration = 25 | 30 | 55 | 60 | 85 | 90 | 120 | 145 | 180;
+type TimerMode = "pomodoro" | "guided";
 
 interface PomodoroSession {
   type: SessionType;
@@ -261,20 +261,25 @@ export default function Home() {
     const sessionsList: PomodoroSession[] = [];
 
     if (timerMode === "pomodoro") {
-      const cycles = totalMinutes / 30; // Each cycle is 30 minutes (25 focus + 5 break)
-      for (let i = 0; i < cycles; i++) {
+      // Calculate number of pomodoros based on conventional structure
+      // 25min = 1 Pomodoro, 55min = 2 Pomodoros, 85min = 3 Pomodoros, 145min = 5 Pomodoros
+      const pomodoros = Math.floor((totalMinutes + 5) / 30); // Calculate number of pomodoros
+      for (let i = 0; i < pomodoros; i++) {
         sessionsList.push({ type: "focus", duration: FOCUS_DURATION });
-        sessionsList.push({ type: "break", duration: BREAK_DURATION });
+        // Add break after focus, except for the last pomodoro
+        if (i < pomodoros - 1) {
+          sessionsList.push({ type: "break", duration: BREAK_DURATION });
+        }
       }
     } else {
-      // Flow Club mode - breaks between focus sessions, last focus is always 20 min
+      // Guided Deep Work mode - settle-in and wrap-up periods around focus sessions
       if (totalMinutes === 30) {
-        // 30 min: 3 break, 24 focus, 3 break
+        // 30 min: 3 settle-in, 24 focus, 3 wrap-up
         sessionsList.push({ type: "break", duration: 3 * 60 });
         sessionsList.push({ type: "focus", duration: 24 * 60 });
         sessionsList.push({ type: "break", duration: 3 * 60 });
       } else if (totalMinutes === 60) {
-        // 60 min: 5 break, 25 focus, 5 break, 20 focus, 5 break
+        // 60 min: 5 settle-in, 25 focus, 5 break, 20 focus, 5 wrap-up
         sessionsList.push({ type: "break", duration: 5 * 60 });
         sessionsList.push({ type: "focus", duration: 25 * 60 });
         sessionsList.push({ type: "break", duration: 5 * 60 });
@@ -610,33 +615,14 @@ export default function Home() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calculate total progress
-  const calculateProgress = (): number => {
-    if (sessions.length === 0) return 0;
-
-    let totalDuration = 0;
-    let completedDuration = 0;
-
-    sessions.forEach((session, index) => {
-      totalDuration += session.duration;
-      if (index < currentSessionIndex) {
-        completedDuration += session.duration;
-      } else if (index === currentSessionIndex) {
-        completedDuration += (session.duration - timeRemaining);
-      }
-    });
-
-    return (completedDuration / totalDuration) * 100;
-  };
-
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-[#E0F2FE] via-[#EEF2FF] to-[#93C5FD] dark:from-[#0F172A] dark:via-[#1E293B] dark:to-[#0F172A] transition-colors duration-500">
       {/* Top right buttons */}
-      <div className="fixed top-4 right-4 flex gap-2">
+      <div className="fixed top-4 right-4 flex gap-3 z-40">
         {/* Settings button */}
         <button
           onClick={() => setShowSettings(!showSettings)}
-          className="p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-200 text-gray-800 dark:text-gray-200"
+          className="p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
           title="Settings"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -648,7 +634,7 @@ export default function Home() {
         {/* Dark mode toggle */}
         <button
           onClick={toggleDarkMode}
-          className="p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-200 text-gray-800 dark:text-gray-200"
+          className="p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
           title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
         >
           {isDarkMode ? (
@@ -665,15 +651,15 @@ export default function Home() {
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowSettings(false)}>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn" onClick={() => setShowSettings(false)}>
+          <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 border border-white/20 dark:border-cyan-500/20 animate-scaleIn" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Settings</h2>
+              <h2 className="text-2xl font-bold text-slate-800 dark:text-white dark:drop-shadow-[0_0_10px_rgba(34,211,238,0.3)]">Settings</h2>
               <button
                 onClick={() => setShowSettings(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all duration-200 text-slate-600 dark:text-cyan-400"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-600 dark:text-gray-300">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -682,11 +668,11 @@ export default function Home() {
             {/* Audio Settings */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Audio Settings</h3>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-300 mb-4">Audio Settings</h3>
 
                 {/* Tick Sound Selection */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
                     Tick Sound
                   </label>
                   <select
@@ -696,7 +682,7 @@ export default function Home() {
                       setTickSound(newSound);
                       localStorage.setItem('tickSound', newSound);
                     }}
-                    className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-4 py-3 text-sm bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-cyan-500/30 rounded-xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-400 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200 backdrop-blur-sm"
                   >
                     <option value="tick.m4a">Tick (Original)</option>
                     <option value="beep1.mp3">Beep 1</option>
@@ -705,10 +691,10 @@ export default function Home() {
                 </div>
 
                 {/* Tick Volume Slider */}
-                <div className="mb-4">
-                  <label className="flex items-center justify-between text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                <div className="mb-5">
+                  <label className="flex items-center justify-between text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
                     <span>Tick Volume</span>
-                    <span className="font-mono text-indigo-600 dark:text-indigo-400">{Math.round(tickVolume * 100)}%</span>
+                    <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(tickVolume * 100)}%</span>
                   </label>
                   <input
                     type="range"
@@ -721,15 +707,15 @@ export default function Home() {
                       setTickVolume(newVolume);
                       localStorage.setItem('tickVolume', String(newVolume));
                     }}
-                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 dark:accent-cyan-400 hover:accent-blue-600 dark:hover:accent-cyan-300 transition-all"
                   />
                 </div>
 
                 {/* Announcement Volume Slider */}
                 <div>
-                  <label className="flex items-center justify-between text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                  <label className="flex items-center justify-between text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
                     <span>Announcement Volume</span>
-                    <span className="font-mono text-indigo-600 dark:text-indigo-400">{Math.round(announcementVolume * 100)}%</span>
+                    <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(announcementVolume * 100)}%</span>
                   </label>
                   <input
                     type="range"
@@ -742,7 +728,7 @@ export default function Home() {
                       setAnnouncementVolume(newVolume);
                       localStorage.setItem('announcementVolume', String(newVolume));
                     }}
-                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500 dark:accent-cyan-400 hover:accent-blue-600 dark:hover:accent-cyan-300 transition-all"
                   />
                 </div>
               </div>
@@ -752,260 +738,297 @@ export default function Home() {
       )}
 
       <div className="w-full max-w-2xl">
-        <h1 className="text-5xl font-bold text-center mb-2 text-gray-800 dark:text-white">
+        <h1 className="text-6xl font-bold text-center mb-3 text-slate-800 dark:text-white drop-shadow-lg dark:drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] transition-all duration-500">
           Flowmate
         </h1>
-        <p className="text-center text-gray-600 dark:text-gray-300 mb-12">
-          Pomodoro Timer with Audio Announcements
+        <p className="text-center text-slate-600 dark:text-cyan-200/80 mb-12 text-lg">
+          Focus Timer with Audio Announcements
         </p>
 
         {!selectedDuration ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl p-10 border border-white/20 dark:border-cyan-500/20">
             {/* Tab Navigation */}
-            <div className="flex justify-center mb-6">
-              <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-1 bg-gray-100 dark:bg-gray-900">
+            <div className="flex justify-center mb-8">
+              <div className="inline-flex rounded-2xl border border-slate-200 dark:border-cyan-500/30 p-1 bg-slate-100/50 dark:bg-slate-900/50 backdrop-blur-sm">
                 <button
                   onClick={() => setTimerMode("pomodoro")}
-                  className={`px-6 py-2 rounded-md font-semibold transition-all duration-200 ${
+                  className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 ${
                     timerMode === "pomodoro"
-                      ? "bg-white dark:bg-gray-800 text-indigo-600 shadow"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                      ? "bg-white dark:bg-cyan-500/20 text-blue-600 dark:text-cyan-400 shadow-lg dark:shadow-cyan-500/20"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-cyan-300"
                   }`}
                 >
                   Pomodoro
                 </button>
                 <button
-                  onClick={() => setTimerMode("flowclub")}
-                  className={`px-6 py-2 rounded-md font-semibold transition-all duration-200 ${
-                    timerMode === "flowclub"
-                      ? "bg-white dark:bg-gray-800 text-indigo-600 shadow"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  onClick={() => setTimerMode("guided")}
+                  className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                    timerMode === "guided"
+                      ? "bg-white dark:bg-cyan-500/20 text-blue-600 dark:text-cyan-400 shadow-lg dark:shadow-cyan-500/20"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-cyan-300"
                   }`}
                 >
-                  Flow Club
+                  Guided Deep Work
                 </button>
               </div>
             </div>
 
-            <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800 dark:text-white">
+            <h2 className="text-2xl font-semibold mb-6 text-center text-slate-800 dark:text-white">
               Select Session Duration
             </h2>
             <div className="grid grid-cols-2 gap-4">
               {(timerMode === "pomodoro"
-                ? [30, 60, 90, 180]
+                ? [25, 55, 85, 145]
                 : [30, 60, 90, 120, 180]
-              ).map((duration) => (
-                <button
-                  key={duration}
-                  onClick={() => startSession(duration as SessionDuration)}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-6 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
-                >
-                  <div className="text-3xl mb-2">{duration} min</div>
-                  <div className="text-sm opacity-90">
-                    {timerMode === "pomodoro"
-                      ? `${duration / 30}x Pomodoro`
-                      : "Flow Club"}
-                  </div>
-                </button>
-              ))}
+              ).map((duration) => {
+                // Calculate pomodoro count for display
+                const pomodoroCount = timerMode === "pomodoro"
+                  ? Math.floor((duration + 5) / 30)
+                  : 0;
+
+                return (
+                  <button
+                    key={duration}
+                    onClick={() => startSession(duration as SessionDuration)}
+                    className="bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white font-bold py-6 px-8 rounded-2xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl dark:shadow-cyan-500/30"
+                  >
+                    <div className="text-4xl mb-2">{duration} min</div>
+                    <div className="text-sm opacity-90">
+                      {timerMode === "pomodoro"
+                        ? `${pomodoroCount} Pomodoro${pomodoroCount > 1 ? 's' : ''}`
+                        : "Guided Session"}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl p-10 border border-white/20 dark:border-cyan-500/20">
             {/* Current session info */}
-            <div className="text-center mb-6">
-              <div className={`inline-block px-6 py-2 rounded-full text-white font-semibold ${
+            <div className="text-center mb-8">
+              <div className={`inline-block px-8 py-3 rounded-2xl text-white font-bold text-lg shadow-lg transition-all duration-300 ${
                 sessions[currentSessionIndex]?.type === "focus"
-                  ? "bg-green-500"
-                  : "bg-blue-500"
+                  ? "bg-blue-500 dark:bg-cyan-500 dark:shadow-cyan-500/50"
+                  : "bg-slate-500 dark:bg-slate-600"
               }`}>
-                {sessions[currentSessionIndex]?.type === "focus" && "Focus Time"}
-                {sessions[currentSessionIndex]?.type === "break" && "Break Time"}
+                {sessions[currentSessionIndex]?.type === "focus" && "🎯 Focus Time"}
+                {sessions[currentSessionIndex]?.type === "break" && "☕ Break Time"}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              <div className="text-sm text-slate-600 dark:text-slate-300 mt-3 font-medium">
                 Session {currentSessionIndex + 1} of {sessions.length}
               </div>
             </div>
 
             {/* Timer display */}
             <div className="text-center mb-8">
-              <div className="text-8xl font-bold text-gray-800 dark:text-white mb-4 font-mono">
-                {formatTime(timeRemaining)}
-              </div>
-
-              {/* Progress bar */}
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-4">
-                <div
-                  className="bg-indigo-600 h-4 rounded-full transition-all duration-1000"
-                  style={{ width: `${calculateProgress()}%` }}
-                />
-              </div>
-
-              {/* Time adjustment controls */}
+              {/* Time adjustment controls - moved above timer */}
               <div className="flex gap-2 justify-center mb-4">
                 <button
                   onClick={() => adjustTime(-60 * 5)}
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow text-sm"
+                  className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
                   title="Subtract 5 minutes"
+                  aria-label="Subtract 5 minutes"
                 >
                   -5m
                 </button>
                 <button
                   onClick={() => adjustTime(-60)}
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow text-sm"
+                  className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
                   title="Subtract 1 minute"
+                  aria-label="Subtract 1 minute"
                 >
                   -1m
                 </button>
                 <button
                   onClick={() => adjustTime(60)}
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow text-sm"
+                  className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
                   title="Add 1 minute"
+                  aria-label="Add 1 minute"
                 >
                   +1m
                 </button>
                 <button
                   onClick={() => adjustTime(60 * 5)}
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow text-sm"
+                  className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
                   title="Add 5 minutes"
+                  aria-label="Add 5 minutes"
                 >
                   +5m
                 </button>
               </div>
+
+              <div className="text-9xl font-bold text-slate-800 dark:text-white mb-6 font-mono dark:drop-shadow-[0_0_30px_rgba(34,211,238,0.6)] transition-all duration-300">
+                {formatTime(timeRemaining)}
+              </div>
+
+              {/* Segmented Progress bar */}
+              <div className="w-full flex gap-1 mb-4 py-2">
+                {sessions.map((session, index) => {
+                  const totalDuration = sessions.reduce((sum, s) => sum + s.duration, 0);
+                  const sessionPercentage = (session.duration / totalDuration) * 100;
+
+                  // Calculate fill percentage for this segment
+                  let fillPercentage = 0;
+                  if (index < currentSessionIndex) {
+                    // Completed sessions are 100% filled
+                    fillPercentage = 100;
+                  } else if (index === currentSessionIndex) {
+                    // Current session shows progress
+                    const sessionProgress = ((session.duration - timeRemaining) / session.duration) * 100;
+                    fillPercentage = Math.max(0, Math.min(100, sessionProgress));
+                  }
+                  // Future sessions remain at 0%
+
+                  const isFocus = session.type === "focus";
+                  const isFirstSegment = index === 0;
+                  const isLastSegment = index === sessions.length - 1;
+
+                  // Determine border radius classes
+                  let borderRadiusClass = '';
+                  if (isFirstSegment && isLastSegment) {
+                    borderRadiusClass = 'rounded-full';
+                  } else if (isFirstSegment) {
+                    borderRadiusClass = 'rounded-l-full';
+                  } else if (isLastSegment) {
+                    borderRadiusClass = 'rounded-r-full';
+                  }
+
+                  // Format duration for tooltip
+                  const durationMinutes = Math.floor(session.duration / 60);
+                  const tooltipText = `${durationMinutes}m ${isFocus ? 'Focus' : 'Break'}`;
+
+                  return (
+                    <div
+                      key={index}
+                      style={{ flex: `${sessionPercentage} 1 0%` }}
+                      className={`relative h-4 overflow-hidden ${borderRadiusClass} cursor-pointer hover:scale-105 transition-transform duration-200`}
+                      title={tooltipText}
+                    >
+                      {/* Background (unfilled) */}
+                      <div className={`absolute inset-0 pointer-events-none ${
+                        isFocus
+                          ? 'bg-[rgb(210,221,236)] dark:bg-slate-700/50'
+                          : 'bg-[rgb(81,94,168)] dark:bg-slate-600/50'
+                      }`}></div>
+
+                      {/* Progress fill */}
+                      <div
+                        className={`absolute inset-0 transition-all duration-1000 pointer-events-none ${
+                          isFocus
+                            ? 'bg-[rgb(165,243,227)] dark:bg-cyan-400'
+                            : 'bg-[rgb(115,122,201)] dark:bg-slate-500'
+                        }`}
+                        style={{ width: `${fillPercentage}%` }}
+                      ></div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Controls */}
-            <div className="flex flex-col gap-4 items-center">
-              <div className="flex gap-4 justify-center">
+            <div className="flex flex-col gap-5 items-center">
+              {/* Primary Controls - Icon Buttons */}
+              <div className="flex gap-3 justify-center">
                 <button
                   onClick={togglePause}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 shadow-lg"
+                  className="bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white font-bold p-4 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                  aria-label={isPaused ? "Resume timer" : "Pause timer"}
+                  title={isPaused ? "Resume Timer" : "Pause Timer"}
                 >
-                  {isPaused ? "Resume" : "Pause"}
+                  {isPaused ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
+                      <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
+                      <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" clipRule="evenodd" />
+                    </svg>
+                  )}
                 </button>
                 <button
                   onClick={reset}
-                  className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 shadow-lg"
+                  className="bg-slate-400 hover:bg-slate-500 dark:bg-slate-600 dark:hover:bg-slate-500 text-white font-semibold p-4 rounded-2xl transition-all duration-200 shadow-md hover:shadow-lg"
+                  aria-label="Reset timer"
+                  title="Reset Timer"
                 >
-                  Reset
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
+                    <path fillRule="evenodd" d="M4.755 10.059a7.5 7.5 0 0112.548-3.364l1.903 1.903h-3.183a.75.75 0 100 1.5h4.992a.75.75 0 00.75-.75V4.356a.75.75 0 00-1.5 0v3.18l-1.9-1.9A9 9 0 003.306 9.67a.75.75 0 101.45.388zm15.408 3.352a.75.75 0 00-.919.53 7.5 7.5 0 01-12.548 3.364l-1.902-1.903h3.183a.75.75 0 000-1.5H2.984a.75.75 0 00-.75.75v4.992a.75.75 0 001.5 0v-3.18l1.9 1.9a9 9 0 0015.059-4.035.75.75 0 00-.53-.918z" clipRule="evenodd" />
+                  </svg>
                 </button>
+              </div>
+
+              {/* Secondary Controls Row */}
+              <div className="flex flex-wrap gap-2 items-center justify-center text-sm">
+                {/* Add more cycles - Pomodoro only */}
+                {timerMode === "pomodoro" && (
+                  <button
+                    onClick={() => addMoreCycles(1)}
+                    className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium py-2 px-3 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
+                    title="Add Pomodoro Cycle"
+                    aria-label="Add Pomodoro cycle"
+                  >
+                    + Pomodoro
+                  </button>
+                )}
+
+                {/* Mute all button - Icon only */}
+                <button
+                  onClick={() => {
+                    setMuteAll(!muteAll);
+                    if (!muteAll && 'speechSynthesis' in window) {
+                      window.speechSynthesis.cancel();
+                    }
+                  }}
+                  className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium p-2 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
+                  title={muteAll ? "Unmute All Sounds" : "Mute All Sounds"}
+                  aria-label={muteAll ? "Unmute all sounds" : "Mute all sounds"}
+                >
+                  {muteAll ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.531V19.94a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.506-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.395C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Mute during breaks - Icon + Checkbox */}
+                <label
+                  className="flex items-center gap-2 cursor-pointer bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 px-3 py-2 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
+                  title="Mute During Breaks"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-600 dark:text-slate-300">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                  </svg>
+                  <input
+                    type="checkbox"
+                    checked={muteBreak}
+                    onChange={(e) => {
+                      setMuteBreak(e.target.checked);
+                      if (e.target.checked && 'speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600 dark:text-cyan-500 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 dark:focus:ring-cyan-500 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-600 dark:border-slate-500"
+                    aria-label="Mute sounds during break sessions"
+                  />
+                </label>
+
+                {/* PiP button */}
                 <button
                   onClick={openPiP}
-                  className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg"
-                  title="Open Picture-in-Picture"
+                  className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium p-2 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
+                  title="Picture-in-Picture Mode"
+                  aria-label="Open picture-in-picture mode"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </button>
-              </div>
-
-              <div className="flex flex-col gap-3 items-center">
-                {/* Add more cycles button - only show in Pomodoro mode */}
-                {timerMode === "pomodoro" && (
-                  <button
-                    onClick={() => addMoreCycles(1)}
-                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg transition-all duration-200 shadow"
-                    title="Add one more Pomodoro cycle (25 min focus + 5 min break)"
-                  >
-                    + Add Pomodoro (25/5)
-                  </button>
-                )}
-
-                <div className="flex gap-4 items-center">
-                  {/* Mute all button */}
-                  <button
-                    onClick={() => {
-                      setMuteAll(!muteAll);
-                      // Cancel any currently speaking audio when toggling mute
-                      if (!muteAll && 'speechSynthesis' in window) {
-                        window.speechSynthesis.cancel();
-                      }
-                    }}
-                    className={`${
-                      muteAll
-                        ? 'bg-gray-600 hover:bg-gray-700'
-                        : 'bg-gray-500 hover:bg-gray-600'
-                    } text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 shadow flex items-center gap-2`}
-                    title={muteAll ? "Unmute all sounds" : "Mute all sounds"}
-                  >
-                    {muteAll ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.531V19.94a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.506-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.395C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
-                      </svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
-                      </svg>
-                    )}
-                    <span className="text-sm">{muteAll ? 'Unmute' : 'Mute'}</span>
-                  </button>
-
-                  {/* Mute break toggle */}
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={muteBreak}
-                      onChange={(e) => {
-                        setMuteBreak(e.target.checked);
-                        // Cancel any currently speaking audio when toggling mute
-                        if (e.target.checked && 'speechSynthesis' in window) {
-                          window.speechSynthesis.cancel();
-                        }
-                      }}
-                      className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      Mute during breaks
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Session overview */}
-            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">
-                Sessions Progress
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {sessions.map((session, index) => {
-                  const getSessionColor = () => {
-                    if (index < currentSessionIndex) {
-                      return "bg-gray-400 text-white";
-                    }
-
-                    if (index === currentSessionIndex) {
-                      if (session.type === "focus") {
-                        return "bg-green-500 text-white ring-4 ring-green-300";
-                      } else {
-                        return "bg-blue-500 text-white ring-4 ring-blue-300";
-                      }
-                    }
-
-                    // Future sessions
-                    if (session.type === "focus") {
-                      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-                    } else {
-                      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-                    }
-                  };
-
-                  const getSessionLabel = () => {
-                    if (session.type === "focus") return "F";
-                    if (session.type === "break") return "B";
-                    return "?";
-                  };
-
-                  return (
-                    <div
-                      key={index}
-                      className={`w-12 h-12 rounded-lg flex items-center justify-center text-xs font-bold ${getSessionColor()}`}
-                    >
-                      {getSessionLabel()}
-                    </div>
-                  );
-                })}
               </div>
             </div>
           </div>

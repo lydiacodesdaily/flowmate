@@ -1,19 +1,27 @@
-# Flowmate - Pomodoro Timer
+# Flowmate - Focus Timer
 
-A beautiful and functional Pomodoro timer built with Next.js, TypeScript, and Tailwind CSS. Features audio ticking, high-quality voice announcements, and Picture-in-Picture support.
+A beautiful and functional focus timer built with Next.js, TypeScript, and Tailwind CSS. Supports both Pomodoro technique and Guided Deep Work sessions. Features audio ticking, high-quality voice announcements, and Picture-in-Picture support.
 
 ## Features
 
 ### Timer Modes
 - **Pomodoro Mode**: Traditional 25-minute focus sessions with 5-minute breaks
-- **Flow Club Mode**: Custom timing patterns designed for deep work sessions
+- **Guided Deep Work Mode**: Structured check-in → focus → wrap-up cycles
 
 ### Session Durations
-- **30 minutes**: 1 Pomodoro cycle or Flow Club quick session
-- **60 minutes**: 2 Pomodoro cycles or Flow Club standard session
-- **90 minutes**: 3 Pomodoro cycles or Flow Club extended session
-- **120 minutes**: 4 Pomodoro cycles or Flow Club marathon session (Flow Club only)
-- **180 minutes**: 6 Pomodoro cycles or Flow Club ultra-marathon session
+
+**Pomodoro Mode:**
+- **25 minutes**: 1 Pomodoro (25 min focus)
+- **55 minutes**: 2 Pomodoros (25 min focus + 5 min break + 25 min focus)
+- **85 minutes**: 3 Pomodoros (25 + 5 + 25 + 5 + 25)
+- **145 minutes**: 5 Pomodoros (25 + 5 + 25 + 5 + 25 + 5 + 25 + 5 + 25)
+
+**Guided Deep Work Mode:**
+- **30 minutes**: 3 min settle-in • 24 min focus • 3 min wrap-up
+- **60 minutes**: 5 • 25 • 5 • 20 • 5
+- **90 minutes**: 5 • 25 • 5 • 25 • 5 • 20 • 5
+- **120 minutes**: Extended guided session
+- **180 minutes**: Marathon guided session
 
 ### Audio Features
 - **Audio Ticking**: Subtle tick sound every second to maintain rhythm
@@ -66,20 +74,21 @@ Voice files generated using **ElevenLabs Sarah voice** for high-quality, natural
 
 ## Pomodoro Mode Structure
 
-Each cycle consists of 25 minutes focus + 5 minutes break:
-- 30 minutes = 1 cycle (1x 25/5)
-- 60 minutes = 2 cycles (2x 25/5)
-- 90 minutes = 3 cycles (3x 25/5)
-- 180 minutes = 6 cycles (6x 25/5)
+Following the conventional Pomodoro technique, each Pomodoro is 25 minutes of focused work. Breaks (5 minutes) are added between Pomodoros, but **not after the final one**:
 
-## Flow Club Mode Structure
+- **25 min** = 1 Pomodoro (25 min focus)
+- **55 min** = 2 Pomodoros (25 min focus + 5 min break + 25 min focus)
+- **85 min** = 3 Pomodoros (25 + 5 + 25 + 5 + 25)
+- **145 min** = 5 Pomodoros (25 + 5 + 25 + 5 + 25 + 5 + 25 + 5 + 25)
 
-Flow Club mode uses custom timing patterns optimized for deep work:
-- **30 min**: 3 min break → 24 min focus → 3 min break
-- **60 min**: 5 min break → 25 min focus → 5 min break → 20 min focus → 5 min break
-- **90 min**: Repeats 60-minute pattern with extended sessions
-- **120 min**: Double 60-minute pattern for marathon sessions
-- **180 min**: Triple 60-minute pattern for ultra-marathon sessions
+## Guided Deep Work Mode Structure
+
+Guided Deep Work mode uses structured check-in → focus → wrap-up cycles:
+- **30 min**: 3 min settle-in → 24 min focus → 3 min wrap-up
+- **60 min**: 5 min settle-in → 25 min focus → 5 min break → 20 min focus → 5 min wrap-up
+- **90 min**: 5 → 25 → 5 → 25 → 5 → 20 → 5
+- **120 min**: Extended pattern for marathon sessions
+- **180 min**: Extended pattern for ultra-marathon sessions
 
 ## Getting Started
 
@@ -99,7 +108,7 @@ npm run dev
 
 ## Usage
 
-1. **Choose Mode**: Select between Pomodoro or Flow Club mode
+1. **Choose Mode**: Select between Pomodoro or Guided Deep Work mode
 2. **Select Duration**: Choose your desired session duration
 3. **Start Timer**: Timer automatically starts with first session
 4. **Listen**: Enjoy high-quality voice announcements at key intervals
