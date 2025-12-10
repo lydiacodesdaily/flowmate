@@ -1,71 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-
-type SessionType = "focus" | "break";
-type SessionDuration = 25 | 30 | 55 | 60 | 85 | 90 | 120 | 145 | 180;
-type TimerMode = "pomodoro" | "guided" | "custom";
-
-interface PomodoroSession {
-  type: SessionType;
-  duration: number; // in seconds
-}
-
-const FOCUS_DURATION = 25 * 60; // 25 minutes in seconds
-const BREAK_DURATION = 5 * 60; // 5 minutes in seconds
-
-// Tomato Icon Component
-const TomatoIcon = ({ className = "" }: { className?: string }) => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
-    {/* Shadow / base */}
-    <ellipse cx="12" cy="18" rx="6.5" ry="2.2" fill="rgba(0,0,0,0.08)" />
-
-    {/* Tomato body */}
-    <circle cx="12" cy="12" r="7" fill="#FF4B4B" />
-
-    {/* Subtle highlight */}
-    <ellipse
-      cx="9"
-      cy="10"
-      rx="2.4"
-      ry="1.6"
-      fill="#FFFFFF"
-      opacity="0.35"
-    />
-
-    {/* Stem base */}
-    <circle cx="12" cy="7.4" r="2.1" fill="#2E7D32" />
-
-    {/* Leafy top */}
-    <path
-      d="M12 5.3
-         L10.7 6.5
-         L9.1 6.1
-         L9.6 7.7
-         L8.5 9
-         L10.2 9.1
-         L11.1 10.6
-         L12 9.2
-         L12.9 10.6
-         L13.8 9.1
-         L15.5 9
-         L14.4 7.7
-         L14.9 6.1
-         L13.3 6.5
-         Z"
-      fill="#388E3C"
-    />
-
-    {/* Tiny top highlight on stem */}
-    <circle cx="11.3" cy="6.8" r="0.45" fill="#FFFFFF" opacity="0.6" />
-  </svg>
-);
+import confetti from "canvas-confetti";
+import { SessionDuration, TimerMode, PomodoroSession, FOCUS_DURATION, BREAK_DURATION } from "./types";
+import { SettingsModal } from "./components/SettingsModal";
+import { TimerSelection } from "./components/TimerSelection";
+import { TimerDisplay } from "./components/TimerDisplay";
+import { CompletionScreen } from "./components/CompletionScreen";
 
 export default function Home() {
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
@@ -84,6 +25,7 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
   const [customMinutes, setCustomMinutes] = useState<string>("");
   const [isPiPSupported, setIsPiPSupported] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -98,32 +40,16 @@ export default function Home() {
   const currentSessionIndexRef = useRef<number>(0);
   const sessionsRef = useRef<PomodoroSession[]>([]);
 
-  // Sync refs with state
-  useEffect(() => {
-    muteAllRef.current = muteAll;
-  }, [muteAll]);
-
-  useEffect(() => {
-    muteBreakRef.current = muteBreak;
-  }, [muteBreak]);
-
+  // Update refs for PiP
   useEffect(() => {
     isPausedRef.current = isPaused;
-  }, [isPaused]);
-
-  useEffect(() => {
     timeRemainingRef.current = timeRemaining;
-  }, [timeRemaining]);
-
-  useEffect(() => {
     currentSessionIndexRef.current = currentSessionIndex;
-  }, [currentSessionIndex]);
-
-  useEffect(() => {
     sessionsRef.current = sessions;
-  }, [sessions]);
+    muteAllRef.current = muteAll;
+    muteBreakRef.current = muteBreak;
+  }, [isPaused, timeRemaining, currentSessionIndex, sessions, muteAll, muteBreak]);
 
-  // Picture-in-Picture functions
   const openPiP = async () => {
     if (!('documentPictureInPicture' in window)) {
       console.log('Document Picture-in-Picture API not supported');
@@ -424,6 +350,7 @@ export default function Home() {
     setSessions([]);
     setCurrentSessionIndex(0);
     setTimeRemaining(0);
+    setIsCompleted(false);
     lastMinuteAnnouncedRef.current = -1;
   };
 
@@ -723,6 +650,39 @@ export default function Home() {
             // All sessions complete
             speak("Done.");
             setIsRunning(false);
+            setIsCompleted(true);
+
+            // Trigger confetti celebration
+            const duration = 3000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            function randomInRange(min: number, max: number) {
+              return Math.random() * (max - min) + min;
+            }
+
+            const interval = setInterval(function() {
+              const timeLeft = animationEnd - Date.now();
+
+              if (timeLeft <= 0) {
+                return clearInterval(interval);
+              }
+
+              const particleCount = 50 * (timeLeft / duration);
+
+              // Fire confetti from both sides
+              confetti({
+                ...defaults,
+                particleCount,
+                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+              });
+              confetti({
+                ...defaults,
+                particleCount,
+                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+              });
+            }, 250);
+
             return 0;
           }
         }
@@ -792,125 +752,18 @@ export default function Home() {
       </div>
 
       {/* Settings Modal */}
-      {showSettings && (
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn" onClick={() => setShowSettings(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 border border-slate-200 dark:border-slate-700 animate-scaleIn max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Settings</h2>
-              <button
-                onClick={() => setShowSettings(false)}
-                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 text-slate-600 dark:text-slate-400"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Audio Settings */}
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-400 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">Audio</h3>
-
-                {/* Second Sound Selection */}
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Second Sound
-                  </label>
-                  <select
-                    value={tickSound}
-                    onChange={(e) => {
-                      const newSound = e.target.value;
-                      setTickSound(newSound);
-                      localStorage.setItem('tickSound', newSound);
-                    }}
-                    className="w-full px-4 py-3 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
-                  >
-                    <option value="tick-tok-alternate.mp3">Tick-Tok Alternating</option>
-                    <option value="tick.m4a">Mechanical Tick</option>
-                    <option value="beep1.mp3">High Beep</option>
-                    <option value="beep2.mp3">Low Beep</option>
-                    <option value="tick1.mp3">Soft Tick</option>
-                    <option value="tok1.mp3">Soft Tok</option>
-                  </select>
-                </div>
-
-                {/* Second Volume Slider */}
-                <div className="mb-5">
-                  <label className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                    <span>Second Volume</span>
-                    <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(tickVolume * 100)}%</span>
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={tickVolume}
-                    onChange={(e) => {
-                      const newVolume = parseFloat(e.target.value);
-                      setTickVolume(newVolume);
-                      localStorage.setItem('tickVolume', String(newVolume));
-                    }}
-                    className="w-full h-3 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all"
-                    style={{
-                      background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${tickVolume * 100}%, rgb(203, 213, 225) ${tickVolume * 100}%, rgb(203, 213, 225) 100%)`,
-                    }}
-                  />
-                </div>
-
-                {/* Announcement Volume Slider */}
-                <div className="mb-5">
-                  <label className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                    <span>Announcement Volume</span>
-                    <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(announcementVolume * 100)}%</span>
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={announcementVolume}
-                    onChange={(e) => {
-                      const newVolume = parseFloat(e.target.value);
-                      setAnnouncementVolume(newVolume);
-                      localStorage.setItem('announcementVolume', String(newVolume));
-                    }}
-                    className="w-full h-3 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all"
-                    style={{
-                      background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${announcementVolume * 100}%, rgb(203, 213, 225) ${announcementVolume * 100}%, rgb(203, 213, 225) 100%)`,
-                    }}
-                  />
-                </div>
-
-                {/* Mute During Breaks Toggle */}
-                <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center gap-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-600 dark:text-slate-400">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                    </svg>
-                    <label htmlFor="mute-breaks" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                      Mute During Breaks
-                    </label>
-                  </div>
-                  <input
-                    id="mute-breaks"
-                    type="checkbox"
-                    checked={muteBreak}
-                    onChange={(e) => {
-                      setMuteBreak(e.target.checked);
-                      if (e.target.checked && 'speechSynthesis' in window) {
-                        window.speechSynthesis.cancel();
-                      }
-                    }}
-                    className="w-5 h-5 text-blue-600 dark:text-cyan-500 bg-slate-100 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-cyan-500 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 cursor-pointer"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <SettingsModal
+        showSettings={showSettings}
+        setShowSettings={setShowSettings}
+        tickSound={tickSound}
+        setTickSound={setTickSound}
+        tickVolume={tickVolume}
+        setTickVolume={setTickVolume}
+        announcementVolume={announcementVolume}
+        setAnnouncementVolume={setAnnouncementVolume}
+        muteBreak={muteBreak}
+        setMuteBreak={setMuteBreak}
+      />
 
       <div className="w-full max-w-2xl">
         <h1 className="text-5xl font-bold text-center mb-2 text-slate-800 dark:text-white drop-shadow-lg dark:drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] transition-all duration-500">
@@ -921,402 +774,38 @@ export default function Home() {
         </p>
 
         {!selectedDuration ? (
-          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl pt-10 px-10 pb-8 border border-white/20 dark:border-cyan-500/20">
-            {/* Tab Navigation */}
-            <div className="flex justify-center mb-8">
-              <div className="inline-flex rounded-2xl border-2 border-slate-300 dark:border-cyan-500/40 p-1.5 bg-slate-100 dark:bg-slate-900/70 backdrop-blur-sm">
-                <button
-                  onClick={() => setTimerMode("pomodoro")}
-                  className={`px-6 py-3 rounded-xl transition-all duration-300 ${
-                    timerMode === "pomodoro"
-                      ? "bg-white dark:bg-cyan-500/30 text-blue-700 dark:text-cyan-300 shadow-lg dark:shadow-cyan-500/30 font-bold scale-105"
-                      : "text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-semibold"
-                  }`}
-                >
-                  Pomodoro
-                </button>
-                <button
-                  onClick={() => setTimerMode("guided")}
-                  className={`px-6 py-3 rounded-xl transition-all duration-300 ${
-                    timerMode === "guided"
-                      ? "bg-white dark:bg-cyan-500/30 text-blue-700 dark:text-cyan-300 shadow-lg dark:shadow-cyan-500/30 font-bold scale-105"
-                      : "text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-semibold"
-                  }`}
-                >
-                  Guided Deep Work
-                </button>
-                <button
-                  onClick={() => setTimerMode("custom")}
-                  className={`px-6 py-3 rounded-xl transition-all duration-300 ${
-                    timerMode === "custom"
-                      ? "bg-white dark:bg-cyan-500/30 text-blue-700 dark:text-cyan-300 shadow-lg dark:shadow-cyan-500/30 font-bold scale-105"
-                      : "text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-semibold"
-                  }`}
-                >
-                  Custom
-                </button>
-              </div>
-            </div>
-
-            <h2 className="text-2xl font-semibold mb-6 text-center text-slate-800 dark:text-white">
-              {timerMode === "custom" ? "Custom Timer" : "Select Session Duration"}
-            </h2>
-
-            {timerMode === "custom" ? (
-              <div className="space-y-6">
-                {/* Custom time input */}
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-full max-w-sm">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 text-center">
-                      Enter minutes
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="999"
-                      value={customMinutes}
-                      onChange={(e) => setCustomMinutes(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && customMinutes && parseInt(customMinutes) > 0) {
-                          startCustomSession(parseInt(customMinutes));
-                        }
-                      }}
-                      placeholder="e.g., 15, 45, 120"
-                      className="w-full px-6 py-4 text-2xl text-center bg-slate-50 dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-2xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200 font-mono"
-                    />
-                    <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                      </svg>
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        Voice announcements begin at 25 minutes
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (customMinutes && parseInt(customMinutes) > 0) {
-                        startCustomSession(parseInt(customMinutes));
-                      }
-                    }}
-                    disabled={!customMinutes || parseInt(customMinutes) <= 0}
-                    className="bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white font-bold py-4 px-12 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-500 dark:disabled:hover:bg-cyan-500"
-                  >
-                    Start Timer
-                  </button>
-                </div>
-
-                {/* Quick presets */}
-                <div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 text-center mb-3">Quick presets:</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[15, 30, 45].map((preset) => (
-                      <button
-                        key={preset}
-                        onClick={() => startCustomSession(preset)}
-                        className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-3 px-4 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 hover:scale-105"
-                      >
-                        {preset} min
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                {(timerMode === "pomodoro"
-                  ? [25, 55, 85, 145]
-                  : [30, 60, 90, 120, 180]
-                ).map((duration, index) => {
-                  // Calculate pomodoro count for display
-                  const pomodoroCount = timerMode === "pomodoro"
-                    ? Math.floor((duration + 5) / 30)
-                    : 0;
-
-                  // Color progression for visual distinction
-                  const colors = timerMode === "pomodoro"
-                    ? [
-                        "bg-blue-400 hover:bg-blue-500 dark:bg-cyan-400 dark:hover:bg-cyan-500",
-                        "bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-600",
-                        "bg-blue-600 hover:bg-blue-700 dark:bg-cyan-600 dark:hover:bg-cyan-700",
-                        "bg-blue-700 hover:bg-blue-800 dark:bg-cyan-700 dark:hover:bg-cyan-800"
-                      ]
-                    : [
-                        "bg-blue-400 hover:bg-blue-500 dark:bg-cyan-400 dark:hover:bg-cyan-500",
-                        "bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-600",
-                        "bg-blue-600 hover:bg-blue-700 dark:bg-cyan-600 dark:hover:bg-cyan-700",
-                        "bg-blue-700 hover:bg-blue-800 dark:bg-cyan-700 dark:hover:bg-cyan-800",
-                        "bg-blue-800 hover:bg-blue-900 dark:bg-cyan-800 dark:hover:bg-cyan-900"
-                      ];
-
-                  // Taglines for context
-                  const taglines = timerMode === "pomodoro"
-                    ? [
-                        "Classic focus session",
-                        "Two rounds back-to-back",
-                        "Deep flow block",
-                        "Extended deep work"
-                      ]
-                    : [
-                        "Quick guided session",
-                        "Standard deep work",
-                        "Extended focus time",
-                        "Long work session",
-                        "Marathon focus"
-                      ];
-
-                  return (
-                    <button
-                      key={duration}
-                      onClick={() => startSession(duration as SessionDuration)}
-                      className={`${colors[index]} text-white font-bold py-6 px-8 rounded-2xl transition-all duration-200 transform hover:scale-105 hover:shadow-xl`}
-                      style={{ boxShadow: '0px 8px 24px rgba(0,0,0,0.12)' }}
-                    >
-                      {timerMode === "pomodoro" && (
-                        <div className="flex items-center justify-center gap-1.5 mb-2 mt-1">
-                          {Array.from({ length: pomodoroCount }).map((_, i) => (
-                            <TomatoIcon key={i} className="drop-shadow-sm" />
-                          ))}
-                        </div>
-                      )}
-                      <div className="text-4xl mb-2">{duration} min</div>
-                      <div className="text-xs opacity-75 mt-1">
-                        {taglines[index]}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <TimerSelection
+            timerMode={timerMode}
+            setTimerMode={setTimerMode}
+            customMinutes={customMinutes}
+            setCustomMinutes={setCustomMinutes}
+            startSession={startSession}
+            startCustomSession={startCustomSession}
+          />
+        ) : isCompleted ? (
+          <CompletionScreen
+            timerMode={timerMode}
+            selectedDuration={selectedDuration}
+            reset={reset}
+          />
         ) : (
-          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl p-10 border border-white/20 dark:border-cyan-500/20">
-            {/* Current session info */}
-            <div className="text-center mb-8">
-              <div className={`inline-block px-8 py-3 rounded-2xl text-white font-bold text-lg shadow-lg transition-all duration-300 ${
-                sessions[currentSessionIndex]?.type === "focus"
-                  ? "bg-blue-500 dark:bg-cyan-500 dark:shadow-cyan-500/50"
-                  : "bg-slate-500 dark:bg-slate-600"
-              }`}>
-                {sessions[currentSessionIndex]?.type === "focus" && (timerMode === "custom" ? "⏱️ Custom Timer" : "🎯 Focus Time")}
-                {sessions[currentSessionIndex]?.type === "break" && "☕ Break Time"}
-              </div>
-              {sessions.length > 1 && (
-                <div className="text-sm text-slate-600 dark:text-slate-300 mt-3 font-medium">
-                  Session {currentSessionIndex + 1} of {sessions.length}
-                </div>
-              )}
-            </div>
-
-            {/* Timer display */}
-            <div className="text-center mb-8">
-              <div className={`text-9xl font-bold mb-4 font-mono transition-all duration-300 ${
-                sessions[currentSessionIndex]?.type === "focus"
-                  ? "text-slate-800 dark:text-white dark:drop-shadow-[0_0_30px_rgba(34,211,238,0.6)]"
-                  : "text-[#2FC6A5] dark:text-[#2FC6A5] drop-shadow-[0_0_30px_rgba(47,198,165,0.5)]"
-              }`}>
-                {formatTime(timeRemaining)}
-              </div>
-
-              {/* Time adjustment controls - below timer */}
-              <div className="flex gap-2 justify-center mb-4">
-                <button
-                  onClick={() => adjustTime(-60 * 5)}
-                  className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
-                  title="Subtract 5 minutes"
-                  aria-label="Subtract 5 minutes"
-                >
-                  -5m
-                </button>
-                <button
-                  onClick={() => adjustTime(-60)}
-                  className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
-                  title="Subtract 1 minute"
-                  aria-label="Subtract 1 minute"
-                >
-                  -1m
-                </button>
-                <button
-                  onClick={() => adjustTime(60)}
-                  className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
-                  title="Add 1 minute"
-                  aria-label="Add 1 minute"
-                >
-                  +1m
-                </button>
-                <button
-                  onClick={() => adjustTime(60 * 5)}
-                  className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
-                  title="Add 5 minutes"
-                  aria-label="Add 5 minutes"
-                >
-                  +5m
-                </button>
-              </div>
-
-              {/* Segmented Progress bar */}
-              <div className="w-full flex gap-1 mb-4 py-2">
-                {sessions.map((session, index) => {
-                  const totalDuration = sessions.reduce((sum, s) => sum + s.duration, 0);
-                  const sessionPercentage = (session.duration / totalDuration) * 100;
-
-                  // Calculate fill percentage for this segment
-                  let fillPercentage = 0;
-                  if (index < currentSessionIndex) {
-                    // Completed sessions are 100% filled
-                    fillPercentage = 100;
-                  } else if (index === currentSessionIndex) {
-                    // Current session shows progress
-                    const sessionProgress = ((session.duration - timeRemaining) / session.duration) * 100;
-                    fillPercentage = Math.max(0, Math.min(100, sessionProgress));
-                  }
-                  // Future sessions remain at 0%
-
-                  const isFocus = session.type === "focus";
-                  const isFirstSegment = index === 0;
-                  const isLastSegment = index === sessions.length - 1;
-
-                  // Determine border radius classes
-                  let borderRadiusClass = '';
-                  if (isFirstSegment && isLastSegment) {
-                    borderRadiusClass = 'rounded-full';
-                  } else if (isFirstSegment) {
-                    borderRadiusClass = 'rounded-l-full';
-                  } else if (isLastSegment) {
-                    borderRadiusClass = 'rounded-r-full';
-                  }
-
-                  // Format duration for tooltip
-                  const durationMinutes = Math.floor(session.duration / 60);
-                  const tooltipText = `${durationMinutes}m ${isFocus ? 'Focus' : 'Break'}`;
-
-                  return (
-                    <div
-                      key={index}
-                      style={{ flex: `${sessionPercentage} 1 0%` }}
-                      className={`relative h-4 overflow-hidden ${borderRadiusClass} cursor-pointer`}
-                      title={tooltipText}
-                    >
-                      {/* Background (unfilled) */}
-                      <div className={`absolute inset-0 pointer-events-none ${
-                        isFocus
-                          ? 'bg-[rgb(210,221,236)] dark:bg-slate-700/50'
-                          : 'bg-[rgb(81,94,168)] dark:bg-slate-600/50'
-                      }`}></div>
-
-                      {/* Progress fill */}
-                      <div
-                        className={`absolute inset-0 transition-all duration-1000 pointer-events-none ${
-                          isFocus
-                            ? 'bg-[rgb(165,243,227)] dark:bg-cyan-400'
-                            : 'bg-[rgb(115,122,201)] dark:bg-slate-500'
-                        }`}
-                        style={{ width: `${fillPercentage}%` }}
-                      ></div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Controls */}
-            <div className="flex flex-col gap-5 items-center">
-              {/* Primary Controls - Pause Button */}
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={togglePause}
-                  className="bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white font-bold p-4 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
-                  aria-label={isPaused ? "Resume timer" : "Pause timer"}
-                  title={isPaused ? "Resume Timer" : "Pause Timer"}
-                >
-                  {isPaused ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
-                      <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
-                      <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-
-              {/* Secondary Controls Row */}
-              <div className="flex flex-wrap gap-2 items-center justify-center text-sm">
-                {/* Add more cycles - Pomodoro only */}
-                {timerMode === "pomodoro" && (
-                  <button
-                    onClick={() => addMoreCycles(1)}
-                    className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium py-2 px-3 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
-                    title="Add Pomodoro Cycle"
-                    aria-label="Add Pomodoro cycle"
-                  >
-                    + Pomodoro
-                  </button>
-                )}
-
-                {/* Mute all button - Icon only */}
-                <button
-                  onClick={() => {
-                    setMuteAll(!muteAll);
-                    if (!muteAll && 'speechSynthesis' in window) {
-                      window.speechSynthesis.cancel();
-                    }
-                  }}
-                  className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium p-2 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
-                  title={muteAll ? "Unmute All Sounds" : "Mute All Sounds"}
-                  aria-label={muteAll ? "Unmute all sounds" : "Mute all sounds"}
-                >
-                  {muteAll ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.531V19.94a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.506-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.395C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
-                    </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
-                    </svg>
-                  )}
-                </button>
-
-                {/* Mute breaks button - Icon only */}
-                <button
-                  onClick={() => {
-                    setMuteBreak(!muteBreak);
-                    if (!muteBreak && 'speechSynthesis' in window) {
-                      window.speechSynthesis.cancel();
-                    }
-                  }}
-                  className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium p-2 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
-                  title={muteBreak ? "Unmute During Breaks" : "Mute During Breaks"}
-                  aria-label={muteBreak ? "Unmute during breaks" : "Mute during breaks"}
-                >
-                  {muteBreak ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 16.318A4.486 4.486 0 0012.016 15a4.486 4.486 0 00-3.198 1.318M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
-                    </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                    </svg>
-                  )}
-                </button>
-
-                {/* PiP button - only show if supported */}
-                {isPiPSupported && (
-                  <button
-                    onClick={openPiP}
-                    className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium p-2 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
-                    title="Picture-in-Picture Mode"
-                    aria-label="Open picture-in-picture mode"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+          <TimerDisplay
+            sessions={sessions}
+            currentSessionIndex={currentSessionIndex}
+            timerMode={timerMode}
+            timeRemaining={timeRemaining}
+            formatTime={formatTime}
+            adjustTime={adjustTime}
+            isPaused={isPaused}
+            togglePause={togglePause}
+            addMoreCycles={addMoreCycles}
+            muteAll={muteAll}
+            setMuteAll={setMuteAll}
+            muteBreak={muteBreak}
+            setMuteBreak={setMuteBreak}
+            isPiPSupported={isPiPSupported}
+            openPiP={openPiP}
+          />
         )}
       </div>
     </main>
