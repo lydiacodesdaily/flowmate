@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 
 type SessionType = "focus" | "break";
 type SessionDuration = 25 | 30 | 55 | 60 | 85 | 90 | 120 | 145 | 180;
-type TimerMode = "pomodoro" | "guided";
+type TimerMode = "pomodoro" | "guided" | "custom";
 
 interface PomodoroSession {
   type: SessionType;
@@ -29,6 +29,8 @@ export default function Home() {
   const [tickVolume, setTickVolume] = useState<number>(0.2);
   const [announcementVolume, setAnnouncementVolume] = useState<number>(1.0);
   const [showSettings, setShowSettings] = useState(false);
+  const [customMinutes, setCustomMinutes] = useState<string>("");
+  const [isPiPSupported, setIsPiPSupported] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -36,6 +38,7 @@ export default function Home() {
   const useTickRef = useRef<boolean>(true); // For alternating tick/tok
   const lastMinuteAnnouncedRef = useRef<number>(-1);
   const muteAllRef = useRef<boolean>(false);
+  const muteBreakRef = useRef<boolean>(false);
   const pipWindowRef = useRef<Window | null>(null);
   const isPausedRef = useRef<boolean>(false);
   const timeRemainingRef = useRef<number>(0);
@@ -46,6 +49,10 @@ export default function Home() {
   useEffect(() => {
     muteAllRef.current = muteAll;
   }, [muteAll]);
+
+  useEffect(() => {
+    muteBreakRef.current = muteBreak;
+  }, [muteBreak]);
 
   useEffect(() => {
     isPausedRef.current = isPaused;
@@ -259,10 +266,13 @@ export default function Home() {
   }, []);
 
   // Generate sessions based on selected duration and mode
-  const generateSessions = (totalMinutes: SessionDuration): PomodoroSession[] => {
+  const generateSessions = (totalMinutes: SessionDuration | number): PomodoroSession[] => {
     const sessionsList: PomodoroSession[] = [];
 
-    if (timerMode === "pomodoro") {
+    if (timerMode === "custom") {
+      // Custom mode - single focus session with no breaks
+      sessionsList.push({ type: "focus", duration: totalMinutes * 60 });
+    } else if (timerMode === "pomodoro") {
       // Calculate number of pomodoros based on conventional structure
       // 25min = 1 Pomodoro, 55min = 2 Pomodoros, 85min = 3 Pomodoros, 145min = 5 Pomodoros
       const pomodoros = Math.floor((totalMinutes + 5) / 30); // Calculate number of pomodoros
@@ -334,6 +344,25 @@ export default function Home() {
     }
   };
 
+  // Start a custom duration session
+  const startCustomSession = (minutes: number) => {
+    const sessionsList = generateSessions(minutes);
+    setSessions(sessionsList);
+    setCurrentSessionIndex(0);
+    setTimeRemaining(sessionsList[0].duration);
+    setSelectedDuration(minutes as SessionDuration);
+    setIsRunning(true);
+    setIsPaused(false);
+    lastMinuteAnnouncedRef.current = -1;
+
+    // Initialize speech synthesis on user interaction (Chrome requirement)
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance('');
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   // Reset everything
   const reset = () => {
     setIsRunning(false);
@@ -379,14 +408,18 @@ export default function Home() {
 
     // Check if we should mute during break sessions
     const currentSession = sessions[currentSessionIndex];
-    if (muteBreak && currentSession?.type === "break") {
+    if (muteBreakRef.current && currentSession?.type === "break") {
       return;
     }
 
     let audioPath = '';
 
+    // Ding sound for 5-minute intervals (> 25 minutes)
+    if (text === 'ding') {
+      audioPath = '/audio/effects/ding.mp3';
+    }
     // Session type announcements (Focus, Break, Done)
-    if (text === "Focus.") {
+    else if (text === "Focus.") {
       audioPath = '/audio/countdown/transitions/focus.mp3';
     } else if (text === "Break.") {
       audioPath = '/audio/countdown/transitions/break.mp3';
@@ -455,6 +488,9 @@ export default function Home() {
       if (savedAnnouncementVolume) {
         setAnnouncementVolume(parseFloat(savedAnnouncementVolume));
       }
+
+      // Check if Document Picture-in-Picture API is supported
+      setIsPiPSupported('documentPictureInPicture' in window);
     }
   }, []);
 
@@ -541,7 +577,7 @@ export default function Home() {
 
     // Check if we should mute during break sessions
     const currentSession = sessions[currentSessionIndex];
-    if (muteBreak && currentSession?.type === "break") {
+    if (muteBreakRef.current && currentSession?.type === "break") {
       return;
     }
 
@@ -581,9 +617,16 @@ export default function Home() {
           const secondsRemaining = newTime % 60;
 
           if (minutesRemaining >= 1) {
-            // Greater than 1 minute: announce at the start of each minute
+            // Greater than 1 minute
             if (secondsRemaining === 0 && lastMinuteAnnouncedRef.current !== minutesRemaining) {
-              speak(`${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`);
+              // For minutes > 25: play ding at 5-minute intervals
+              if (minutesRemaining > 25 && minutesRemaining % 5 === 0) {
+                speak('ding');
+              }
+              // For minutes 1-25: announce the minute
+              else if (minutesRemaining <= 25) {
+                speak(`${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`);
+              }
               lastMinuteAnnouncedRef.current = minutesRemaining;
             }
           } else {
@@ -815,7 +858,7 @@ export default function Home() {
               <div className="inline-flex rounded-2xl border border-slate-200 dark:border-cyan-500/30 p-1 bg-slate-100/50 dark:bg-slate-900/50 backdrop-blur-sm">
                 <button
                   onClick={() => setTimerMode("pomodoro")}
-                  className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                     timerMode === "pomodoro"
                       ? "bg-white dark:bg-cyan-500/20 text-blue-600 dark:text-cyan-400 shadow-lg dark:shadow-cyan-500/20"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-cyan-300"
@@ -825,7 +868,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => setTimerMode("guided")}
-                  className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                     timerMode === "guided"
                       ? "bg-white dark:bg-cyan-500/20 text-blue-600 dark:text-cyan-400 shadow-lg dark:shadow-cyan-500/20"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-cyan-300"
@@ -833,38 +876,111 @@ export default function Home() {
                 >
                   Guided Deep Work
                 </button>
+                <button
+                  onClick={() => setTimerMode("custom")}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                    timerMode === "custom"
+                      ? "bg-white dark:bg-cyan-500/20 text-blue-600 dark:text-cyan-400 shadow-lg dark:shadow-cyan-500/20"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-cyan-300"
+                  }`}
+                >
+                  Custom
+                </button>
               </div>
             </div>
 
             <h2 className="text-2xl font-semibold mb-6 text-center text-slate-800 dark:text-white">
-              Select Session Duration
+              {timerMode === "custom" ? "Custom Timer" : "Select Session Duration"}
             </h2>
-            <div className="grid grid-cols-2 gap-4">
-              {(timerMode === "pomodoro"
-                ? [25, 55, 85, 145]
-                : [30, 60, 90, 120, 180]
-              ).map((duration) => {
-                // Calculate pomodoro count for display
-                const pomodoroCount = timerMode === "pomodoro"
-                  ? Math.floor((duration + 5) / 30)
-                  : 0;
 
-                return (
-                  <button
-                    key={duration}
-                    onClick={() => startSession(duration as SessionDuration)}
-                    className="bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white font-bold py-6 px-8 rounded-2xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl dark:shadow-cyan-500/30"
-                  >
-                    <div className="text-4xl mb-2">{duration} min</div>
-                    <div className="text-sm opacity-90">
-                      {timerMode === "pomodoro"
-                        ? `${pomodoroCount} Pomodoro${pomodoroCount > 1 ? 's' : ''}`
-                        : "Guided Session"}
+            {timerMode === "custom" ? (
+              <div className="space-y-6">
+                {/* Custom time input */}
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-full max-w-sm">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 text-center">
+                      Enter minutes
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="999"
+                      value={customMinutes}
+                      onChange={(e) => setCustomMinutes(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && customMinutes && parseInt(customMinutes) > 0) {
+                          startCustomSession(parseInt(customMinutes));
+                        }
+                      }}
+                      placeholder="e.g., 15, 45, 120"
+                      className="w-full px-6 py-4 text-2xl text-center bg-slate-50 dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-2xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200 font-mono"
+                    />
+                    <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                      </svg>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        Voice announcements begin at 25 minutes
+                      </p>
                     </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (customMinutes && parseInt(customMinutes) > 0) {
+                        startCustomSession(parseInt(customMinutes));
+                      }
+                    }}
+                    disabled={!customMinutes || parseInt(customMinutes) <= 0}
+                    className="bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white font-bold py-4 px-12 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-500 dark:disabled:hover:bg-cyan-500"
+                  >
+                    Start Timer
                   </button>
-                );
-              })}
-            </div>
+                </div>
+
+                {/* Quick presets */}
+                <div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 text-center mb-3">Quick presets:</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[15, 30, 45].map((preset) => (
+                      <button
+                        key={preset}
+                        onClick={() => startCustomSession(preset)}
+                        className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-3 px-4 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 hover:scale-105"
+                      >
+                        {preset} min
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {(timerMode === "pomodoro"
+                  ? [25, 55, 85, 145]
+                  : [30, 60, 90, 120, 180]
+                ).map((duration) => {
+                  // Calculate pomodoro count for display
+                  const pomodoroCount = timerMode === "pomodoro"
+                    ? Math.floor((duration + 5) / 30)
+                    : 0;
+
+                  return (
+                    <button
+                      key={duration}
+                      onClick={() => startSession(duration as SessionDuration)}
+                      className="bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white font-bold py-6 px-8 rounded-2xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl dark:shadow-cyan-500/30"
+                    >
+                      <div className="text-4xl mb-2">{duration} min</div>
+                      <div className="text-sm opacity-90">
+                        {timerMode === "pomodoro"
+                          ? `${pomodoroCount} Pomodoro${pomodoroCount > 1 ? 's' : ''}`
+                          : "Guided Session"}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl p-10 border border-white/20 dark:border-cyan-500/20">
@@ -875,12 +991,14 @@ export default function Home() {
                   ? "bg-blue-500 dark:bg-cyan-500 dark:shadow-cyan-500/50"
                   : "bg-slate-500 dark:bg-slate-600"
               }`}>
-                {sessions[currentSessionIndex]?.type === "focus" && "🎯 Focus Time"}
+                {sessions[currentSessionIndex]?.type === "focus" && (timerMode === "custom" ? "⏱️ Custom Timer" : "🎯 Focus Time")}
                 {sessions[currentSessionIndex]?.type === "break" && "☕ Break Time"}
               </div>
-              <div className="text-sm text-slate-600 dark:text-slate-300 mt-3 font-medium">
-                Session {currentSessionIndex + 1} of {sessions.length}
-              </div>
+              {sessions.length > 1 && (
+                <div className="text-sm text-slate-600 dark:text-slate-300 mt-3 font-medium">
+                  Session {currentSessionIndex + 1} of {sessions.length}
+                </div>
+              )}
             </div>
 
             {/* Timer display */}
@@ -1059,17 +1177,42 @@ export default function Home() {
                   )}
                 </button>
 
-                {/* PiP button */}
+                {/* Mute breaks button - Icon only */}
                 <button
-                  onClick={openPiP}
+                  onClick={() => {
+                    setMuteBreak(!muteBreak);
+                    if (!muteBreak && 'speechSynthesis' in window) {
+                      window.speechSynthesis.cancel();
+                    }
+                  }}
                   className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium p-2 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
-                  title="Picture-in-Picture Mode"
-                  aria-label="Open picture-in-picture mode"
+                  title={muteBreak ? "Unmute During Breaks" : "Mute During Breaks"}
+                  aria-label={muteBreak ? "Unmute during breaks" : "Mute during breaks"}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                  {muteBreak ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 16.318A4.486 4.486 0 0012.016 15a4.486 4.486 0 00-3.198 1.318M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                  )}
                 </button>
+
+                {/* PiP button - only show if supported */}
+                {isPiPSupported && (
+                  <button
+                    onClick={openPiP}
+                    className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium p-2 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
+                    title="Picture-in-Picture Mode"
+                    aria-label="Open picture-in-picture mode"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </button>
+                )}
               </div>
             </div>
           </div>
