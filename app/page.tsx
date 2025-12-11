@@ -835,8 +835,10 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="fixed bottom-4 left-0 right-0 text-center text-xs sm:text-sm text-slate-600 dark:text-cyan-200/60 transition-colors duration-500">
-        Made by Liddy 🦥💻✨ • Feedback: <a href="mailto:lydia.kwag.dev@gmail.com" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">lydia.kwag.dev@gmail.com</a>
+      <footer className="mt-8 sm:mt-12 pb-4 text-center text-xs sm:text-sm text-slate-600 dark:text-cyan-200/60 transition-colors duration-500">
+        Made by Liddy 🦥💻✨ • Lydia Studio
+        <br />
+        💬 <a href="https://forms.gle/TnjJTJqjMrAg45Jr9" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Share feedback</a> • 🍵 <a href="https://buymeacoffee.com/lydiastudio" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Find this useful? Buy me a matcha latte</a>
       </footer>
     </main>
   );
