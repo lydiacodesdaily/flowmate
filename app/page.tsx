@@ -278,26 +278,40 @@ export default function Home() {
         sessionsList.push({ type: "break", duration: 5 * 60 });
         sessionsList.push({ type: "focus", duration: 20 * 60 });
         sessionsList.push({ type: "break", duration: 5 * 60 });
-      } else if (totalMinutes === 120) {
-        // 120 min: Repeat 60 min pattern twice
-        for (let i = 0; i < 2; i++) {
-          sessionsList.push({ type: "break", duration: 5 * 60 });
-          sessionsList.push({ type: "focus", duration: 25 * 60 });
-          sessionsList.push({ type: "break", duration: 5 * 60 });
-          sessionsList.push({ type: "focus", duration: 20 * 60 });
-        }
-        // Final break
+      } else if (totalMinutes === 90) {
+        // 90 min: 5 break, 25 focus, 5 break, 25 focus, 5 break, 20 focus, 5 break
         sessionsList.push({ type: "break", duration: 5 * 60 });
-      } else {
-        // 90/180 min: Repeat 60 min pattern (5 break, 25 focus, 5 break, 20 focus)
-        const cycles = Math.floor(totalMinutes / 60);
-        for (let i = 0; i < cycles; i++) {
-          sessionsList.push({ type: "break", duration: 5 * 60 });
-          sessionsList.push({ type: "focus", duration: 25 * 60 });
-          sessionsList.push({ type: "break", duration: 5 * 60 });
-          sessionsList.push({ type: "focus", duration: 20 * 60 });
-        }
-        // Final break
+        sessionsList.push({ type: "focus", duration: 25 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 25 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 20 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+      } else if (totalMinutes === 120) {
+        // 120 min: 5 break, 25 focus, 5 break, 25 focus, 5 break, 25 focus, 5 break, 20 focus, 5 break
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 25 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 25 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 25 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 20 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+      } else if (totalMinutes === 180) {
+        // 180 min: 5 break, then five 25-min focus sessions with breaks, then one 20-min focus, then final break
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 25 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 25 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 25 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 25 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 25 * 60 });
+        sessionsList.push({ type: "break", duration: 5 * 60 });
+        sessionsList.push({ type: "focus", duration: 20 * 60 });
         sessionsList.push({ type: "break", duration: 5 * 60 });
       }
     }
@@ -819,6 +833,11 @@ export default function Home() {
           />
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="fixed bottom-4 left-0 right-0 text-center text-xs sm:text-sm text-slate-600 dark:text-cyan-200/60 transition-colors duration-500">
+        Made by Liddy 🦥💻✨ • Feedback: <a href="mailto:lydia.kwag.dev@gmail.com" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">lydia.kwag.dev@gmail.com</a>
+      </footer>
     </main>
   );
 }
