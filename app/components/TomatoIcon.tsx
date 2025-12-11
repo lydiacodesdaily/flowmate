@@ -4,7 +4,7 @@ export const TomatoIcon = ({ className = "" }: { className?: string }) => (
     xmlns="http://www.w3.org/2000/svg"
     className={`w-5 h-5 ${className}`}
   >
-    {/* Shadow / base */}
+    {/* Shadow base */}
     <ellipse cx="12" cy="18" rx="6.5" ry="2.2" fill="rgba(0,0,0,0.08)" />
 
     {/* Tomato body */}

@@ -318,24 +318,6 @@ export default function Home() {
 
     // Initialize audio on user interaction (required for mobile browsers)
     initializeAudio();
-
-    // Play a silent tick to unlock audio on mobile
-    if (tickAudioRef.current) {
-      tickAudioRef.current.volume = 0;
-      tickAudioRef.current.play().then(() => {
-        // Restore actual volume after unlocking
-        if (tickAudioRef.current) {
-          tickAudioRef.current.volume = tickVolume;
-        }
-      }).catch(err => console.log('Audio unlock failed:', err));
-    }
-
-    // Unlock announcement audio - use a very short delay to avoid "one" being heard
-    setTimeout(() => {
-      const testAnnouncement = new Audio('/audio/countdown/seconds/s01.mp3');
-      testAnnouncement.volume = 0;
-      testAnnouncement.play().catch(err => console.log('Announcement audio unlock failed:', err));
-    }, 100);
   };
 
   // Start a custom duration session
@@ -351,24 +333,6 @@ export default function Home() {
 
     // Initialize audio on user interaction (required for mobile browsers)
     initializeAudio();
-
-    // Play a silent tick to unlock audio on mobile
-    if (tickAudioRef.current) {
-      tickAudioRef.current.volume = 0;
-      tickAudioRef.current.play().then(() => {
-        // Restore actual volume after unlocking
-        if (tickAudioRef.current) {
-          tickAudioRef.current.volume = tickVolume;
-        }
-      }).catch(err => console.log('Audio unlock failed:', err));
-    }
-
-    // Unlock announcement audio - use a very short delay to avoid "one" being heard
-    setTimeout(() => {
-      const testAnnouncement = new Audio('/audio/countdown/seconds/s01.mp3');
-      testAnnouncement.volume = 0;
-      testAnnouncement.play().catch(err => console.log('Announcement audio unlock failed:', err));
-    }, 100);
   };
 
   // Reset everything
@@ -482,6 +446,10 @@ export default function Home() {
         document.documentElement.classList.add('dark');
       }
 
+      // Detect mobile devices first
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsMobile(isMobileDevice);
+
       // Load audio settings
       const savedTickSound = localStorage.getItem('tickSound');
       if (savedTickSound) {
@@ -489,8 +457,12 @@ export default function Home() {
       }
 
       const savedTickVolume = localStorage.getItem('tickVolume');
-      if (savedTickVolume) {
+      if (savedTickVolume && !isMobileDevice) {
+        // Don't load tick volume on mobile - keep it at 0
         setTickVolume(parseFloat(savedTickVolume));
+      } else if (isMobileDevice) {
+        // Force tick volume to 0 on mobile
+        setTickVolume(0);
       }
 
       const savedAnnouncementVolume = localStorage.getItem('announcementVolume');
@@ -500,10 +472,6 @@ export default function Home() {
 
       // Check if Document Picture-in-Picture API is supported
       setIsPiPSupported('documentPictureInPicture' in window);
-
-      // Detect mobile devices
-      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      setIsMobile(isMobileDevice);
     }
   }, []);
 
@@ -588,11 +556,6 @@ export default function Home() {
   // Play tick sound using audio file
   const playTick = () => {
     if (!tickAudioRef.current) return;
-
-    // Disable tick sounds on mobile devices due to timing/sync issues
-    if (isMobile) {
-      return;
-    }
 
     // Check if all sound is muted
     if (muteAllRef.current) {
@@ -810,6 +773,7 @@ export default function Home() {
         setAnnouncementVolume={setAnnouncementVolume}
         muteBreak={muteBreak}
         setMuteBreak={setMuteBreak}
+        isMobile={isMobile}
       />
 
       <div className="w-full max-w-2xl px-2 sm:px-0">

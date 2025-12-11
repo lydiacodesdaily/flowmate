@@ -9,6 +9,7 @@ interface SettingsModalProps {
   setAnnouncementVolume: (volume: number) => void;
   muteBreak: boolean;
   setMuteBreak: (mute: boolean) => void;
+  isMobile: boolean;
 }
 
 export const SettingsModal = ({
@@ -22,6 +23,7 @@ export const SettingsModal = ({
   setAnnouncementVolume,
   muteBreak,
   setMuteBreak,
+  isMobile,
 }: SettingsModalProps) => {
   if (!showSettings) return null;
 
@@ -51,52 +53,56 @@ export const SettingsModal = ({
           <div>
             <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-400 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">Audio</h3>
 
-            {/* Second Sound Selection */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Second Sound
-              </label>
-              <select
-                value={tickSound}
-                onChange={(e) => {
-                  const newSound = e.target.value;
-                  setTickSound(newSound);
-                  localStorage.setItem('tickSound', newSound);
-                }}
-                className="w-full px-4 py-3 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
-              >
-                <option value="tick-tok-alternate.mp3">Tick-Tok Alternating</option>
-                <option value="tick.m4a">Mechanical Tick</option>
-                <option value="beep1.mp3">High Beep</option>
-                <option value="beep2.mp3">Low Beep</option>
-                <option value="tick1.mp3">Soft Tick</option>
-                <option value="tok1.mp3">Soft Tok</option>
-              </select>
-            </div>
+            {/* Second Sound Selection - Disabled on mobile */}
+            {!isMobile && (
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Second Sound
+                </label>
+                <select
+                  value={tickSound}
+                  onChange={(e) => {
+                    const newSound = e.target.value;
+                    setTickSound(newSound);
+                    localStorage.setItem('tickSound', newSound);
+                  }}
+                  className="w-full px-4 py-3 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
+                >
+                  <option value="tick-tok-alternate.mp3">Tick-Tok Alternating</option>
+                  <option value="tick.m4a">Mechanical Tick</option>
+                  <option value="beep1.mp3">High Beep</option>
+                  <option value="beep2.mp3">Low Beep</option>
+                  <option value="tick1.mp3">Soft Tick</option>
+                  <option value="tok1.mp3">Soft Tok</option>
+                </select>
+              </div>
+            )}
 
-            {/* Second Volume Slider */}
-            <div className="mb-5">
-              <label className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                <span>Second Volume</span>
-                <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(tickVolume * 100)}%</span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={tickVolume}
-                onChange={(e) => {
-                  const newVolume = parseFloat(e.target.value);
-                  setTickVolume(newVolume);
-                  localStorage.setItem('tickVolume', String(newVolume));
-                }}
-                className="w-full h-3 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all"
-                style={{
-                  background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${tickVolume * 100}%, rgb(203, 213, 225) ${tickVolume * 100}%, rgb(203, 213, 225) 100%)`,
-                }}
-              />
-            </div>
+            {/* Second Volume Slider - Disabled on mobile */}
+            {!isMobile && (
+              <div className="mb-5">
+                <label className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                  <span>Second Volume</span>
+                  <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(tickVolume * 100)}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={tickVolume}
+                  onChange={(e) => {
+                    const newVolume = parseFloat(e.target.value);
+                    setTickVolume(newVolume);
+                    localStorage.setItem('tickVolume', String(newVolume));
+                  }}
+                  className="w-full h-3 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all"
+                  style={{
+                    background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${tickVolume * 100}%, rgb(203, 213, 225) ${tickVolume * 100}%, rgb(203, 213, 225) 100%)`,
+                  }}
+                />
+              </div>
+            )}
 
             {/* Announcement Volume Slider */}
             <div className="mb-5">
