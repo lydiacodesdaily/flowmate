@@ -28,7 +28,6 @@ export default function Home() {
   const [isPiPSupported, setIsPiPSupported] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [showMobileNotification, setShowMobileNotification] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -331,18 +330,12 @@ export default function Home() {
       }).catch(err => console.log('Audio unlock failed:', err));
     }
 
-    // Also unlock announcement audio by playing a silent test sound
-    const testAnnouncement = new Audio('/audio/countdown/seconds/s01.mp3');
-    testAnnouncement.volume = 0;
-    testAnnouncement.play().catch(err => console.log('Announcement audio unlock failed:', err));
-
-    // Initialize speech synthesis on user interaction (Chrome requirement)
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // Clear any pending speech
-      // Speak empty string to "wake up" speech synthesis in Chrome
-      const utterance = new SpeechSynthesisUtterance('');
-      window.speechSynthesis.speak(utterance);
-    }
+    // Unlock announcement audio - use a very short delay to avoid "one" being heard
+    setTimeout(() => {
+      const testAnnouncement = new Audio('/audio/countdown/seconds/s01.mp3');
+      testAnnouncement.volume = 0;
+      testAnnouncement.play().catch(err => console.log('Announcement audio unlock failed:', err));
+    }, 100);
   };
 
   // Start a custom duration session
@@ -370,17 +363,12 @@ export default function Home() {
       }).catch(err => console.log('Audio unlock failed:', err));
     }
 
-    // Also unlock announcement audio by playing a silent test sound
-    const testAnnouncement = new Audio('/audio/countdown/seconds/s01.mp3');
-    testAnnouncement.volume = 0;
-    testAnnouncement.play().catch(err => console.log('Announcement audio unlock failed:', err));
-
-    // Initialize speech synthesis on user interaction (Chrome requirement)
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance('');
-      window.speechSynthesis.speak(utterance);
-    }
+    // Unlock announcement audio - use a very short delay to avoid "one" being heard
+    setTimeout(() => {
+      const testAnnouncement = new Audio('/audio/countdown/seconds/s01.mp3');
+      testAnnouncement.volume = 0;
+      testAnnouncement.play().catch(err => console.log('Announcement audio unlock failed:', err));
+    }, 100);
   };
 
   // Reset everything
@@ -516,12 +504,6 @@ export default function Home() {
       // Detect mobile devices
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       setIsMobile(isMobileDevice);
-
-      // Show mobile notification if on mobile and not previously dismissed
-      const notificationDismissed = localStorage.getItem('mobileNotificationDismissed');
-      if (isMobileDevice && !notificationDismissed) {
-        setShowMobileNotification(true);
-      }
     }
   }, []);
 
@@ -763,22 +745,14 @@ export default function Home() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Handle mobile notification dismissal
-  const handleDismissMobileNotification = () => {
-    setShowMobileNotification(false);
-    localStorage.setItem('mobileNotificationDismissed', 'true');
-  };
-
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 bg-gradient-to-br from-[#E0F2FE] via-[#EEF2FF] to-[#93C5FD] dark:from-[#0F172A] dark:via-[#1E293B] dark:to-[#0F172A] transition-colors duration-500">
-      {/* Mobile notification */}
-      {showMobileNotification && (
-        <MobileNotification onDismiss={handleDismissMobileNotification} />
-      )}
+      {/* Mobile notification banner */}
+      {isMobile && <MobileNotification />}
 
       {/* Back button - top left, only shown when timer is running */}
       {selectedDuration && (
-        <div className="fixed top-2 left-2 sm:top-4 sm:left-4 z-40">
+        <div className={`fixed left-2 sm:left-4 z-40 ${isMobile ? 'top-12' : 'top-2 sm:top-4'}`}>
           <button
             onClick={reset}
             className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
@@ -793,7 +767,7 @@ export default function Home() {
       )}
 
       {/* Top right buttons */}
-      <div className="fixed top-2 right-2 sm:top-4 sm:right-4 flex gap-2 sm:gap-3 z-40">
+      <div className={`fixed right-2 sm:right-4 flex gap-2 sm:gap-3 z-40 ${isMobile ? 'top-12' : 'top-2 sm:top-4'}`}>
         {/* Settings button */}
         <button
           onClick={() => setShowSettings(!showSettings)}
