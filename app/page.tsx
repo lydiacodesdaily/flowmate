@@ -7,6 +7,7 @@ import { SettingsModal } from "./components/SettingsModal";
 import { TimerSelection } from "./components/TimerSelection";
 import { TimerDisplay } from "./components/TimerDisplay";
 import { CompletionScreen } from "./components/CompletionScreen";
+import { MobileNotification } from "./components/MobileNotification";
 
 export default function Home() {
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
@@ -26,6 +27,8 @@ export default function Home() {
   const [customMinutes, setCustomMinutes] = useState<string>("");
   const [isPiPSupported, setIsPiPSupported] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMobileNotification, setShowMobileNotification] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -509,6 +512,16 @@ export default function Home() {
 
       // Check if Document Picture-in-Picture API is supported
       setIsPiPSupported('documentPictureInPicture' in window);
+
+      // Detect mobile devices
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsMobile(isMobileDevice);
+
+      // Show mobile notification if on mobile and not previously dismissed
+      const notificationDismissed = localStorage.getItem('mobileNotificationDismissed');
+      if (isMobileDevice && !notificationDismissed) {
+        setShowMobileNotification(true);
+      }
     }
   }, []);
 
@@ -593,6 +606,11 @@ export default function Home() {
   // Play tick sound using audio file
   const playTick = () => {
     if (!tickAudioRef.current) return;
+
+    // Disable tick sounds on mobile devices due to timing/sync issues
+    if (isMobile) {
+      return;
+    }
 
     // Check if all sound is muted
     if (muteAllRef.current) {
@@ -745,8 +763,19 @@ export default function Home() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Handle mobile notification dismissal
+  const handleDismissMobileNotification = () => {
+    setShowMobileNotification(false);
+    localStorage.setItem('mobileNotificationDismissed', 'true');
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 bg-gradient-to-br from-[#E0F2FE] via-[#EEF2FF] to-[#93C5FD] dark:from-[#0F172A] dark:via-[#1E293B] dark:to-[#0F172A] transition-colors duration-500">
+      {/* Mobile notification */}
+      {showMobileNotification && (
+        <MobileNotification onDismiss={handleDismissMobileNotification} />
+      )}
+
       {/* Back button - top left, only shown when timer is running */}
       {selectedDuration && (
         <div className="fixed top-2 left-2 sm:top-4 sm:left-4 z-40">
