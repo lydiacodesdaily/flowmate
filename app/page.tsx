@@ -258,11 +258,11 @@ export default function Home() {
       // 25min = 1 Pomodoro, 55min = 2 Pomodoros, 85min = 3 Pomodoros, 145min = 5 Pomodoros
       const pomodoros = Math.floor((totalMinutes + 5) / 30); // Calculate number of pomodoros
       for (let i = 0; i < pomodoros; i++) {
-        sessionsList.push({ type: "focus", duration: FOCUS_DURATION });
-        // Add break after focus, except for the last pomodoro
-        if (i < pomodoros - 1) {
+        // Add break before focus (except for the first pomodoro if you want to start with focus)
+        if (i > 0) {
           sessionsList.push({ type: "break", duration: BREAK_DURATION });
         }
+        sessionsList.push({ type: "focus", duration: FOCUS_DURATION });
       }
     } else {
       // Guided Deep Work mode - settle-in and wrap-up periods around focus sessions
