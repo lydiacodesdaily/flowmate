@@ -376,12 +376,12 @@ export default function Home() {
     });
   };
 
-  // Add more Pomodoro cycles (25 min focus + 5 min break)
+  // Add more Pomodoro cycles (5 min break + 25 min focus)
   const addMoreCycles = (numCycles: number = 1) => {
     const newSessions: PomodoroSession[] = [];
     for (let i = 0; i < numCycles; i++) {
-      newSessions.push({ type: "focus", duration: FOCUS_DURATION });
       newSessions.push({ type: "break", duration: BREAK_DURATION });
+      newSessions.push({ type: "focus", duration: FOCUS_DURATION });
     }
     setSessions((prev) => [...prev, ...newSessions]);
   };
