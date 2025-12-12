@@ -41,7 +41,6 @@ export default function Home() {
   const timeRemainingRef = useRef<number>(0);
   const currentSessionIndexRef = useRef<number>(0);
   const sessionsRef = useRef<PomodoroSession[]>([]);
-  const startTimeRef = useRef<number>(0);
   const endTimeRef = useRef<number>(0);
 
   // Update refs for PiP
@@ -372,6 +371,8 @@ export default function Home() {
   const adjustTime = (seconds: number) => {
     setTimeRemaining((prev) => {
       const newTime = Math.max(0, prev + seconds);
+      // Update the end time reference to reflect the adjustment
+      endTimeRef.current = Date.now() + newTime * 1000;
       // Reset announcement tracking when time is adjusted
       lastMinuteAnnouncedRef.current = -1;
       return newTime;
