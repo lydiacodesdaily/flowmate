@@ -11,6 +11,7 @@ import { MobileNotification } from "./components/MobileNotification";
 
 export default function Home() {
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
+  const [guidedStyle, setGuidedStyle] = useState<"pomodoro" | "deep-focus">("pomodoro");
   const [selectedDuration, setSelectedDuration] = useState<SessionDuration | null>(null);
   const [sessions, setSessions] = useState<PomodoroSession[]>([]);
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
@@ -266,54 +267,91 @@ export default function Home() {
         sessionsList.push({ type: "focus", duration: FOCUS_DURATION });
       }
     } else {
-      // Guided Deep Work mode - settle-in and wrap-up periods around focus sessions
-      if (totalMinutes === 30) {
-        // 30 min: 3 settle-in, 25 focus, 2 wrap-up
-        sessionsList.push({ type: "break", duration: 3 * 60 });
-        sessionsList.push({ type: "focus", duration: 25 * 60 });
-        sessionsList.push({ type: "break", duration: 2 * 60 });
-      } else if (totalMinutes === 60) {
-        // 60 min: 5 settle-in, 25 focus, 5 break, 20 focus, 5 wrap-up
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 25 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 20 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-      } else if (totalMinutes === 90) {
-        // 90 min: 5 break, 25 focus, 5 break, 25 focus, 5 break, 20 focus, 5 break
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 25 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 25 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 20 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-      } else if (totalMinutes === 120) {
-        // 120 min: 5 break, 25 focus, 5 break, 25 focus, 5 break, 25 focus, 5 break, 20 focus, 5 break
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 25 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 25 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 25 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 20 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-      } else if (totalMinutes === 180) {
-        // 180 min: 5 break, then five 25-min focus sessions with breaks, then one 20-min focus, then final break
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 25 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 25 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 25 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 25 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 25 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
-        sessionsList.push({ type: "focus", duration: 20 * 60 });
-        sessionsList.push({ type: "break", duration: 5 * 60 });
+      // Guided mode - check which style is selected
+      if (guidedStyle === "pomodoro") {
+        // Pomodoro-style guided sessions
+        if (totalMinutes === 30) {
+          // 30 min: 3 settle-in, 25 focus, 2 wrap-up
+          sessionsList.push({ type: "break", duration: 3 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 2 * 60 });
+        } else if (totalMinutes === 60) {
+          // 60 min: 5 settle-in, 25 focus, 5 break, 20 focus, 5 wrap-up
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 20 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+        } else if (totalMinutes === 90) {
+          // 90 min: 5 break, 25 focus, 5 break, 25 focus, 5 break, 20 focus, 5 break
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 20 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+        } else if (totalMinutes === 120) {
+          // 120 min: 5 break, 25 focus, 5 break, 25 focus, 5 break, 25 focus, 5 break, 20 focus, 5 break
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 20 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+        } else if (totalMinutes === 180) {
+          // 180 min: 5 break, then five 25-min focus sessions with breaks, then one 20-min focus, then final break
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 20 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+        }
+      } else {
+        // Deep Focus style - longer uninterrupted focus blocks
+        if (totalMinutes === 30) {
+          // 30 min: Not typically used in deep focus, fallback to pomodoro style
+          sessionsList.push({ type: "break", duration: 3 * 60 });
+          sessionsList.push({ type: "focus", duration: 25 * 60 });
+          sessionsList.push({ type: "break", duration: 2 * 60 });
+        } else if (totalMinutes === 60) {
+          // 60 min: 5 break → 50 focus → 5 break
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 50 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+        } else if (totalMinutes === 90) {
+          // 90 min: 5 break → 80 focus → 5 break
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 80 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+        } else if (totalMinutes === 120) {
+          // 120 min: 5 break → 50 focus → 5 break → 55 focus → 5 break
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 50 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 55 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+        } else if (totalMinutes === 180) {
+          // 180 min: 5 break → 50 focus → 5 break → 50 focus → 5 break → 60 focus → 5 break
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 50 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 50 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+          sessionsList.push({ type: "focus", duration: 60 * 60 });
+          sessionsList.push({ type: "break", duration: 5 * 60 });
+        }
       }
     }
 
@@ -829,6 +867,8 @@ export default function Home() {
           <TimerSelection
             timerMode={timerMode}
             setTimerMode={setTimerMode}
+            guidedStyle={guidedStyle}
+            setGuidedStyle={setGuidedStyle}
             customMinutes={customMinutes}
             setCustomMinutes={setCustomMinutes}
             startSession={startSession}

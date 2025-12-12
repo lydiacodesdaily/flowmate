@@ -4,6 +4,8 @@ import { TomatoIcon } from "./TomatoIcon";
 interface TimerSelectionProps {
   timerMode: TimerMode;
   setTimerMode: (mode: TimerMode) => void;
+  guidedStyle: "pomodoro" | "deep-focus";
+  setGuidedStyle: (style: "pomodoro" | "deep-focus") => void;
   customMinutes: string;
   setCustomMinutes: (minutes: string) => void;
   startSession: (duration: SessionDuration) => void;
@@ -13,6 +15,8 @@ interface TimerSelectionProps {
 export const TimerSelection = ({
   timerMode,
   setTimerMode,
+  guidedStyle,
+  setGuidedStyle,
   customMinutes,
   setCustomMinutes,
   startSession,
@@ -56,9 +60,35 @@ export const TimerSelection = ({
         </div>
       </div>
 
-      <h2 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-center text-slate-800 dark:text-white">
-        {timerMode === "custom" ? "Custom Timer" : "Select Session Duration"}
-      </h2>
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-semibold text-center text-slate-800 dark:text-white">
+          {timerMode === "custom" ? "Custom Timer" : "Select Session Duration"}
+        </h2>
+
+        {/* Guided Style Toggle - inline with subtle design */}
+        {timerMode === "guided" && (
+          <div className="flex items-center justify-center gap-2 mt-3">
+            <button
+              onClick={() => setGuidedStyle(guidedStyle === "pomodoro" ? "deep-focus" : "pomodoro")}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200 border border-slate-200 dark:border-slate-600"
+            >
+              <TomatoIcon className={`w-4 h-4 transition-opacity ${guidedStyle === "pomodoro" ? "opacity-100" : "opacity-30"}`} />
+              <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
+                {guidedStyle === "pomodoro" ? "Pomodoro Style" : "Deep Focus"}
+              </span>
+              <div className={`w-9 h-5 rounded-full transition-colors duration-200 relative ${
+                guidedStyle === "pomodoro"
+                  ? "bg-blue-500 dark:bg-cyan-500"
+                  : "bg-slate-300 dark:bg-slate-600"
+              }`}>
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                  guidedStyle === "pomodoro" ? "left-0.5" : "left-4"
+                }`} />
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
 
       {timerMode === "custom" ? (
         <div className="space-y-6">
@@ -155,12 +185,20 @@ export const TimerSelection = ({
                   "Deep flow block",
                   "Extended deep work"
                 ]
-              : [
+              : guidedStyle === "pomodoro"
+              ? [
                   "Quick guided session",
                   "Standard deep work",
                   "Extended focus time",
                   "Long work session",
                   "Marathon focus"
+                ]
+              : [
+                  "Quick session",
+                  "50 min uninterrupted",
+                  "80 min deep focus",
+                  "Two deep blocks",
+                  "Three deep blocks"
                 ];
 
             return (
