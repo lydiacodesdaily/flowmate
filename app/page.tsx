@@ -41,6 +41,8 @@ export default function Home() {
   const timeRemainingRef = useRef<number>(0);
   const currentSessionIndexRef = useRef<number>(0);
   const sessionsRef = useRef<PomodoroSession[]>([]);
+  const startTimeRef = useRef<number>(0);
+  const endTimeRef = useRef<number>(0);
 
   // Update refs for PiP
   useEffect(() => {
@@ -601,134 +603,143 @@ export default function Home() {
     }
   };
 
-  // Main timer effect
+  // Main timer effect - using timestamp-based approach to avoid browser throttling
   useEffect(() => {
     if (!isRunning || isPaused || sessions.length === 0) return;
 
+    // Set the end time based on current time remaining
+    endTimeRef.current = Date.now() + timeRemaining * 1000;
+    let lastSecond = timeRemaining;
+
     const interval = setInterval(() => {
-      // Play tick sound at the start of each second (non-blocking)
-      try {
-        playTick();
-      } catch (err) {
-        // Silently catch any audio errors to prevent timer from stopping
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((endTimeRef.current - now) / 1000));
+
+      // Update time remaining
+      setTimeRemaining(remaining);
+
+      // Play tick sound when second changes (non-blocking)
+      if (remaining !== lastSecond && remaining > 0) {
+        try {
+          playTick();
+        } catch (err) {
+          // Silently catch any audio errors to prevent timer from stopping
+        }
+      }
+      lastSecond = remaining;
+
+      // Announce remaining time
+      if (remaining > 0) {
+        const minutesRemaining = Math.floor(remaining / 60);
+        const secondsRemaining = remaining % 60;
+
+        if (minutesRemaining >= 1) {
+          // Greater than 1 minute
+          if (secondsRemaining === 0 && lastMinuteAnnouncedRef.current !== minutesRemaining) {
+            // For minutes > 25: play ding at 5-minute intervals
+            if (minutesRemaining > 25 && minutesRemaining % 5 === 0) {
+              speak('ding');
+            }
+            // For minutes 1-25: announce the minute
+            else if (minutesRemaining <= 25) {
+              speak(`${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`);
+            }
+            lastMinuteAnnouncedRef.current = minutesRemaining;
+          }
+        } else {
+          // Less than 1 minute
+          if (remaining >= 10) {
+            // Between 10-59 seconds: announce every 10 seconds (50, 40, 30, 20, 10)
+            if (remaining % 10 === 0 && lastMinuteAnnouncedRef.current !== remaining) {
+              speak(`${remaining} seconds`);
+              lastMinuteAnnouncedRef.current = remaining;
+            }
+          } else {
+            // Less than 10 seconds: countdown 9, 8, 7, 6, 5, 4, 3, 2, 1
+            if (lastMinuteAnnouncedRef.current !== remaining) {
+              speak(`${remaining}`);
+              lastMinuteAnnouncedRef.current = remaining;
+            }
+          }
+        }
       }
 
-      setTimeRemaining((prev) => {
-        const newTime = prev - 1;
+      // Session complete
+      if (remaining <= 0) {
+        // Move to next session
+        const nextIndex = currentSessionIndex + 1;
+        if (nextIndex < sessions.length) {
+          const nextSession = sessions[nextIndex];
 
-        // Announce remaining time
-        if (newTime > 0) {
-          const minutesRemaining = Math.floor(newTime / 60);
-          const secondsRemaining = newTime % 60;
-
-          if (minutesRemaining >= 1) {
-            // Greater than 1 minute
-            if (secondsRemaining === 0 && lastMinuteAnnouncedRef.current !== minutesRemaining) {
-              // For minutes > 25: play ding at 5-minute intervals
-              if (minutesRemaining > 25 && minutesRemaining % 5 === 0) {
-                speak('ding');
-              }
-              // For minutes 1-25: announce the minute
-              else if (minutesRemaining <= 25) {
-                speak(`${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`);
-              }
-              lastMinuteAnnouncedRef.current = minutesRemaining;
-            }
-          } else {
-            // Less than 1 minute
-            if (newTime >= 10) {
-              // Between 10-59 seconds: announce every 10 seconds (50, 40, 30, 20, 10)
-              if (newTime % 10 === 0 && lastMinuteAnnouncedRef.current !== newTime) {
-                speak(`${newTime} seconds`);
-                lastMinuteAnnouncedRef.current = newTime;
-              }
-            } else {
-              // Less than 10 seconds: countdown 9, 8, 7, 6, 5, 4, 3, 2, 1
-              if (lastMinuteAnnouncedRef.current !== newTime) {
-                speak(`${newTime}`);
-                lastMinuteAnnouncedRef.current = newTime;
-              }
-            }
+          // Announce next session
+          if (nextSession.type === "focus") {
+            speak("Focus.");
+          } else if (nextSession.type === "break") {
+            speak("Break.");
           }
-        }
 
-        // Session complete
-        if (newTime <= 0) {
-          // Move to next session
-          const nextIndex = currentSessionIndex + 1;
-          if (nextIndex < sessions.length) {
-            const nextSession = sessions[nextIndex];
+          setCurrentSessionIndex(nextIndex);
+          setTimeRemaining(sessions[nextIndex].duration);
+          lastMinuteAnnouncedRef.current = -1;
+          endTimeRef.current = Date.now() + sessions[nextIndex].duration * 1000;
+        } else {
+          // All sessions complete
+          speak("Done.");
+          setIsRunning(false);
+          setIsCompleted(true);
 
-            // Announce next session
-            if (nextSession.type === "focus") {
-              speak("Focus.");
-            } else if (nextSession.type === "break") {
-              speak("Break.");
-            }
+          // Trigger confetti celebration
+          const duration = 3000;
+          const animationEnd = Date.now() + duration;
+          const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
-            setCurrentSessionIndex(nextIndex);
-            lastMinuteAnnouncedRef.current = -1;
-            return sessions[nextIndex].duration;
-          } else {
-            // All sessions complete
-            speak("Done.");
-            setIsRunning(false);
-            setIsCompleted(true);
-
-            // Trigger confetti celebration
-            const duration = 3000;
-            const animationEnd = Date.now() + duration;
-            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-            function randomInRange(min: number, max: number) {
-              return Math.random() * (max - min) + min;
-            }
-
-            const interval = setInterval(function() {
-              const timeLeft = animationEnd - Date.now();
-
-              if (timeLeft <= 0) {
-                return clearInterval(interval);
-              }
-
-              const particleCount = 50 * (timeLeft / duration);
-
-              // Fire confetti from both sides
-              confetti({
-                ...defaults,
-                particleCount,
-                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-              });
-              confetti({
-                ...defaults,
-                particleCount,
-                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-              });
-            }, 250);
-
-            return 0;
+          function randomInRange(min: number, max: number) {
+            return Math.random() * (max - min) + min;
           }
-        }
 
-        return newTime;
-      });
-    }, 1000);
+          const confettiInterval = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+              return clearInterval(confettiInterval);
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+
+            // Fire confetti from both sides
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+            });
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+            });
+          }, 250);
+        }
+      }
+    }, 100); // Check every 100ms for accuracy
 
     return () => clearInterval(interval);
   }, [isRunning, isPaused, currentSessionIndex, sessions]);
 
-  // Update page title with timer
+  // Update page title with session type (without countdown to avoid browser throttling issues)
   useEffect(() => {
-    if (isRunning && timeRemaining > 0) {
+    if (isRunning) {
       const currentSession = sessions[currentSessionIndex];
-      const sessionEmoji = currentSession?.type === "focus" ? "🎯" : "☕";
-      document.title = `${sessionEmoji} ${formatTime(timeRemaining)} - Flowmate`;
+      if (currentSession?.type === "focus") {
+        document.title = "🎯 Focus Time - Flowmate";
+      } else if (currentSession?.type === "break") {
+        document.title = "☕ Break Time - Flowmate";
+      }
     } else if (isCompleted) {
       document.title = "✅ Done! - Flowmate";
     } else {
       document.title = "Flowmate - Focus Timer";
     }
-  }, [isRunning, timeRemaining, isCompleted, sessions, currentSessionIndex]);
+  }, [isRunning, isCompleted, sessions, currentSessionIndex]);
 
   // Format time as MM:SS
   const formatTime = (seconds: number): string => {
