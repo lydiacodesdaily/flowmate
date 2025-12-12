@@ -606,8 +606,12 @@ export default function Home() {
     if (!isRunning || isPaused || sessions.length === 0) return;
 
     const interval = setInterval(() => {
-      // Play tick sound at the start of each second
-      playTick();
+      // Play tick sound at the start of each second (non-blocking)
+      try {
+        playTick();
+      } catch (err) {
+        // Silently catch any audio errors to prevent timer from stopping
+      }
 
       setTimeRemaining((prev) => {
         const newTime = prev - 1;
@@ -650,8 +654,6 @@ export default function Home() {
 
         // Session complete
         if (newTime <= 0) {
-          const currentSession = sessions[currentSessionIndex];
-
           // Move to next session
           const nextIndex = currentSessionIndex + 1;
           if (nextIndex < sessions.length) {
@@ -714,6 +716,19 @@ export default function Home() {
 
     return () => clearInterval(interval);
   }, [isRunning, isPaused, currentSessionIndex, sessions]);
+
+  // Update page title with timer
+  useEffect(() => {
+    if (isRunning && timeRemaining > 0) {
+      const currentSession = sessions[currentSessionIndex];
+      const sessionEmoji = currentSession?.type === "focus" ? "🎯" : "☕";
+      document.title = `${sessionEmoji} ${formatTime(timeRemaining)} - Flowmate`;
+    } else if (isCompleted) {
+      document.title = "✅ Done! - Flowmate";
+    } else {
+      document.title = "Flowmate - Focus Timer";
+    }
+  }, [isRunning, timeRemaining, isCompleted, sessions, currentSessionIndex]);
 
   // Format time as MM:SS
   const formatTime = (seconds: number): string => {
