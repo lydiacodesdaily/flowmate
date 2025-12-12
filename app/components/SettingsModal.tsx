@@ -1,3 +1,7 @@
+"use client";
+
+import { useFlowclubSync } from "../contexts/FlowclubSyncContext";
+
 interface SettingsModalProps {
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
@@ -25,6 +29,7 @@ export const SettingsModal = ({
   setMuteBreak,
   isMobile,
 }: SettingsModalProps) => {
+  const { isFlowClubDetected, isSynced, setSyncEnabled } = useFlowclubSync();
   if (!showSettings) return null;
 
   return (
@@ -152,6 +157,37 @@ export const SettingsModal = ({
               />
             </div>
           </div>
+
+          {/* Integrations Section - Only show if Flow Club detected */}
+          {isFlowClubDetected && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-400 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">Integrations</h3>
+
+              {/* Flow Club Integration */}
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-slate-600 dark:text-slate-400">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                  </svg>
+                  <div>
+                    <label htmlFor="flowclub-sync" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer block">
+                      Flow Club Sync
+                    </label>
+                    <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">
+                      Auto-sync with Flow Club sessions
+                    </p>
+                  </div>
+                </div>
+                <input
+                  id="flowclub-sync"
+                  type="checkbox"
+                  checked={isSynced}
+                  onChange={(e) => setSyncEnabled(e.target.checked)}
+                  className="w-5 h-5 text-blue-600 dark:text-cyan-500 bg-slate-100 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-cyan-500 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 cursor-pointer"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

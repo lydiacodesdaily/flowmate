@@ -1,5 +1,9 @@
+"use client";
+
 import { PomodoroSession, TimerMode } from "../types";
 import { ProgressBar } from "./ProgressBar";
+import { TomatoIcon } from "./TomatoIcon";
+import { useFlowclubSync } from "../contexts/FlowclubSyncContext";
 
 interface TimerDisplayProps {
   sessions: PomodoroSession[];
@@ -36,19 +40,59 @@ export const TimerDisplay = ({
   isPiPSupported,
   openPiP,
 }: TimerDisplayProps) => {
+  const { isSynced, lastPayload, isStale } = useFlowclubSync();
+
+  // When synced, use Flow Club data for display
+  const syncedTimeRemaining = isSynced && lastPayload ? lastPayload.flowclubTimerSeconds : timeRemaining;
+  const syncedSessionType = isSynced && lastPayload ? lastPayload.flowclubCurrentSessionType : sessions[currentSessionIndex]?.type;
+  const isReadOnly = isSynced && timerMode === "guided";
   return (
     <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl p-10 border border-white/20 dark:border-cyan-500/20">
+      {/* Flow Club Sync Badge */}
+      {isSynced && (
+        <div className="text-center mb-4">
+          {isStale ? (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm font-medium border border-orange-200 dark:border-orange-800">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 animate-pulse">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              Waiting for Flow Club update...
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium border border-green-200 dark:border-green-800">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Synced: Flow Club
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Current session info */}
       <div className="text-center mb-8">
         <div className={`inline-block px-8 py-3 rounded-2xl text-white font-bold text-lg shadow-lg transition-all duration-300 ${
-          sessions[currentSessionIndex]?.type === "focus"
+          syncedSessionType === "focus"
             ? "bg-blue-500 dark:bg-cyan-500 dark:shadow-cyan-500/50"
             : "bg-slate-500 dark:bg-slate-600"
         }`}>
-          {sessions[currentSessionIndex]?.type === "focus" && (timerMode === "custom" ? "⏱️ Custom Timer" : "🎯 Focus Time")}
-          {sessions[currentSessionIndex]?.type === "break" && "☕ Break Time"}
+          {syncedSessionType === "focus" && (timerMode === "custom" ? "⏱️ Custom Timer" : "🎯 Focus Time")}
+          {syncedSessionType === "break" && "☕ Break Time"}
         </div>
-        {sessions.length > 1 && (
+
+        {/* Show Flow Club session title and phase if available */}
+        {isSynced && lastPayload && (
+          <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            {lastPayload.flowclubSessionTitle && (
+              <div className="font-medium">{lastPayload.flowclubSessionTitle}</div>
+            )}
+            {lastPayload.flowclubPhaseLabel && (
+              <div className="text-xs mt-1">{lastPayload.flowclubPhaseLabel}</div>
+            )}
+          </div>
+        )}
+
+        {sessions.length > 1 && !isSynced && (
           <div className="text-sm text-slate-600 dark:text-slate-300 mt-3 font-medium">
             Session {currentSessionIndex + 1} of {sessions.length}
           </div>
@@ -58,48 +102,50 @@ export const TimerDisplay = ({
       {/* Timer display */}
       <div className="text-center mb-6 sm:mb-8">
         <div className={`text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold mb-3 sm:mb-4 font-mono transition-all duration-300 ${
-          sessions[currentSessionIndex]?.type === "focus"
+          syncedSessionType === "focus"
             ? "text-slate-800 dark:text-white dark:drop-shadow-[0_0_30px_rgba(34,211,238,0.6)]"
             : "text-[#2FC6A5] dark:text-[#2FC6A5] drop-shadow-[0_0_30px_rgba(47,198,165,0.5)]"
         }`}>
-          {formatTime(timeRemaining)}
+          {formatTime(syncedTimeRemaining)}
         </div>
 
-        {/* Time adjustment controls - below timer */}
-        <div className="flex gap-2 justify-center mb-4">
-          <button
-            onClick={() => adjustTime(-60 * 5)}
-            className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
-            title="Subtract 5 minutes"
-            aria-label="Subtract 5 minutes"
-          >
-            -5m
-          </button>
-          <button
-            onClick={() => adjustTime(-60)}
-            className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
-            title="Subtract 1 minute"
-            aria-label="Subtract 1 minute"
-          >
-            -1m
-          </button>
-          <button
-            onClick={() => adjustTime(60)}
-            className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
-            title="Add 1 minute"
-            aria-label="Add 1 minute"
-          >
-            +1m
-          </button>
-          <button
-            onClick={() => adjustTime(60 * 5)}
-            className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
-            title="Add 5 minutes"
-            aria-label="Add 5 minutes"
-          >
-            +5m
-          </button>
-        </div>
+        {/* Time adjustment controls - below timer - disabled in sync mode */}
+        {!isReadOnly && (
+          <div className="flex gap-2 justify-center mb-4">
+            <button
+              onClick={() => adjustTime(-60 * 5)}
+              className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
+              title="Subtract 5 minutes"
+              aria-label="Subtract 5 minutes"
+            >
+              -5m
+            </button>
+            <button
+              onClick={() => adjustTime(-60)}
+              className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
+              title="Subtract 1 minute"
+              aria-label="Subtract 1 minute"
+            >
+              -1m
+            </button>
+            <button
+              onClick={() => adjustTime(60)}
+              className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
+              title="Add 1 minute"
+              aria-label="Add 1 minute"
+            >
+              +1m
+            </button>
+            <button
+              onClick={() => adjustTime(60 * 5)}
+              className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium py-1.5 px-3 rounded-lg transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600 text-xs"
+              title="Add 5 minutes"
+              aria-label="Add 5 minutes"
+            >
+              +5m
+            </button>
+          </div>
+        )}
 
         {/* Segmented Progress bar */}
         <ProgressBar
@@ -111,30 +157,32 @@ export const TimerDisplay = ({
 
       {/* Controls */}
       <div className="flex flex-col gap-5 items-center">
-        {/* Primary Controls - Pause Button */}
-        <div className="flex gap-3 justify-center">
-          <button
-            onClick={togglePause}
-            className="bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white font-bold p-4 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
-            aria-label={isPaused ? "Resume timer" : "Pause timer"}
-            title={isPaused ? "Resume Timer" : "Pause Timer"}
-          >
-            {isPaused ? (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
-                <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
-                <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" clipRule="evenodd" />
-              </svg>
-            )}
-          </button>
-        </div>
+        {/* Primary Controls - Pause Button - disabled in sync mode */}
+        {!isReadOnly && (
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={togglePause}
+              className="bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white font-bold p-4 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
+              aria-label={isPaused ? "Resume timer" : "Pause timer"}
+              title={isPaused ? "Resume Timer" : "Pause Timer"}
+            >
+              {isPaused ? (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
+                  <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
+                  <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Secondary Controls Row */}
         <div className="flex flex-wrap gap-2 items-center justify-center text-sm">
-          {/* Add more cycles - Pomodoro only */}
-          {timerMode === "pomodoro" && (
+          {/* Add more cycles - Pomodoro only - disabled in sync mode */}
+          {timerMode === "pomodoro" && !isReadOnly && (
             <button
               onClick={() => addMoreCycles(1)}
               className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium py-2 px-3 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
