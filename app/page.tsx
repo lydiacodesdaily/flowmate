@@ -429,6 +429,27 @@ export default function Home() {
     setSessions((prev) => [...prev, ...newSessions]);
   };
 
+  // Remove Pomodoro cycles (5 min break + 25 min focus from the end)
+  const removeCycles = (numCycles: number = 1) => {
+    setSessions((prev) => {
+      // Each cycle is 2 sessions: break + focus
+      const sessionsToRemove = numCycles * 2;
+
+      // Don't remove if it would affect current or past sessions
+      // Keep at least currentSessionIndex + 1 sessions
+      const minSessionsToKeep = currentSessionIndex + 1;
+      const canRemove = prev.length - sessionsToRemove >= minSessionsToKeep;
+
+      if (canRemove) {
+        // Remove from the end
+        return prev.slice(0, -sessionsToRemove);
+      }
+
+      // If we can't remove the full cycle, don't remove anything
+      return prev;
+    });
+  };
+
   // Speak text using audio files
   const speak = (text: string) => {
     // Check if all sound is muted
@@ -947,6 +968,7 @@ export default function Home() {
             isPaused={isPaused}
             togglePause={togglePause}
             addMoreCycles={addMoreCycles}
+            removeCycles={removeCycles}
             muteAll={muteAll}
             setMuteAll={setMuteAll}
             muteBreak={muteBreak}
