@@ -29,6 +29,10 @@ export default function Home() {
   const [isPiPSupported, setIsPiPSupported] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [enableConfetti, setEnableConfetti] = useState(true);
+  const [enableMinuteAnnouncements, setEnableMinuteAnnouncements] = useState(true);
+  const [enableFinalCountdown, setEnableFinalCountdown] = useState(true);
+  const [enableDingCheckpoints, setEnableDingCheckpoints] = useState(true);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -448,6 +452,47 @@ export default function Home() {
     });
   };
 
+  // Trigger confetti celebration with reduced-motion support
+  const triggerConfetti = () => {
+    // Check if confetti is enabled
+    if (!enableConfetti) return;
+
+    // Check for reduced motion preference
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
+    const duration = 3000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+    function randomInRange(min: number, max: number) {
+      return Math.random() * (max - min) + min;
+    }
+
+    const confettiInterval = setInterval(function() {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(confettiInterval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+
+      // Fire confetti from both sides
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+      });
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+      });
+    }, 250);
+  };
+
   // Skip to next session or complete if on last session
   const skipToNext = () => {
     const nextIndex = currentSessionIndex + 1;
@@ -462,37 +507,7 @@ export default function Home() {
       speak("Done.");
       setIsRunning(false);
       setIsCompleted(true);
-
-      // Trigger confetti celebration
-      const duration = 3000;
-      const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-      function randomInRange(min: number, max: number) {
-        return Math.random() * (max - min) + min;
-      }
-
-      const confettiInterval = setInterval(function() {
-        const timeLeft = animationEnd - Date.now();
-
-        if (timeLeft <= 0) {
-          return clearInterval(confettiInterval);
-        }
-
-        const particleCount = 50 * (timeLeft / duration);
-
-        // Fire confetti from both sides
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-        });
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-        });
-      }, 250);
+      triggerConfetti();
     }
   };
 
@@ -592,6 +607,26 @@ export default function Home() {
       const savedAnnouncementVolume = localStorage.getItem('announcementVolume');
       if (savedAnnouncementVolume) {
         setAnnouncementVolume(parseFloat(savedAnnouncementVolume));
+      }
+
+      const savedEnableConfetti = localStorage.getItem('enableConfetti');
+      if (savedEnableConfetti !== null) {
+        setEnableConfetti(savedEnableConfetti === 'true');
+      }
+
+      const savedEnableMinuteAnnouncements = localStorage.getItem('enableMinuteAnnouncements');
+      if (savedEnableMinuteAnnouncements !== null) {
+        setEnableMinuteAnnouncements(savedEnableMinuteAnnouncements === 'true');
+      }
+
+      const savedEnableFinalCountdown = localStorage.getItem('enableFinalCountdown');
+      if (savedEnableFinalCountdown !== null) {
+        setEnableFinalCountdown(savedEnableFinalCountdown === 'true');
+      }
+
+      const savedEnableDingCheckpoints = localStorage.getItem('enableDingCheckpoints');
+      if (savedEnableDingCheckpoints !== null) {
+        setEnableDingCheckpoints(savedEnableDingCheckpoints === 'true');
       }
 
       // Check if Document Picture-in-Picture API is supported
@@ -750,12 +785,12 @@ export default function Home() {
 
             // For focus sessions > 25 minutes: only play ding at 5-minute intervals
             if (currentSession?.type === "focus" && focusDurationMinutes > 25) {
-              if (minutesRemaining % 5 === 0) {
+              if (enableDingCheckpoints && minutesRemaining % 5 === 0) {
                 speak('ding');
               }
             }
             // For all other cases (focus <= 25 min, breaks, custom): announce minutes 1-25
-            else if (minutesRemaining <= 25) {
+            else if (enableMinuteAnnouncements && minutesRemaining <= 25) {
               speak(`${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`);
             }
             lastMinuteAnnouncedRef.current = minutesRemaining;
@@ -764,13 +799,13 @@ export default function Home() {
           // Less than 1 minute
           if (remaining >= 10) {
             // Between 10-59 seconds: announce every 10 seconds (50, 40, 30, 20, 10)
-            if (remaining % 10 === 0 && lastMinuteAnnouncedRef.current !== remaining) {
+            if (enableFinalCountdown && remaining % 10 === 0 && lastMinuteAnnouncedRef.current !== remaining) {
               speak(`${remaining} seconds`);
               lastMinuteAnnouncedRef.current = remaining;
             }
           } else {
             // Less than 10 seconds: countdown 9, 8, 7, 6, 5, 4, 3, 2, 1
-            if (lastMinuteAnnouncedRef.current !== remaining) {
+            if (enableFinalCountdown && lastMinuteAnnouncedRef.current !== remaining) {
               speak(`${remaining}`);
               lastMinuteAnnouncedRef.current = remaining;
             }
@@ -801,37 +836,7 @@ export default function Home() {
           speak("Done.");
           setIsRunning(false);
           setIsCompleted(true);
-
-          // Trigger confetti celebration
-          const duration = 3000;
-          const animationEnd = Date.now() + duration;
-          const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-          function randomInRange(min: number, max: number) {
-            return Math.random() * (max - min) + min;
-          }
-
-          const confettiInterval = setInterval(function() {
-            const timeLeft = animationEnd - Date.now();
-
-            if (timeLeft <= 0) {
-              return clearInterval(confettiInterval);
-            }
-
-            const particleCount = 50 * (timeLeft / duration);
-
-            // Fire confetti from both sides
-            confetti({
-              ...defaults,
-              particleCount,
-              origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-            });
-            confetti({
-              ...defaults,
-              particleCount,
-              origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-            });
-          }, 250);
+          triggerConfetti();
         }
       }
     }, 100); // Check every 100ms for accuracy
@@ -927,6 +932,14 @@ export default function Home() {
         setAnnouncementVolume={setAnnouncementVolume}
         muteBreak={muteBreak}
         setMuteBreak={setMuteBreak}
+        enableConfetti={enableConfetti}
+        setEnableConfetti={setEnableConfetti}
+        enableMinuteAnnouncements={enableMinuteAnnouncements}
+        setEnableMinuteAnnouncements={setEnableMinuteAnnouncements}
+        enableFinalCountdown={enableFinalCountdown}
+        setEnableFinalCountdown={setEnableFinalCountdown}
+        enableDingCheckpoints={enableDingCheckpoints}
+        setEnableDingCheckpoints={setEnableDingCheckpoints}
         isMobile={isMobile}
       />
 
@@ -980,9 +993,12 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="mt-8 sm:mt-12 pb-4 text-center text-xs sm:text-sm text-slate-600 dark:text-cyan-200/60 transition-colors duration-500">
-        Made by Liddy 🦥💻✨ • Lydia Studio
-        <br />
-        💬 <a href="https://forms.gle/TnjJTJqjMrAg45Jr9" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Share feedback</a> • 🍵 <a href="https://buymeacoffee.com/lydiastudio" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Find this useful? Buy me a matcha latte</a>
+        <div className="mb-1">Made by Liddy 🦥💻✨ · Lydia Studio</div>
+        <div>
+          💬 <a href="https://forms.gle/TnjJTJqjMrAg45Jr9" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Share feedback</a>
+          {' · '}
+          🍵 <a href="https://buymeacoffee.com/lydiastudio" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Buy me a matcha latte</a>
+        </div>
       </footer>
     </main>
   );

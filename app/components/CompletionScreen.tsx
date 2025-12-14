@@ -24,25 +24,27 @@ export const CompletionScreen = ({
           Great Work!
         </h2>
         <p className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-300 mb-6 sm:mb-8 px-2">
-          You completed your {selectedDuration} minute {timerMode === "custom" ? "custom" : timerMode} session
+          {timerMode === "pomodoro" && `${selectedDuration} minutes complete.`}
+          {timerMode === "guided" && "Session complete."}
+          {timerMode === "custom" && "Timer complete."}
         </p>
 
         {/* Stats or Encouragement */}
         <div className="bg-blue-50 dark:bg-cyan-900/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-blue-200 dark:border-cyan-700">
           <p className="text-slate-700 dark:text-slate-300 text-base sm:text-lg">
-            {timerMode === "pomodoro" && "🍅 Another Pomodoro in the books!"}
-            {timerMode === "guided" && "✨ Deep work session complete!"}
-            {timerMode === "custom" && "⚡ Focused time well spent!"}
+            {timerMode === "pomodoro" && "🍅 One pomodoro down."}
+            {timerMode === "guided" && "✅ Nice flow."}
+            {timerMode === "custom" && "✅ You're done."}
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
           <button
             onClick={reset}
             className="bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl sm:rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base"
           >
-            Start Another Session
+            Choose Next Session
           </button>
         </div>
       </div>
