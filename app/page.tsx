@@ -8,10 +8,8 @@ import { TimerSelection } from "./components/TimerSelection";
 import { TimerDisplay } from "./components/TimerDisplay";
 import { CompletionScreen } from "./components/CompletionScreen";
 import { MobileNotification } from "./components/MobileNotification";
-import { useFlowclubSync } from "./contexts/FlowclubSyncContext";
 
 export default function Home() {
-  const { isSynced, lastPayload, isStale } = useFlowclubSync();
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
   const [guidedStyle, setGuidedStyle] = useState<"pomodoro" | "deep-focus">("pomodoro");
   const [selectedDuration, setSelectedDuration] = useState<SessionDuration | null>(null);
@@ -669,9 +667,6 @@ export default function Home() {
   useEffect(() => {
     if (!isRunning || isPaused || sessions.length === 0) return;
 
-    // Don't run local timer in Flow Club sync mode
-    if (isSynced && timerMode === "guided") return;
-
     // Set the end time based on current time remaining
     endTimeRef.current = Date.now() + timeRemaining * 1000;
     let lastSecond = timeRemaining;
@@ -794,7 +789,7 @@ export default function Home() {
     }, 100); // Check every 100ms for accuracy
 
     return () => clearInterval(interval);
-  }, [isRunning, isPaused, currentSessionIndex, sessions, isSynced, timerMode]);
+  }, [isRunning, isPaused, currentSessionIndex, sessions]);
 
   // Update page title with session type (without countdown to avoid browser throttling issues)
   useEffect(() => {
@@ -811,51 +806,6 @@ export default function Home() {
       document.title = "Flowmate - Focus Timer";
     }
   }, [isRunning, isCompleted, sessions, currentSessionIndex]);
-
-  // Handle Flow Club sync mode
-  useEffect(() => {
-    if (!isSynced || !lastPayload || isStale) {
-      return;
-    }
-
-    // Auto-start guided timer when sync is enabled
-    if (!isRunning && lastPayload.flowclubSessionDurationMinutes) {
-      const duration = lastPayload.flowclubSessionDurationMinutes as SessionDuration;
-      // Check if this duration is valid for guided mode
-      if ([30, 60, 90, 120, 180].includes(duration)) {
-        setTimerMode("guided");
-
-        // Set guided style based on Flow Club session style
-        if (lastPayload.flowclubSessionStyle === "pomodoro") {
-          setGuidedStyle("pomodoro");
-        } else if (lastPayload.flowclubSessionStyle === "non_pomodoro") {
-          setGuidedStyle("deep-focus");
-        }
-
-        // Generate sessions and start
-        const sessionsList = generateSessions(duration);
-        setSessions(sessionsList);
-        setSelectedDuration(duration);
-        setIsRunning(true);
-        setIsPaused(false); // Running in sync mode
-
-        // Initialize audio
-        initializeAudio();
-      }
-    }
-
-    // Update timer state when synced and running
-    if (isRunning && timerMode === "guided") {
-      // Update time remaining to match Flow Club
-      setTimeRemaining(lastPayload.flowclubTimerSeconds);
-
-      // Update current session index if different
-      const flowClubIndex = lastPayload.flowclubCurrentSessionIndex;
-      if (flowClubIndex !== currentSessionIndex && flowClubIndex < sessions.length) {
-        setCurrentSessionIndex(flowClubIndex);
-      }
-    }
-  }, [isSynced, lastPayload, isStale]); // Run when sync state or payload changes
 
   // Format time as MM:SS
   const formatTime = (seconds: number): string => {

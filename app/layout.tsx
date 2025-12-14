@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { FlowclubSyncProvider } from "./contexts/FlowclubSyncContext";
 
 export const metadata: Metadata = {
   title: "Flowmate - Focus Timer",
@@ -27,9 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <FlowclubSyncProvider>
-          {children}
-        </FlowclubSyncProvider>
+        {children}
       </body>
     </html>
   );
