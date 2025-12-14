@@ -149,23 +149,25 @@ export const TimerDisplay = ({
               <button
                 onClick={() => removeCycles(1)}
                 disabled={!canRemoveCycle}
-                className={`font-medium py-2 px-3 rounded-xl transition-all duration-200 backdrop-blur-sm border ${
+                className={`flex items-center gap-1 font-medium py-2 px-3 rounded-xl transition-all duration-200 backdrop-blur-sm border ${
                   canRemoveCycle
                     ? "bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 cursor-pointer"
                     : "bg-slate-200/40 dark:bg-slate-800/40 text-slate-400 dark:text-slate-600 border-slate-300/40 dark:border-slate-700/40 cursor-not-allowed"
                 }`}
-                title={canRemoveCycle ? "Remove Pomodoro Cycle" : "Cannot remove current or past cycles"}
-                aria-label="Remove Pomodoro cycle"
+                title={canRemoveCycle ? "Remove one Pomodoro" : "Cannot remove current or past cycles"}
+                aria-label="Remove one Pomodoro"
               >
-                - Pomodoro
+                <TomatoIcon className="w-4 h-4" />
+                <span>−</span>
               </button>
               <button
                 onClick={() => addMoreCycles(1)}
-                className="bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium py-2 px-3 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
-                title="Add Pomodoro Cycle"
-                aria-label="Add Pomodoro cycle"
+                className="flex items-center gap-1 bg-white/60 hover:bg-white dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium py-2 px-3 rounded-xl transition-all duration-200 backdrop-blur-sm border border-slate-200 dark:border-slate-600"
+                title="Add one Pomodoro"
+                aria-label="Add one Pomodoro"
               >
-                + Pomodoro
+                <TomatoIcon className="w-4 h-4" />
+                <span>+</span>
               </button>
             </>
           )}
