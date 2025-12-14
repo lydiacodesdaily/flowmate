@@ -448,6 +448,54 @@ export default function Home() {
     });
   };
 
+  // Skip to next session or complete if on last session
+  const skipToNext = () => {
+    const nextIndex = currentSessionIndex + 1;
+    if (nextIndex < sessions.length) {
+      // Move to next session
+      setCurrentSessionIndex(nextIndex);
+      setTimeRemaining(sessions[nextIndex].duration);
+      lastMinuteAnnouncedRef.current = -1;
+      endTimeRef.current = Date.now() + sessions[nextIndex].duration * 1000;
+    } else {
+      // Complete the timer on last session
+      speak("Done.");
+      setIsRunning(false);
+      setIsCompleted(true);
+
+      // Trigger confetti celebration
+      const duration = 3000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+      function randomInRange(min: number, max: number) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const confettiInterval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(confettiInterval);
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+
+        // Fire confetti from both sides
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+        });
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+        });
+      }, 250);
+    }
+  };
+
   // Speak text using audio files
   const speak = (text: string) => {
     // Check if all sound is muted
@@ -919,6 +967,7 @@ export default function Home() {
             togglePause={togglePause}
             addMoreCycles={addMoreCycles}
             removeCycles={removeCycles}
+            skipToNext={skipToNext}
             muteAll={muteAll}
             setMuteAll={setMuteAll}
             muteBreak={muteBreak}

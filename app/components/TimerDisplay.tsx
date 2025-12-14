@@ -15,6 +15,7 @@ interface TimerDisplayProps {
   togglePause: () => void;
   addMoreCycles: (count: number) => void;
   removeCycles: (count: number) => void;
+  skipToNext: () => void;
   muteAll: boolean;
   setMuteAll: (mute: boolean) => void;
   muteBreak: boolean;
@@ -34,6 +35,7 @@ export const TimerDisplay = ({
   togglePause,
   addMoreCycles,
   removeCycles,
+  skipToNext,
   muteAll,
   setMuteAll,
   muteBreak,
@@ -121,8 +123,8 @@ export const TimerDisplay = ({
 
       {/* Controls */}
       <div className="flex flex-col gap-5 items-center">
-        {/* Primary Controls - Pause Button */}
-        <div className="flex gap-3 justify-center">
+        {/* Primary Controls - Pause and Next Buttons */}
+        <div className="flex gap-3 justify-center items-center">
           <button
             onClick={togglePause}
             className="bg-blue-500 hover:bg-blue-600 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white font-bold p-4 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -138,6 +140,18 @@ export const TimerDisplay = ({
                 <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" clipRule="evenodd" />
               </svg>
             )}
+          </button>
+
+          {/* Next/Skip Button */}
+          <button
+            onClick={skipToNext}
+            className="bg-white/80 hover:bg-white dark:bg-slate-700/80 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-md hover:shadow-lg p-3 rounded-2xl transition-all duration-200"
+            aria-label="Skip to next session"
+            title={currentSessionIndex >= sessions.length - 1 ? "End this block and finish" : "End this block and continue"}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+              <path d="M5.055 7.06c-1.25-.714-2.805.189-2.805 1.628v8.123c0 1.44 1.555 2.342 2.805 1.628L12 14.471v2.34c0 1.44 1.555 2.342 2.805 1.628l7.108-4.061c1.26-.72 1.26-2.536 0-3.256L14.805 7.06C13.555 6.346 12 7.25 12 8.688v2.34L5.055 7.06z" />
+            </svg>
           </button>
         </div>
 
