@@ -27,7 +27,8 @@ A beautiful and functional focus timer built with Next.js, TypeScript, and Tailw
 - **Audio Ticking**: Subtle tick sound every second to maintain rhythm
 - **High-Quality Voice Announcements**:
   - Generated using ElevenLabs Sarah voice for natural, clear announcements
-  - Minute countdowns (25 minutes, 24 minutes, etc.)
+  - Minute countdowns (1-24 minutes) for focus sessions ≤ 25 minutes
+  - Ding sound at 5-minute intervals for focus sessions > 25 minutes
   - Seconds countdowns (50, 40, 30, 20, 10 seconds)
   - Final countdown (9, 8, 7... 1)
   - Session transitions (Focus, Break, Done)
@@ -58,7 +59,7 @@ All voice announcements are stored in `/public/audio/countdown/`:
 /audio/
   /countdown/
     /minutes/
-      m01.mp3 - m25.mp3  (1-25 minute announcements)
+      m01.mp3 - m24.mp3  (1-24 minute announcements)
     /seconds/
       s01.mp3 - s09.mp3  (1-9 second countdown)
       s10.mp3, s20.mp3, s30.mp3, s40.mp3, s50.mp3  (10-second intervals)
@@ -68,6 +69,7 @@ All voice announcements are stored in `/public/audio/countdown/`:
       done.mp3           ("Done")
   /effects/
     tick.m4a             (Clock tick sound)
+    ding.mp3             (Ding sound for 5-min intervals when > 25 min)
 ```
 
 Voice files generated using **ElevenLabs Sarah voice** for high-quality, natural-sounding announcements.

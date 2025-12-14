@@ -680,11 +680,17 @@ export default function Home() {
         if (minutesRemaining >= 1) {
           // Greater than 1 minute
           if (secondsRemaining === 0 && lastMinuteAnnouncedRef.current !== minutesRemaining) {
-            // For minutes > 25: play ding at 5-minute intervals
-            if (minutesRemaining > 25 && minutesRemaining % 5 === 0) {
-              speak('ding');
+            // Get current session to check focus duration
+            const currentSession = sessions[currentSessionIndex];
+            const focusDurationMinutes = currentSession ? Math.floor(currentSession.duration / 60) : 0;
+
+            // For focus sessions > 25 minutes: only play ding at 5-minute intervals
+            if (currentSession?.type === "focus" && focusDurationMinutes > 25) {
+              if (minutesRemaining % 5 === 0) {
+                speak('ding');
+              }
             }
-            // For minutes 1-25: announce the minute
+            // For all other cases (focus <= 25 min, breaks, custom): announce minutes 1-25
             else if (minutesRemaining <= 25) {
               speak(`${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`);
             }
