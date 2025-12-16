@@ -892,7 +892,9 @@ export default function Home() {
 
           setCurrentSessionIndex(nextIndex);
           setTimeRemaining(sessions[nextIndex].duration);
-          lastMinuteAnnouncedRef.current = -1;
+          // Set to current minutes to prevent immediate re-announcement of the duration
+          const startingMinutes = Math.floor(sessions[nextIndex].duration / 60);
+          lastMinuteAnnouncedRef.current = startingMinutes;
           endTimeRef.current = Date.now() + sessions[nextIndex].duration * 1000;
         } else {
           // All sessions complete
@@ -1076,7 +1078,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="mt-8 sm:mt-12 pb-4 text-center text-sm sm:text-sm text-slate-600 dark:text-cyan-200/60 transition-colors duration-500">
-        <div className="mb-1">Made by Liddy 🦥💻✨ · Lydia Studio</div>
+        <div className="mb-1">Made by Liddy 🦥✨ · Lydia Studio</div>
         <div>
           💬 <a href="https://forms.gle/TnjJTJqjMrAg45Jr9" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Share feedback</a>
           {' · '}
