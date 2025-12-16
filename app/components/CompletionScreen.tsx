@@ -4,6 +4,7 @@ import { StatsDisplay } from "./StatsDisplay";
 interface CompletionScreenProps {
   timerMode: TimerMode;
   selectedDuration: number;
+  actualMinutes?: number;
   reset: () => void;
   userStats: UserStats | null;
 }
@@ -11,9 +12,12 @@ interface CompletionScreenProps {
 export const CompletionScreen = ({
   timerMode,
   selectedDuration,
+  actualMinutes,
   reset,
   userStats,
 }: CompletionScreenProps) => {
+  // Use actual minutes if available, otherwise fall back to selected duration
+  const displayMinutes = actualMinutes && actualMinutes > 0 ? actualMinutes : selectedDuration;
   return (
     <div className="space-y-6">
       {/* Completion Card */}
@@ -29,9 +33,9 @@ export const CompletionScreen = ({
             Great Work!
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-300 mb-6 sm:mb-8 px-2">
-            {timerMode === "pomodoro" && `${selectedDuration} minutes complete.`}
-            {timerMode === "guided" && "Session complete."}
-            {timerMode === "custom" && "Timer complete."}
+            {timerMode === "pomodoro" && `${displayMinutes} ${displayMinutes === 1 ? 'minute' : 'minutes'} complete.`}
+            {timerMode === "guided" && `${displayMinutes} ${displayMinutes === 1 ? 'minute' : 'minutes'} complete.`}
+            {timerMode === "custom" && `${displayMinutes} ${displayMinutes === 1 ? 'minute' : 'minutes'} complete.`}
           </p>
 
           {/* Stats or Encouragement */}

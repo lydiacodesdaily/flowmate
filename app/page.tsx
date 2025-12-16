@@ -4,11 +4,11 @@ import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { SessionDuration, TimerMode, PomodoroSession, FOCUS_DURATION, BREAK_DURATION, UserStats } from "./types";
 import { SettingsModal } from "./components/SettingsModal";
+import { StatsModal } from "./components/StatsModal";
 import { TimerSelection } from "./components/TimerSelection";
 import { TimerDisplay } from "./components/TimerDisplay";
 import { CompletionScreen } from "./components/CompletionScreen";
 import { MobileNotification } from "./components/MobileNotification";
-import { StatsDisplay } from "./components/StatsDisplay";
 import { loadStats, saveStats, addFocusSession } from "./utils/statsUtils";
 
 export default function Home() {
@@ -37,6 +37,7 @@ export default function Home() {
   const [enableDingCheckpoints, setEnableDingCheckpoints] = useState(true);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [showStats, setShowStats] = useState(false);
+  const [completedFocusMinutes, setCompletedFocusMinutes] = useState<number>(0);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -51,6 +52,9 @@ export default function Home() {
   const currentSessionIndexRef = useRef<number>(0);
   const sessionsRef = useRef<PomodoroSession[]>([]);
   const endTimeRef = useRef<number>(0);
+  const sessionStartTimeRef = useRef<number>(0);
+  const totalPausedTimeRef = useRef<number>(0);
+  const pauseStartTimeRef = useRef<number>(0);
 
   // Update refs for PiP
   useEffect(() => {
@@ -406,10 +410,24 @@ export default function Home() {
     setTimeRemaining(0);
     setIsCompleted(false);
     lastMinuteAnnouncedRef.current = -1;
+    sessionStartTimeRef.current = 0;
+    totalPausedTimeRef.current = 0;
+    pauseStartTimeRef.current = 0;
   };
 
   // Toggle pause
   const togglePause = () => {
+    if (!isPaused) {
+      // About to pause - record pause start time
+      pauseStartTimeRef.current = Date.now();
+    } else {
+      // About to resume - add paused duration to total
+      if (pauseStartTimeRef.current > 0) {
+        const pausedDuration = Date.now() - pauseStartTimeRef.current;
+        totalPausedTimeRef.current += pausedDuration;
+        pauseStartTimeRef.current = 0;
+      }
+    }
     setIsPaused(!isPaused);
   };
 
@@ -499,15 +517,11 @@ export default function Home() {
 
   // Skip to next session or complete if on last session
   const skipToNext = () => {
-    const completedSession = sessions[currentSessionIndex];
-
-    // Track skipped focus session in stats (give credit for skip)
-    if (completedSession?.type === "focus" && userStats) {
-      const focusTimeMinutes = Math.round(completedSession.duration / 60);
-      const updatedStats = addFocusSession(userStats, focusTimeMinutes);
-      setUserStats(updatedStats);
-      saveStats(updatedStats);
-    }
+    // Note: Skipped sessions are NOT tracked in stats - only completed sessions count
+    // Reset session timing
+    sessionStartTimeRef.current = 0;
+    totalPausedTimeRef.current = 0;
+    pauseStartTimeRef.current = 0;
 
     const nextIndex = currentSessionIndex + 1;
     if (nextIndex < sessions.length) {
@@ -772,6 +786,13 @@ export default function Home() {
 
     // Set the end time based on current time remaining
     endTimeRef.current = Date.now() + timeRemaining * 1000;
+
+    // Track session start time for the first run of a new session
+    if (sessionStartTimeRef.current === 0) {
+      sessionStartTimeRef.current = Date.now();
+      totalPausedTimeRef.current = 0;
+    }
+
     let lastSecond = timeRemaining;
 
     const interval = setInterval(() => {
@@ -837,13 +858,25 @@ export default function Home() {
       if (remaining <= 0) {
         const completedSession = sessions[currentSessionIndex];
 
-        // Track completed focus session in stats
-        if (completedSession?.type === "focus" && userStats) {
-          const focusTimeMinutes = Math.round(completedSession.duration / 60);
+        // Track completed focus session in stats using actual elapsed time
+        if (completedSession?.type === "focus" && userStats && sessionStartTimeRef.current > 0) {
+          // Calculate actual elapsed time (minus paused time)
+          const totalElapsedMs = Date.now() - sessionStartTimeRef.current;
+          const activeTimeMs = totalElapsedMs - totalPausedTimeRef.current;
+          const focusTimeMinutes = Math.round(activeTimeMs / 1000 / 60);
+
+          // Store the actual completed time for display
+          setCompletedFocusMinutes(focusTimeMinutes);
+
           const updatedStats = addFocusSession(userStats, focusTimeMinutes);
           setUserStats(updatedStats);
           saveStats(updatedStats);
         }
+
+        // Reset session timing for next session
+        sessionStartTimeRef.current = 0;
+        totalPausedTimeRef.current = 0;
+        pauseStartTimeRef.current = 0;
 
         // Move to next session
         const nextIndex = currentSessionIndex + 1;
@@ -920,6 +953,17 @@ export default function Home() {
 
       {/* Top right buttons */}
       <div className={`fixed right-2 sm:right-4 flex gap-2 sm:gap-3 z-40 ${isMobile ? 'top-12' : 'top-2 sm:top-4'}`}>
+        {/* Stats button */}
+        <button
+          onClick={() => setShowStats(!showStats)}
+          className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
+          title="Your Stats"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+          </svg>
+        </button>
+
         {/* Settings button */}
         <button
           onClick={() => setShowSettings(!showSettings)}
@@ -973,6 +1017,13 @@ export default function Home() {
         isMobile={isMobile}
       />
 
+      {/* Stats Modal */}
+      <StatsModal
+        showStats={showStats}
+        setShowStats={setShowStats}
+        userStats={userStats}
+      />
+
       <div className="w-full max-w-2xl px-2 sm:px-0">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2 text-slate-800 dark:text-white drop-shadow-lg dark:drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] transition-all duration-500">
           Flowmate
@@ -982,37 +1033,21 @@ export default function Home() {
         </p>
 
         {!selectedDuration ? (
-          <div className="space-y-6">
-            <TimerSelection
-              timerMode={timerMode}
-              setTimerMode={setTimerMode}
-              guidedStyle={guidedStyle}
-              setGuidedStyle={setGuidedStyle}
-              customMinutes={customMinutes}
-              setCustomMinutes={setCustomMinutes}
-              startSession={startSession}
-              startCustomSession={startCustomSession}
-            />
-
-            {/* Stats Toggle Button */}
-            {userStats && (
-              <div className="text-center">
-                <button
-                  onClick={() => setShowStats(!showStats)}
-                  className="text-sm text-slate-600 dark:text-cyan-200/80 hover:text-slate-800 dark:hover:text-cyan-100 transition-colors underline"
-                >
-                  {showStats ? "Hide Stats" : "View Your Stats"}
-                </button>
-              </div>
-            )}
-
-            {/* Stats Display */}
-            {showStats && userStats && <StatsDisplay stats={userStats} />}
-          </div>
+          <TimerSelection
+            timerMode={timerMode}
+            setTimerMode={setTimerMode}
+            guidedStyle={guidedStyle}
+            setGuidedStyle={setGuidedStyle}
+            customMinutes={customMinutes}
+            setCustomMinutes={setCustomMinutes}
+            startSession={startSession}
+            startCustomSession={startCustomSession}
+          />
         ) : isCompleted ? (
           <CompletionScreen
             timerMode={timerMode}
             selectedDuration={selectedDuration}
+            actualMinutes={completedFocusMinutes}
             reset={reset}
             userStats={userStats}
           />
