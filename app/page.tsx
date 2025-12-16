@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
-import { SessionDuration, TimerMode, PomodoroSession, FOCUS_DURATION, BREAK_DURATION } from "./types";
+import { SessionDuration, TimerMode, PomodoroSession, FOCUS_DURATION, BREAK_DURATION, UserStats } from "./types";
 import { SettingsModal } from "./components/SettingsModal";
 import { TimerSelection } from "./components/TimerSelection";
 import { TimerDisplay } from "./components/TimerDisplay";
 import { CompletionScreen } from "./components/CompletionScreen";
 import { MobileNotification } from "./components/MobileNotification";
+import { StatsDisplay } from "./components/StatsDisplay";
+import { loadStats, saveStats, addFocusSession } from "./utils/statsUtils";
 
 export default function Home() {
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
@@ -33,6 +35,8 @@ export default function Home() {
   const [enableMinuteAnnouncements, setEnableMinuteAnnouncements] = useState(true);
   const [enableFinalCountdown, setEnableFinalCountdown] = useState(true);
   const [enableDingCheckpoints, setEnableDingCheckpoints] = useState(true);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [showStats, setShowStats] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -495,6 +499,16 @@ export default function Home() {
 
   // Skip to next session or complete if on last session
   const skipToNext = () => {
+    const completedSession = sessions[currentSessionIndex];
+
+    // Track skipped focus session in stats (give credit for skip)
+    if (completedSession?.type === "focus" && userStats) {
+      const focusTimeMinutes = Math.round(completedSession.duration / 60);
+      const updatedStats = addFocusSession(userStats, focusTimeMinutes);
+      setUserStats(updatedStats);
+      saveStats(updatedStats);
+    }
+
     const nextIndex = currentSessionIndex + 1;
     if (nextIndex < sessions.length) {
       // Move to next session
@@ -575,6 +589,12 @@ export default function Home() {
       });
     }
   };
+
+  // Load user stats on mount
+  useEffect(() => {
+    const stats = loadStats();
+    setUserStats(stats);
+  }, []);
 
   // Initialize dark mode and audio settings from localStorage
   useEffect(() => {
@@ -815,6 +835,16 @@ export default function Home() {
 
       // Session complete
       if (remaining <= 0) {
+        const completedSession = sessions[currentSessionIndex];
+
+        // Track completed focus session in stats
+        if (completedSession?.type === "focus" && userStats) {
+          const focusTimeMinutes = Math.round(completedSession.duration / 60);
+          const updatedStats = addFocusSession(userStats, focusTimeMinutes);
+          setUserStats(updatedStats);
+          saveStats(updatedStats);
+        }
+
         // Move to next session
         const nextIndex = currentSessionIndex + 1;
         if (nextIndex < sessions.length) {
@@ -952,21 +982,39 @@ export default function Home() {
         </p>
 
         {!selectedDuration ? (
-          <TimerSelection
-            timerMode={timerMode}
-            setTimerMode={setTimerMode}
-            guidedStyle={guidedStyle}
-            setGuidedStyle={setGuidedStyle}
-            customMinutes={customMinutes}
-            setCustomMinutes={setCustomMinutes}
-            startSession={startSession}
-            startCustomSession={startCustomSession}
-          />
+          <div className="space-y-6">
+            <TimerSelection
+              timerMode={timerMode}
+              setTimerMode={setTimerMode}
+              guidedStyle={guidedStyle}
+              setGuidedStyle={setGuidedStyle}
+              customMinutes={customMinutes}
+              setCustomMinutes={setCustomMinutes}
+              startSession={startSession}
+              startCustomSession={startCustomSession}
+            />
+
+            {/* Stats Toggle Button */}
+            {userStats && (
+              <div className="text-center">
+                <button
+                  onClick={() => setShowStats(!showStats)}
+                  className="text-sm text-slate-600 dark:text-cyan-200/80 hover:text-slate-800 dark:hover:text-cyan-100 transition-colors underline"
+                >
+                  {showStats ? "Hide Stats" : "View Your Stats"}
+                </button>
+              </div>
+            )}
+
+            {/* Stats Display */}
+            {showStats && userStats && <StatsDisplay stats={userStats} />}
+          </div>
         ) : isCompleted ? (
           <CompletionScreen
             timerMode={timerMode}
             selectedDuration={selectedDuration}
             reset={reset}
+            userStats={userStats}
           />
         ) : (
           <TimerDisplay
