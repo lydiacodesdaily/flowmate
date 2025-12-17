@@ -33,6 +33,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [enableConfetti, setEnableConfetti] = useState(true);
   const [enableMinuteAnnouncements, setEnableMinuteAnnouncements] = useState(true);
+  const [minuteAnnouncementInterval, setMinuteAnnouncementInterval] = useState(1);
   const [enableFinalCountdown, setEnableFinalCountdown] = useState(true);
   const [enableDingCheckpoints, setEnableDingCheckpoints] = useState(true);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
@@ -44,6 +45,7 @@ export default function Home() {
   const tokAudioRef = useRef<HTMLAudioElement | null>(null);
   const useTickRef = useRef<boolean>(true); // For alternating tick/tok
   const lastMinuteAnnouncedRef = useRef<number>(-1);
+  const minuteAnnouncementIntervalRef = useRef<number>(1);
   const muteAllRef = useRef<boolean>(false);
   const muteBreakRef = useRef<boolean>(false);
   const pipWindowRef = useRef<Window | null>(null);
@@ -64,7 +66,8 @@ export default function Home() {
     sessionsRef.current = sessions;
     muteAllRef.current = muteAll;
     muteBreakRef.current = muteBreak;
-  }, [isPaused, timeRemaining, currentSessionIndex, sessions, muteAll, muteBreak]);
+    minuteAnnouncementIntervalRef.current = minuteAnnouncementInterval;
+  }, [isPaused, timeRemaining, currentSessionIndex, sessions, muteAll, muteBreak, minuteAnnouncementInterval]);
 
   const openPiP = async () => {
     if (!('documentPictureInPicture' in window)) {
@@ -517,7 +520,30 @@ export default function Home() {
 
   // Skip to next session or complete if on last session
   const skipToNext = () => {
-    // Note: Skipped sessions are NOT tracked in stats - only completed sessions count
+    // Track stats for the current session before skipping (if it's a focus session)
+    const currentSession = sessions[currentSessionIndex];
+    if (currentSession?.type === "focus" && userStats && sessionStartTimeRef.current > 0) {
+      // Calculate actual elapsed time (minus paused time)
+      const totalElapsedMs = Date.now() - sessionStartTimeRef.current;
+      const activeTimeMs = totalElapsedMs - totalPausedTimeRef.current;
+      const focusTimeMinutes = Math.round(activeTimeMs / 1000 / 60);
+
+      console.log('Skip - Stats calculation:', {
+        totalElapsedMs,
+        activeTimeMs,
+        focusTimeMinutes,
+        sessionStartTime: sessionStartTimeRef.current,
+        totalPausedTime: totalPausedTimeRef.current
+      });
+
+      // Store the actual completed time for display
+      setCompletedFocusMinutes(focusTimeMinutes);
+
+      const updatedStats = addFocusSession(userStats, focusTimeMinutes);
+      setUserStats(updatedStats);
+      saveStats(updatedStats);
+    }
+
     // Reset session timing
     sessionStartTimeRef.current = 0;
     totalPausedTimeRef.current = 0;
@@ -596,11 +622,14 @@ export default function Home() {
 
     // Play the audio file
     if (audioPath) {
+      console.log(`Playing audio: ${audioPath}, volume: ${announcementVolume}`);
       const audio = new Audio(audioPath);
       audio.volume = announcementVolume;
       audio.play().catch(err => {
         console.log('Audio play failed:', err);
       });
+    } else {
+      console.log(`No audio path found for text: "${text}"`);
     }
   };
 
@@ -651,6 +680,11 @@ export default function Home() {
       const savedEnableMinuteAnnouncements = localStorage.getItem('enableMinuteAnnouncements');
       if (savedEnableMinuteAnnouncements !== null) {
         setEnableMinuteAnnouncements(savedEnableMinuteAnnouncements === 'true');
+      }
+
+      const savedMinuteAnnouncementInterval = localStorage.getItem('minuteAnnouncementInterval');
+      if (savedMinuteAnnouncementInterval !== null) {
+        setMinuteAnnouncementInterval(parseInt(savedMinuteAnnouncementInterval, 10));
       }
 
       const savedEnableFinalCountdown = localStorage.getItem('enableFinalCountdown');
@@ -831,7 +865,9 @@ export default function Home() {
               }
             }
             // For all other cases (focus <= 25 min, breaks, custom): announce minutes 1-25
-            else if (enableMinuteAnnouncements && minutesRemaining <= 25) {
+            // Don't announce at the very start (when minutesRemaining === focusDurationMinutes)
+            else if (enableMinuteAnnouncements && minutesRemaining <= 25 && minutesRemaining < focusDurationMinutes && minutesRemaining % minuteAnnouncementIntervalRef.current === 0) {
+              console.log(`Announcing: ${minutesRemaining} minutes (interval: ${minuteAnnouncementIntervalRef.current}, enableMinuteAnnouncements: ${enableMinuteAnnouncements})`);
               speak(`${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`);
             }
             lastMinuteAnnouncedRef.current = minutesRemaining;
@@ -864,6 +900,14 @@ export default function Home() {
           const totalElapsedMs = Date.now() - sessionStartTimeRef.current;
           const activeTimeMs = totalElapsedMs - totalPausedTimeRef.current;
           const focusTimeMinutes = Math.round(activeTimeMs / 1000 / 60);
+
+          console.log('Stats calculation:', {
+            totalElapsedMs,
+            activeTimeMs,
+            focusTimeMinutes,
+            sessionStartTime: sessionStartTimeRef.current,
+            totalPausedTime: totalPausedTimeRef.current
+          });
 
           // Store the actual completed time for display
           setCompletedFocusMinutes(focusTimeMinutes);
@@ -1012,6 +1056,8 @@ export default function Home() {
         setEnableConfetti={setEnableConfetti}
         enableMinuteAnnouncements={enableMinuteAnnouncements}
         setEnableMinuteAnnouncements={setEnableMinuteAnnouncements}
+        minuteAnnouncementInterval={minuteAnnouncementInterval}
+        setMinuteAnnouncementInterval={setMinuteAnnouncementInterval}
         enableFinalCountdown={enableFinalCountdown}
         setEnableFinalCountdown={setEnableFinalCountdown}
         enableDingCheckpoints={enableDingCheckpoints}

@@ -15,6 +15,8 @@ interface SettingsModalProps {
   setEnableConfetti: (enable: boolean) => void;
   enableMinuteAnnouncements: boolean;
   setEnableMinuteAnnouncements: (enable: boolean) => void;
+  minuteAnnouncementInterval: number;
+  setMinuteAnnouncementInterval: (interval: number) => void;
   enableFinalCountdown: boolean;
   setEnableFinalCountdown: (enable: boolean) => void;
   enableDingCheckpoints: boolean;
@@ -37,6 +39,8 @@ export const SettingsModal = ({
   setEnableConfetti,
   enableMinuteAnnouncements,
   setEnableMinuteAnnouncements,
+  minuteAnnouncementInterval,
+  setMinuteAnnouncementInterval,
   enableFinalCountdown,
   setEnableFinalCountdown,
   enableDingCheckpoints,
@@ -170,6 +174,31 @@ export const SettingsModal = ({
                   className="w-5 h-5 text-blue-600 dark:text-cyan-500 bg-slate-100 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-cyan-500 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 cursor-pointer"
                 />
               </div>
+
+              {/* Minute Announcement Interval Dropdown */}
+              {enableMinuteAnnouncements && (
+                <div className="ml-4 mb-2">
+                  <label htmlFor="minute-interval" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    Announcement interval
+                  </label>
+                  <select
+                    id="minute-interval"
+                    value={minuteAnnouncementInterval}
+                    onChange={(e) => {
+                      const newInterval = parseInt(e.target.value, 10);
+                      setMinuteAnnouncementInterval(newInterval);
+                      localStorage.setItem('minuteAnnouncementInterval', String(newInterval));
+                    }}
+                    className="w-full px-3 py-1.5 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 cursor-pointer"
+                  >
+                    <option value="1">Every 1 minute</option>
+                    <option value="2">Every 2 minutes</option>
+                    <option value="3">Every 3 minutes</option>
+                    <option value="5">Every 5 minutes</option>
+                    <option value="10">Every 10 minutes</option>
+                  </select>
+                </div>
+              )}
 
               {/* Final Countdown Toggle */}
               <div className="flex items-center justify-between py-2">
