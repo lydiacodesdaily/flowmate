@@ -747,17 +747,13 @@ export default function Home() {
     if (typeof window !== 'undefined' && tickSound && tickVolume !== undefined) {
       // Handle alternating tick-tok sound
       if (tickSound === 'tick-tok-alternate.mp3') {
-        // Initialize both tick and tok audio elements
-        if (!tickAudioRef.current) {
-          tickAudioRef.current = new Audio(`/audio/effects/tick1.mp3`);
-          tickAudioRef.current.onerror = () => console.log('tick1.mp3 not found');
-        }
+        // Always reinitialize both tick and tok audio elements for alternating mode
+        tickAudioRef.current = new Audio(`/audio/effects/tick1.mp3`);
+        tickAudioRef.current.onerror = () => console.log('tick1.mp3 not found');
         tickAudioRef.current.volume = tickVolume;
 
-        if (!tokAudioRef.current) {
-          tokAudioRef.current = new Audio(`/audio/effects/tok1.mp3`);
-          tokAudioRef.current.onerror = () => console.log('tok1.mp3 not found');
-        }
+        tokAudioRef.current = new Audio(`/audio/effects/tok1.mp3`);
+        tokAudioRef.current.onerror = () => console.log('tok1.mp3 not found');
         tokAudioRef.current.volume = tickVolume;
       } else {
         // Initialize single tick audio element
