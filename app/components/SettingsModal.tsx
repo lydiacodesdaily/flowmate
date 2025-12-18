@@ -73,185 +73,276 @@ export const SettingsModal = ({
         {/* Audio Settings */}
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-400 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">Audio</h3>
+            <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-400 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">🔊 Audio</h3>
 
-            {/* Tick Sound Selection - Disabled on mobile */}
+            {/* Tick Sound Toggle and Settings - Disabled on mobile */}
             {!isMobile && (
-              <div className="mb-5">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Tick sound
-                </label>
-                <select
-                  value={tickSound}
-                  onChange={(e) => {
-                    const newSound = e.target.value;
-                    setTickSound(newSound);
-                    localStorage.setItem('tickSound', newSound);
-                  }}
-                  className="w-full px-4 py-3 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
-                >
-                  <option value="tick-tok-alternate.mp3">Tick–Tock (Alternating)</option>
-                  <option value="tick.m4a">Tick (Single)</option>
-                  <option value="beep1.mp3">High Beep</option>
-                  <option value="beep2.mp3">Low Beep</option>
-                  <option value="tick1.mp3">Soft Tick</option>
-                  <option value="tok1.mp3">Soft Tok</option>
-                  <option value="">None (Silent)</option>
-                </select>
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  On some phones, ticks may drift when the browser is in the background.
-                </p>
-              </div>
-            )}
-
-            {/* Tick Volume Slider - Disabled on mobile */}
-            {!isMobile && (
-              <div className="mb-5">
-                <label className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                  <span>Tick volume</span>
-                  <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(tickVolume * 100)}%</span>
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={tickVolume}
-                  onChange={(e) => {
-                    const newVolume = parseFloat(e.target.value);
-                    setTickVolume(newVolume);
-                    localStorage.setItem('tickVolume', String(newVolume));
-                  }}
-                  className="w-full h-3 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all"
-                  style={{
-                    background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${tickVolume * 100}%, rgb(203, 213, 225) ${tickVolume * 100}%, rgb(203, 213, 225) 100%)`,
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Announcement Volume Slider */}
-            <div className="mb-5">
-              <label className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                <span>Announcement Volume</span>
-                <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(announcementVolume * 100)}%</span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={announcementVolume}
-                onChange={(e) => {
-                  const newVolume = parseFloat(e.target.value);
-                  setAnnouncementVolume(newVolume);
-                  localStorage.setItem('announcementVolume', String(newVolume));
-                }}
-                className="w-full h-3 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all"
-                style={{
-                  background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${announcementVolume * 100}%, rgb(203, 213, 225) ${announcementVolume * 100}%, rgb(203, 213, 225) 100%)`,
-                }}
-              />
-            </div>
-
-            {/* Announcements Section */}
-            <div className="space-y-3 mt-5">
-              <h4 className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">Announcements</h4>
-
-              {/* Minute Announcements Toggle */}
-              <div className="flex items-center justify-between py-2">
-                <label htmlFor="minute-announcements" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                  Minute announcements
-                </label>
-                <input
-                  id="minute-announcements"
-                  type="checkbox"
-                  checked={enableMinuteAnnouncements}
-                  onChange={(e) => {
-                    setEnableMinuteAnnouncements(e.target.checked);
-                    localStorage.setItem('enableMinuteAnnouncements', String(e.target.checked));
-                  }}
-                  className="w-5 h-5 text-blue-600 dark:text-cyan-500 bg-slate-100 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-cyan-500 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 cursor-pointer"
-                />
-              </div>
-
-              {/* Minute Announcement Interval Dropdown */}
-              {enableMinuteAnnouncements && (
-                <div className="ml-4 mb-2">
-                  <label htmlFor="minute-interval" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                    Announcement interval
+              <div className="mb-6">
+                <div className="flex items-center justify-between py-2 mb-3">
+                  <label htmlFor="tick-sound-enabled" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                    Tick sound
                   </label>
-                  <select
-                    id="minute-interval"
-                    value={minuteAnnouncementInterval}
-                    onChange={(e) => {
-                      const newInterval = parseInt(e.target.value, 10);
-                      setMinuteAnnouncementInterval(newInterval);
-                      localStorage.setItem('minuteAnnouncementInterval', String(newInterval));
+                  <button
+                    id="tick-sound-enabled"
+                    onClick={() => {
+                      const newVolume = tickVolume > 0 ? 0 : 0.5;
+                      setTickVolume(newVolume);
+                      localStorage.setItem('tickVolume', String(newVolume));
                     }}
-                    className="w-full px-3 py-1.5 text-sm bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 cursor-pointer"
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
+                      tickVolume > 0 ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
+                    }`}
                   >
-                    <option value="1">Every 1 minute</option>
-                    <option value="2">Every 2 minutes</option>
-                    <option value="3">Every 3 minutes</option>
-                    <option value="5">Every 5 minutes</option>
-                    <option value="10">Every 10 minutes</option>
-                  </select>
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        tickVolume > 0 ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {tickVolume > 0 && (
+                  <>
+                    <div className="ml-6 space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                          Style
+                        </label>
+                        <select
+                          value={tickSound}
+                          onChange={(e) => {
+                            const newSound = e.target.value;
+                            setTickSound(newSound);
+                            localStorage.setItem('tickSound', newSound);
+                          }}
+                          className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
+                        >
+                          <option value="tick1.mp3">Single</option>
+                          <option value="tick-tok-alternate.mp3">Alternating</option>
+                          <option value="tick.m4a">Classic</option>
+                          <option value="beep1.mp3">High Beep</option>
+                          <option value="beep2.mp3">Low Beep</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                          <span>Volume</span>
+                          <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(tickVolume * 100)}%</span>
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          value={tickVolume}
+                          onChange={(e) => {
+                            const newVolume = parseFloat(e.target.value);
+                            setTickVolume(newVolume);
+                            localStorage.setItem('tickVolume', String(newVolume));
+                          }}
+                          className="w-full h-2 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all"
+                          style={{
+                            background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${tickVolume * 100}%, rgb(203, 213, 225) ${tickVolume * 100}%, rgb(203, 213, 225) 100%)`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Voice Announcements Section */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between py-2 mb-3">
+                <div className="flex items-center gap-1.5">
+                  <label htmlFor="voice-announcements" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                    Voice announcements
+                  </label>
+                  <div className="group relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 cursor-help">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                    </svg>
+                    <div className="absolute left-0 top-full mt-1 w-56 p-2.5 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none leading-relaxed">
+                      <div className="font-semibold mb-1">Voice announcements play:</div>
+                      <div>• Every 5 min for sessions ≥25 min</div>
+                      <div>• Every 1 min in the final stretch</div>
+                      <div>• Countdown: 50, 40, 30, 20, 10, 9...1 sec</div>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  id="voice-announcements"
+                  onClick={() => {
+                    const newVolume = announcementVolume > 0 ? 0 : 1.0;
+                    setAnnouncementVolume(newVolume);
+                    localStorage.setItem('announcementVolume', String(newVolume));
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
+                    announcementVolume > 0 ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      announcementVolume > 0 ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {announcementVolume > 0 && (
+                <div className="ml-6 space-y-4">
+                  {/* Volume Slider */}
+                  <div>
+                    <label className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                      <span>Volume</span>
+                      <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(announcementVolume * 100)}%</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={announcementVolume}
+                      onChange={(e) => {
+                        const newVolume = parseFloat(e.target.value);
+                        setAnnouncementVolume(newVolume);
+                        localStorage.setItem('announcementVolume', String(newVolume));
+                      }}
+                      className="w-full h-2 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all"
+                      style={{
+                        background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${announcementVolume * 100}%, rgb(203, 213, 225) ${announcementVolume * 100}%, rgb(203, 213, 225) 100%)`,
+                      }}
+                    />
+                  </div>
+
+                  {/* Minute Announcements */}
+                  <div>
+                    <div className="flex items-center justify-between py-1.5">
+                      <label htmlFor="minute-announcements" className="text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
+                        Interval
+                      </label>
+                      <button
+                        id="minute-announcements"
+                        onClick={() => {
+                          setEnableMinuteAnnouncements(!enableMinuteAnnouncements);
+                          localStorage.setItem('enableMinuteAnnouncements', String(!enableMinuteAnnouncements));
+                        }}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
+                          enableMinuteAnnouncements ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                            enableMinuteAnnouncements ? 'translate-x-5' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {enableMinuteAnnouncements && (
+                      <select
+                        id="minute-interval"
+                        value={minuteAnnouncementInterval}
+                        onChange={(e) => {
+                          const newInterval = parseInt(e.target.value, 10);
+                          setMinuteAnnouncementInterval(newInterval);
+                          localStorage.setItem('minuteAnnouncementInterval', String(newInterval));
+                        }}
+                        className="w-full px-3 py-1.5 mt-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 cursor-pointer"
+                      >
+                        <option value="1">Every 1 minute</option>
+                        <option value="2">Every 2 minutes</option>
+                        <option value="3">Every 3 minutes</option>
+                        <option value="5">Every 5 minutes</option>
+                        <option value="10">Every 10 minutes</option>
+                      </select>
+                    )}
+                  </div>
+
+                  {/* Seconds Countdown */}
+                  <div className="flex items-center justify-between py-1.5">
+                    <label htmlFor="seconds-countdown" className="text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
+                      Seconds countdown (50, 40...1)
+                    </label>
+                    <button
+                      id="seconds-countdown"
+                      onClick={() => {
+                        setEnableFinalCountdown(!enableFinalCountdown);
+                        localStorage.setItem('enableFinalCountdown', String(!enableFinalCountdown));
+                      }}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
+                        enableFinalCountdown ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          enableFinalCountdown ? 'translate-x-5' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Ding Checkpoints */}
+                  <div className="flex items-center justify-between py-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <label htmlFor="ding-checkpoints" className="text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
+                        Checkpoints
+                      </label>
+                      <div className="group relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 cursor-help">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                        </svg>
+                        <div className="absolute left-0 top-full mt-1 w-48 p-2 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                          Plays a ding sound every 5 minutes during long focus sessions (over 25 minutes)
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      id="ding-checkpoints"
+                      onClick={() => {
+                        setEnableDingCheckpoints(!enableDingCheckpoints);
+                        localStorage.setItem('enableDingCheckpoints', String(!enableDingCheckpoints));
+                      }}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
+                        enableDingCheckpoints ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          enableDingCheckpoints ? 'translate-x-5' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
               )}
+            </div>
 
-              {/* Final Countdown Toggle */}
-              <div className="flex items-center justify-between py-2">
-                <label htmlFor="final-countdown" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                  Final countdown (10 → 1)
-                </label>
-                <input
-                  id="final-countdown"
-                  type="checkbox"
-                  checked={enableFinalCountdown}
-                  onChange={(e) => {
-                    setEnableFinalCountdown(e.target.checked);
-                    localStorage.setItem('enableFinalCountdown', String(e.target.checked));
-                  }}
-                  className="w-5 h-5 text-blue-600 dark:text-cyan-500 bg-slate-100 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-cyan-500 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 cursor-pointer"
+            {/* Mute During Breaks */}
+            <div className="flex items-center justify-between py-2 border-t border-slate-200 dark:border-slate-700 pt-4">
+              <label htmlFor="mute-breaks" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                Mute during breaks
+              </label>
+              <button
+                id="mute-breaks"
+                onClick={() => {
+                  setMuteBreak(!muteBreak);
+                  if (!muteBreak && 'speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                  }
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
+                  muteBreak ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    muteBreak ? 'translate-x-6' : 'translate-x-1'
+                  }`}
                 />
-              </div>
-
-              {/* Ding Checkpoints Toggle */}
-              <div className="flex items-center justify-between py-2">
-                <label htmlFor="ding-checkpoints" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                  Ding checkpoints (for long timers)
-                </label>
-                <input
-                  id="ding-checkpoints"
-                  type="checkbox"
-                  checked={enableDingCheckpoints}
-                  onChange={(e) => {
-                    setEnableDingCheckpoints(e.target.checked);
-                    localStorage.setItem('enableDingCheckpoints', String(e.target.checked));
-                  }}
-                  className="w-5 h-5 text-blue-600 dark:text-cyan-500 bg-slate-100 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-cyan-500 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 cursor-pointer"
-                />
-              </div>
-
-              {/* Mute During Breaks Toggle */}
-              <div className="flex items-center justify-between py-2">
-                <label htmlFor="mute-breaks" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                  Mute during breaks
-                </label>
-                <input
-                  id="mute-breaks"
-                  type="checkbox"
-                  checked={muteBreak}
-                  onChange={(e) => {
-                    setMuteBreak(e.target.checked);
-                    if (e.target.checked && 'speechSynthesis' in window) {
-                      window.speechSynthesis.cancel();
-                    }
-                  }}
-                  className="w-5 h-5 text-blue-600 dark:text-cyan-500 bg-slate-100 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-cyan-500 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 cursor-pointer"
-                />
-              </div>
+              </button>
             </div>
           </div>
 
@@ -264,16 +355,22 @@ export const SettingsModal = ({
               <label htmlFor="enable-confetti" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
                 Confetti celebration
               </label>
-              <input
+              <button
                 id="enable-confetti"
-                type="checkbox"
-                checked={enableConfetti}
-                onChange={(e) => {
-                  setEnableConfetti(e.target.checked);
-                  localStorage.setItem('enableConfetti', String(e.target.checked));
+                onClick={() => {
+                  setEnableConfetti(!enableConfetti);
+                  localStorage.setItem('enableConfetti', String(!enableConfetti));
                 }}
-                className="w-5 h-5 text-blue-600 dark:text-cyan-500 bg-slate-100 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 dark:focus:ring-cyan-500 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 cursor-pointer"
-              />
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
+                  enableConfetti ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    enableConfetti ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
             </div>
           </div>
         </div>
