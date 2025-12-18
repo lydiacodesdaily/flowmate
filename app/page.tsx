@@ -9,6 +9,7 @@ import { TimerSelection } from "./components/TimerSelection";
 import { TimerDisplay } from "./components/TimerDisplay";
 import { CompletionScreen } from "./components/CompletionScreen";
 import { MobileNotification } from "./components/MobileNotification";
+import { FirstSessionCallout } from "./components/FirstSessionCallout";
 import { loadStats, saveStats, addFocusSession } from "./utils/statsUtils";
 
 export default function Home() {
@@ -24,7 +25,7 @@ export default function Home() {
   const [muteAll, setMuteAll] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [tickSound, setTickSound] = useState<string>('tick-tok-alternate.mp3');
-  const [tickVolume, setTickVolume] = useState<number>(0.2);
+  const [tickVolume, setTickVolume] = useState<number>(0);
   const [announcementVolume, setAnnouncementVolume] = useState<number>(1.0);
   const [showSettings, setShowSettings] = useState(false);
   const [customMinutes, setCustomMinutes] = useState<string>("");
@@ -39,6 +40,7 @@ export default function Home() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [showStats, setShowStats] = useState(false);
   const [completedFocusMinutes, setCompletedFocusMinutes] = useState<number>(0);
+  const [showCallout, setShowCallout] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -386,6 +388,13 @@ export default function Home() {
 
     // Initialize audio on user interaction (required for mobile browsers)
     initializeAudio();
+
+    // Show callout on first timer start
+    const hasSeenCallout = localStorage.getItem('hasSeenCallout');
+    const hasOpenedSettings = localStorage.getItem('hasOpenedSettings');
+    if (!hasSeenCallout && !hasOpenedSettings) {
+      setShowCallout(true);
+    }
   };
 
   // Start a custom duration session
@@ -401,6 +410,13 @@ export default function Home() {
 
     // Initialize audio on user interaction (required for mobile browsers)
     initializeAudio();
+
+    // Show callout on first timer start
+    const hasSeenCallout = localStorage.getItem('hasSeenCallout');
+    const hasOpenedSettings = localStorage.getItem('hasOpenedSettings');
+    if (!hasSeenCallout && !hasOpenedSettings) {
+      setShowCallout(true);
+    }
   };
 
   // Reset everything
@@ -977,6 +993,15 @@ export default function Home() {
       {/* Mobile notification banner */}
       {isMobile && <MobileNotification />}
 
+      {/* First session callout */}
+      <FirstSessionCallout
+        showCallout={showCallout}
+        onOpenSettings={() => {
+          setShowSettings(true);
+          localStorage.setItem('hasOpenedSettings', 'true');
+        }}
+      />
+
       {/* Back button - top left, only shown when timer is running */}
       {selectedDuration && (
         <div className={`fixed left-2 sm:left-4 z-40 ${isMobile ? 'top-12' : 'top-2 sm:top-4'}`}>
@@ -1008,7 +1033,13 @@ export default function Home() {
 
         {/* Settings button */}
         <button
-          onClick={() => setShowSettings(!showSettings)}
+          onClick={() => {
+            setShowSettings(!showSettings);
+            // Mark that settings have been opened
+            if (!showSettings) {
+              localStorage.setItem('hasOpenedSettings', 'true');
+            }
+          }}
           className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
           title="Settings"
         >
