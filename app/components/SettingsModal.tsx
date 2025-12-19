@@ -185,7 +185,7 @@ export const SettingsModal = ({
                 <button
                   id="voice-announcements"
                   onClick={() => {
-                    const newVolume = announcementVolume > 0 ? 0 : 1.0;
+                    const newVolume = announcementVolume > 0 ? 0 : 0.5;
                     setAnnouncementVolume(newVolume);
                     localStorage.setItem('announcementVolume', String(newVolume));
                   }}

@@ -26,7 +26,7 @@ export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [tickSound, setTickSound] = useState<string>('tick-tok-alternate.mp3');
   const [tickVolume, setTickVolume] = useState<number>(0);
-  const [announcementVolume, setAnnouncementVolume] = useState<number>(1.0);
+  const [announcementVolume, setAnnouncementVolume] = useState<number>(0.5);
   const [showSettings, setShowSettings] = useState(false);
   const [customMinutes, setCustomMinutes] = useState<string>("");
   const [isPiPSupported, setIsPiPSupported] = useState(false);
