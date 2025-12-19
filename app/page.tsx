@@ -583,6 +583,11 @@ export default function Home() {
 
   // Speak text using audio files
   const speak = (text: string) => {
+    // Check if announcement volume is 0 (disabled)
+    if (announcementVolume === 0) {
+      return;
+    }
+
     // Check if all sound is muted
     if (muteAllRef.current) {
       return;
@@ -757,12 +762,8 @@ export default function Home() {
   // Initialize audio elements (prepare but don't load yet to avoid autoplay issues)
   const initializeAudio = () => {
     if (typeof window !== 'undefined' && tickSound && tickVolume !== undefined) {
-      // Don't initialize audio elements if tick volume is 0 (disabled)
-      if (tickVolume === 0) {
-        tickAudioRef.current = null;
-        tokAudioRef.current = null;
-        return;
-      }
+      // On mobile browsers, we need to initialize audio with user interaction to "unlock" audio playback
+      // So we create the audio elements even if volume is 0, but won't play them in playTick()
 
       // Handle alternating tick-tok sound
       if (tickSound === 'tick-tok-alternate.mp3') {
@@ -787,6 +788,22 @@ export default function Home() {
         // Clear tok audio if it exists
         tokAudioRef.current = null;
       }
+
+      // Play a silent audio to unlock audio on mobile browsers
+      // This is required for both tick and announcement sounds to work
+      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+
+      // Additionally, play and immediately pause a silent audio element to unlock HTML5 audio
+      // This ensures both tick sounds and announcements (which use new Audio()) work on mobile
+      const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7v////////////////////////////////////////////////////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+      silentAudio.volume = 0;
+      silentAudio.play().then(() => {
+        silentAudio.pause();
+      }).catch(() => {
+        // Ignore errors - this is just to unlock audio
+      });
     }
   };
 
