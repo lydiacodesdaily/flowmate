@@ -796,6 +796,11 @@ export default function Home() {
   const playTick = () => {
     if (!tickAudioRef.current) return;
 
+    // Check if tick volume is 0 (muted or disabled on mobile)
+    if (tickVolume === 0) {
+      return;
+    }
+
     // Check if all sound is muted
     if (muteAllRef.current) {
       return;
