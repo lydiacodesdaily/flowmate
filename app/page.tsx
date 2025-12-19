@@ -757,6 +757,13 @@ export default function Home() {
   // Initialize audio elements (prepare but don't load yet to avoid autoplay issues)
   const initializeAudio = () => {
     if (typeof window !== 'undefined' && tickSound && tickVolume !== undefined) {
+      // Don't initialize audio elements if tick volume is 0 (disabled)
+      if (tickVolume === 0) {
+        tickAudioRef.current = null;
+        tokAudioRef.current = null;
+        return;
+      }
+
       // Handle alternating tick-tok sound
       if (tickSound === 'tick-tok-alternate.mp3') {
         // Always reinitialize both tick and tok audio elements for alternating mode
@@ -791,6 +798,11 @@ export default function Home() {
   // Play tick sound using audio file
   const playTick = () => {
     if (!tickAudioRef.current) return;
+
+    // Check if tick volume is 0 (disabled)
+    if (tickVolume === 0) {
+      return;
+    }
 
     // Check if all sound is muted
     if (muteAllRef.current) {
