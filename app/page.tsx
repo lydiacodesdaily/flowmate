@@ -45,6 +45,7 @@ export default function Home() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
   const tokAudioRef = useRef<HTMLAudioElement | null>(null);
+  const announcementAudioRef = useRef<HTMLAudioElement | null>(null);
   const useTickRef = useRef<boolean>(true); // For alternating tick/tok
   const lastMinuteAnnouncedRef = useRef<number>(-1);
   const minuteAnnouncementIntervalRef = useRef<number>(1);
@@ -666,7 +667,13 @@ export default function Home() {
     // Play the audio file
     if (audioPath) {
       console.log(`[speak] Playing audio: ${audioPath}, volume: ${announcementVolume}`);
-      const audio = new Audio(audioPath);
+
+      // Use pre-initialized announcement audio element for mobile compatibility
+      // If it doesn't exist, create a new one (fallback)
+      const audio = announcementAudioRef.current || new Audio();
+
+      // Update the audio source and volume
+      audio.src = audioPath;
       audio.volume = announcementVolume;
 
       // Add error handler before playing
@@ -674,6 +681,7 @@ export default function Home() {
         console.error('[speak] Audio file load error:', audioPath, e);
       };
 
+      // Play the audio
       audio.play().catch(err => {
         console.error('[speak] Audio play failed:', audioPath, err);
       });
@@ -791,38 +799,50 @@ export default function Home() {
   const initializeAudio = () => {
     console.log('[initializeAudio] Called - tickSound:', tickSound, 'tickVolume:', tickVolume);
 
-    if (typeof window !== 'undefined' && tickSound && tickVolume !== undefined) {
-      // If tick volume is 0, clear the audio refs and don't create new ones
-      if (tickVolume === 0) {
-        console.log('[initializeAudio] Tick volume is 0, clearing audio elements');
-        tickAudioRef.current = null;
-        tokAudioRef.current = null;
-        return;
+    if (typeof window !== 'undefined') {
+      // Initialize announcement audio element for mobile browsers
+      // This MUST be created even if tick sounds are disabled, since announcements are independent
+      // This pre-initialized audio element will be reused for all announcements
+      // to ensure they work on mobile browsers (must be created during user interaction)
+      if (!announcementAudioRef.current) {
+        announcementAudioRef.current = new Audio();
+        announcementAudioRef.current.volume = announcementVolume;
+        console.log('[initializeAudio] Created announcement audio element');
       }
 
-      // On mobile browsers, we need to initialize audio with user interaction to "unlock" audio playback
-      // Handle alternating tick-tok sound
-      if (tickSound === 'tick-tok-alternate.mp3') {
-        // Always reinitialize both tick and tok audio elements for alternating mode
-        tickAudioRef.current = new Audio(`/audio/effects/tick1.mp3`);
-        tickAudioRef.current.onerror = () => console.log('tick1.mp3 not found');
-        tickAudioRef.current.volume = tickVolume;
+      // Handle tick sound initialization
+      if (tickSound && tickVolume !== undefined) {
+        // If tick volume is 0, clear the tick audio refs
+        if (tickVolume === 0) {
+          console.log('[initializeAudio] Tick volume is 0, clearing tick audio elements');
+          tickAudioRef.current = null;
+          tokAudioRef.current = null;
+        } else {
+          // On mobile browsers, we need to initialize audio with user interaction to "unlock" audio playback
+          // Handle alternating tick-tok sound
+          if (tickSound === 'tick-tok-alternate.mp3') {
+            // Always reinitialize both tick and tok audio elements for alternating mode
+            tickAudioRef.current = new Audio(`/audio/effects/tick1.mp3`);
+            tickAudioRef.current.onerror = () => console.log('tick1.mp3 not found');
+            tickAudioRef.current.volume = tickVolume;
 
-        tokAudioRef.current = new Audio(`/audio/effects/tok1.mp3`);
-        tokAudioRef.current.onerror = () => console.log('tok1.mp3 not found');
-        tokAudioRef.current.volume = tickVolume;
-      } else {
-        // Initialize single tick audio element
-        if (!tickAudioRef.current || tickAudioRef.current.src !== `/audio/effects/${tickSound}`) {
-          tickAudioRef.current = new Audio(`/audio/effects/${tickSound}`);
-          tickAudioRef.current.onerror = () => {
-            console.log('Tick audio file not found');
-          };
+            tokAudioRef.current = new Audio(`/audio/effects/tok1.mp3`);
+            tokAudioRef.current.onerror = () => console.log('tok1.mp3 not found');
+            tokAudioRef.current.volume = tickVolume;
+          } else {
+            // Initialize single tick audio element
+            if (!tickAudioRef.current || tickAudioRef.current.src !== `/audio/effects/${tickSound}`) {
+              tickAudioRef.current = new Audio(`/audio/effects/${tickSound}`);
+              tickAudioRef.current.onerror = () => {
+                console.log('Tick audio file not found');
+              };
+            }
+            tickAudioRef.current.volume = tickVolume;
+
+            // Clear tok audio if it exists
+            tokAudioRef.current = null;
+          }
         }
-        tickAudioRef.current.volume = tickVolume;
-
-        // Clear tok audio if it exists
-        tokAudioRef.current = null;
       }
 
       // Play a silent audio to unlock audio on mobile browsers
@@ -847,6 +867,14 @@ export default function Home() {
   useEffect(() => {
     initializeAudio();
   }, [tickSound, tickVolume]);
+
+  // Update announcement audio volume when it changes
+  useEffect(() => {
+    if (announcementAudioRef.current) {
+      announcementAudioRef.current.volume = announcementVolume;
+      console.log('[useEffect] Updated announcement volume to:', announcementVolume);
+    }
+  }, [announcementVolume]);
 
   // Play tick sound using audio file
   const playTick = () => {
