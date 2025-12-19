@@ -50,6 +50,7 @@ export default function Home() {
   const minuteAnnouncementIntervalRef = useRef<number>(1);
   const muteAllRef = useRef<boolean>(false);
   const muteBreakRef = useRef<boolean>(false);
+  const announcementVolumeRef = useRef<number>(0.5);
   const pipWindowRef = useRef<Window | null>(null);
   const isPausedRef = useRef<boolean>(false);
   const timeRemainingRef = useRef<number>(0);
@@ -69,7 +70,8 @@ export default function Home() {
     muteAllRef.current = muteAll;
     muteBreakRef.current = muteBreak;
     minuteAnnouncementIntervalRef.current = minuteAnnouncementInterval;
-  }, [isPaused, timeRemaining, currentSessionIndex, sessions, muteAll, muteBreak, minuteAnnouncementInterval]);
+    announcementVolumeRef.current = announcementVolume;
+  }, [isPaused, timeRemaining, currentSessionIndex, sessions, muteAll, muteBreak, minuteAnnouncementInterval, announcementVolume]);
 
   const openPiP = async () => {
     if (!('documentPictureInPicture' in window)) {
@@ -582,10 +584,10 @@ export default function Home() {
 
   // Speak text using audio files
   const speak = (text: string) => {
-    console.log('[speak] Called with text:', text, 'announcementVolume:', announcementVolume);
+    console.log('[speak] Called with text:', text, 'announcementVolume:', announcementVolumeRef.current);
 
     // Check if announcement volume is 0 (disabled)
-    if (announcementVolume === 0) {
+    if (announcementVolumeRef.current === 0) {
       console.log('[speak] Skipping - announcement volume is 0');
       return;
     }
@@ -647,9 +649,9 @@ export default function Home() {
 
     // Play the audio file
     if (audioPath) {
-      console.log(`[speak] Playing audio: ${audioPath}, volume: ${announcementVolume}`);
+      console.log(`[speak] Playing audio: ${audioPath}, volume: ${announcementVolumeRef.current}`);
       const audio = new Audio(audioPath);
-      audio.volume = announcementVolume;
+      audio.volume = announcementVolumeRef.current;
       audio.play().catch(() => {
         // Audio play may fail on some browsers
       });

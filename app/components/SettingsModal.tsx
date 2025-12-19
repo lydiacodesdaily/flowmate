@@ -96,7 +96,7 @@ export const SettingsModal = ({
                 <button
                     id="tick-sound-enabled"
                     onClick={() => {
-                      const newVolume = tickVolume > 0 ? 0 : 0.5;
+                      const newVolume = tickVolume > 0 ? 0 : 0.05;
                       setTickVolume(newVolume);
                       localStorage.setItem('tickVolume', String(newVolume));
                     }}
@@ -183,7 +183,7 @@ export const SettingsModal = ({
                 <button
                   id="voice-announcements"
                   onClick={() => {
-                    const newVolume = announcementVolume > 0 ? 0 : 0.5;
+                    const newVolume = announcementVolume > 0 ? 0 : 0.20;
                     setAnnouncementVolume(newVolume);
                     localStorage.setItem('announcementVolume', String(newVolume));
                   }}
