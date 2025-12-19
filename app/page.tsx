@@ -240,7 +240,7 @@ export default function Home() {
     }
   };
 
-  // Close PiP when tab becomes visible
+  // Close PiP when tab becomes visible and resume audio context
   useEffect(() => {
     if (!isRunning) return;
 
@@ -248,6 +248,23 @@ export default function Home() {
       if (!document.hidden) {
         // Tab is visible, close PiP
         closePiP();
+
+        // Resume AudioContext if it was suspended (important for mobile browsers)
+        if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+          console.log('[visibilitychange] Resuming suspended AudioContext');
+          audioContextRef.current.resume().then(() => {
+            console.log('[visibilitychange] AudioContext resumed successfully');
+          }).catch((err) => {
+            console.error('[visibilitychange] Failed to resume AudioContext:', err);
+          });
+        }
+
+        // On mobile browsers, audio playback can be interrupted when tab is backgrounded
+        // Re-initialize audio elements to ensure they work after returning to the tab
+        if (isMobile && tickVolume > 0) {
+          console.log('[visibilitychange] Re-initializing audio for mobile after tab switch');
+          initializeAudio();
+        }
       }
     };
 
@@ -583,19 +600,24 @@ export default function Home() {
 
   // Speak text using audio files
   const speak = (text: string) => {
+    console.log('[speak] Called with text:', text, 'announcementVolume:', announcementVolume);
+
     // Check if announcement volume is 0 (disabled)
     if (announcementVolume === 0) {
+      console.log('[speak] Skipping - announcement volume is 0');
       return;
     }
 
     // Check if all sound is muted
     if (muteAllRef.current) {
+      console.log('[speak] Skipping - all sound is muted');
       return;
     }
 
     // Check if we should mute during break sessions
     const currentSession = sessions[currentSessionIndex];
     if (muteBreakRef.current && currentSession?.type === "break") {
+      console.log('[speak] Skipping - muted during break');
       return;
     }
 
@@ -643,14 +665,20 @@ export default function Home() {
 
     // Play the audio file
     if (audioPath) {
-      console.log(`Playing audio: ${audioPath}, volume: ${announcementVolume}`);
+      console.log(`[speak] Playing audio: ${audioPath}, volume: ${announcementVolume}`);
       const audio = new Audio(audioPath);
       audio.volume = announcementVolume;
+
+      // Add error handler before playing
+      audio.onerror = (e) => {
+        console.error('[speak] Audio file load error:', audioPath, e);
+      };
+
       audio.play().catch(err => {
-        console.log('Audio play failed:', err);
+        console.error('[speak] Audio play failed:', audioPath, err);
       });
     } else {
-      console.log(`No audio path found for text: "${text}"`);
+      console.log(`[speak] No audio path found for text: "${text}"`);
     }
   };
 
@@ -761,10 +789,18 @@ export default function Home() {
 
   // Initialize audio elements (prepare but don't load yet to avoid autoplay issues)
   const initializeAudio = () => {
-    if (typeof window !== 'undefined' && tickSound && tickVolume !== undefined) {
-      // On mobile browsers, we need to initialize audio with user interaction to "unlock" audio playback
-      // So we create the audio elements even if volume is 0, but won't play them in playTick()
+    console.log('[initializeAudio] Called - tickSound:', tickSound, 'tickVolume:', tickVolume);
 
+    if (typeof window !== 'undefined' && tickSound && tickVolume !== undefined) {
+      // If tick volume is 0, clear the audio refs and don't create new ones
+      if (tickVolume === 0) {
+        console.log('[initializeAudio] Tick volume is 0, clearing audio elements');
+        tickAudioRef.current = null;
+        tokAudioRef.current = null;
+        return;
+      }
+
+      // On mobile browsers, we need to initialize audio with user interaction to "unlock" audio playback
       // Handle alternating tick-tok sound
       if (tickSound === 'tick-tok-alternate.mp3') {
         // Always reinitialize both tick and tok audio elements for alternating mode
@@ -814,23 +850,37 @@ export default function Home() {
 
   // Play tick sound using audio file
   const playTick = () => {
-    if (!tickAudioRef.current) return;
+    if (!tickAudioRef.current) {
+      console.log('[playTick] Skipping - no audio ref');
+      return;
+    }
+
+    // Check if timer is paused
+    if (isPausedRef.current) {
+      console.log('[playTick] Skipping - timer is paused');
+      return;
+    }
 
     // Check if tick volume is 0 (disabled)
     if (tickVolume === 0) {
+      console.log('[playTick] Skipping - tick volume is 0');
       return;
     }
 
     // Check if all sound is muted
     if (muteAllRef.current) {
+      console.log('[playTick] Skipping - all sound is muted');
       return;
     }
 
     // Check if we should mute during break sessions
     const currentSession = sessions[currentSessionIndex];
     if (muteBreakRef.current && currentSession?.type === "break") {
+      console.log('[playTick] Skipping - muted during break');
       return;
     }
+
+    console.log('[playTick] Playing tick sound, volume:', tickVolume);
 
     // Handle alternating tick-tok
     if (tokAudioRef.current) {

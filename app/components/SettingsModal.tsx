@@ -112,55 +112,53 @@ export const SettingsModal = ({
                   </button>
                 </div>
 
-                {tickVolume > 0 && (
-                  <>
-                    <div className="ml-6 space-y-3">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
-                          Style
-                        </label>
-                        <select
-                          value={tickSound}
-                          onChange={(e) => {
-                            const newSound = e.target.value;
-                            setTickSound(newSound);
-                            localStorage.setItem('tickSound', newSound);
-                          }}
-                          className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200"
-                        >
-                          <option value="tick1.mp3">Single</option>
-                          <option value="tick-tok-alternate.mp3">Alternating</option>
-                          <option value="tick.m4a">Classic</option>
-                          <option value="beep1.mp3">High Beep</option>
-                          <option value="beep2.mp3">Low Beep</option>
-                        </select>
-                      </div>
+                <div className={`ml-6 space-y-3 transition-opacity duration-200 ${tickVolume === 0 ? 'opacity-40 pointer-events-none' : ''}`}>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                      Style
+                    </label>
+                    <select
+                      value={tickSound}
+                      onChange={(e) => {
+                        const newSound = e.target.value;
+                        setTickSound(newSound);
+                        localStorage.setItem('tickSound', newSound);
+                      }}
+                      disabled={tickVolume === 0}
+                      className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200 disabled:cursor-not-allowed"
+                    >
+                      <option value="tick1.mp3">Single</option>
+                      <option value="tick-tok-alternate.mp3">Alternating</option>
+                      <option value="tick.m4a">Classic</option>
+                      <option value="beep1.mp3">High Beep</option>
+                      <option value="beep2.mp3">Low Beep</option>
+                    </select>
+                  </div>
 
-                      <div>
-                        <label className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
-                          <span>Volume</span>
-                          <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(tickVolume * 100)}%</span>
-                        </label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          value={tickVolume}
-                          onChange={(e) => {
-                            const newVolume = parseFloat(e.target.value);
-                            setTickVolume(newVolume);
-                            localStorage.setItem('tickVolume', String(newVolume));
-                          }}
-                          className="w-full h-2 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all"
-                          style={{
-                            background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${tickVolume * 100}%, rgb(203, 213, 225) ${tickVolume * 100}%, rgb(203, 213, 225) 100%)`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
+                  <div>
+                    <label className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                      <span>Volume</span>
+                      <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(tickVolume * 100)}%</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={tickVolume}
+                      onChange={(e) => {
+                        const newVolume = parseFloat(e.target.value);
+                        setTickVolume(newVolume);
+                        localStorage.setItem('tickVolume', String(newVolume));
+                      }}
+                      disabled={tickVolume === 0}
+                      className="w-full h-2 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all disabled:cursor-not-allowed"
+                      style={{
+                        background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${tickVolume * 100}%, rgb(203, 213, 225) ${tickVolume * 100}%, rgb(203, 213, 225) 100%)`,
+                      }}
+                    />
+                  </div>
+                </div>
             </div>
 
             {/* Voice Announcements Section */}
