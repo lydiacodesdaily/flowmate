@@ -75,14 +75,25 @@ export const SettingsModal = ({
           <div>
             <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-400 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">🔊 Audio</h3>
 
-            {/* Tick Sound Toggle and Settings - Disabled on mobile */}
-            {!isMobile && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between py-2 mb-3">
+            {/* Tick Sound Toggle and Settings */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between py-2 mb-3">
+                <div className="flex items-center gap-1.5">
                   <label htmlFor="tick-sound-enabled" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
                     Tick sound
                   </label>
-                  <button
+                  {isMobile && (
+                    <div className="group relative">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 cursor-help">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                      </svg>
+                      <div className="absolute left-0 top-full mt-1 w-56 p-2.5 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none leading-relaxed">
+                        Tick sounds on mobile may impact battery life and performance. Default is muted.
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <button
                     id="tick-sound-enabled"
                     onClick={() => {
                       const newVolume = tickVolume > 0 ? 0 : 0.5;
@@ -150,8 +161,7 @@ export const SettingsModal = ({
                     </div>
                   </>
                 )}
-              </div>
-            )}
+            </div>
 
             {/* Voice Announcements Section */}
             <div className="mb-6">

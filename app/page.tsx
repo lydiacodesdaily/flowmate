@@ -675,12 +675,8 @@ export default function Home() {
       }
 
       const savedTickVolume = localStorage.getItem('tickVolume');
-      if (savedTickVolume && !isMobileDevice) {
-        // Don't load tick volume on mobile - keep it at 0
+      if (savedTickVolume) {
         setTickVolume(parseFloat(savedTickVolume));
-      } else if (isMobileDevice) {
-        // Force tick volume to 0 on mobile
-        setTickVolume(0);
       }
 
       const savedAnnouncementVolume = localStorage.getItem('announcementVolume');
@@ -785,18 +781,6 @@ export default function Home() {
         tokAudioRef.current = null;
       }
     }
-
-    // On mobile, play a silent audio to unlock audio playback
-    if (isMobile && typeof window !== 'undefined') {
-      const silentAudio = new Audio();
-      silentAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
-      silentAudio.volume = 0;
-      silentAudio.play().then(() => {
-        console.log('Audio unlocked for mobile');
-      }).catch(err => {
-        console.log('Failed to unlock audio:', err);
-      });
-    }
   };
 
   // Update tick audio when sound or volume changes
@@ -807,11 +791,6 @@ export default function Home() {
   // Play tick sound using audio file
   const playTick = () => {
     if (!tickAudioRef.current) return;
-
-    // Check if tick volume is 0 (muted or disabled on mobile)
-    if (tickVolume === 0) {
-      return;
-    }
 
     // Check if all sound is muted
     if (muteAllRef.current) {
