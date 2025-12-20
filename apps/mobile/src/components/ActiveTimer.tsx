@@ -60,6 +60,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
     },
     onAllSessionsComplete: async () => {
       await hapticService.heavy();
+      await audioService.announceAllComplete();
       lastMinuteRef.current = -1;
       lastAnnouncementMinuteRef.current = -1;
     },
@@ -74,6 +75,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
       if (!audioInitializedRef.current) {
         await audioService.initialize();
         await audioService.loadTickSounds();
+        await audioService.loadTransitionSounds();
         await notificationService.initialize();
         audioInitializedRef.current = true;
       }
