@@ -4,13 +4,13 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@flowmate/shared": ["../../packages/shared"]
+      "@flowmate/shared": [
+        "../../packages/shared"
+      ]
     }
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ]
 }
