@@ -4,6 +4,7 @@ import type { TimerMode, Session } from '@flowmate/shared';
 import { ModeSelectionScreen } from '../components/ModeSelectionScreen';
 import { PomodoroSelectionScreen } from '../components/PomodoroSelectionScreen';
 import { GuidedSelectionScreen } from '../components/GuidedSelectionScreen';
+import { ActiveTimer } from '../components/ActiveTimer';
 
 type Screen = 'mode-select' | 'pomodoro-select' | 'guided-select' | 'timer';
 
@@ -11,7 +12,6 @@ export function TimerScreen() {
   const [screen, setScreen] = useState<Screen>('mode-select');
   const [mode, setMode] = useState<TimerMode | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [timeRemaining, setTimeRemaining] = useState(0);
 
   const handleModeSelect = (selectedMode: TimerMode) => {
     setMode(selectedMode);
@@ -27,13 +27,11 @@ export function TimerScreen() {
 
   const handlePomodoroConfig = (_type: unknown, selectedSessions: Session[]) => {
     setSessions(selectedSessions);
-    setTimeRemaining(selectedSessions[0].durationMinutes * 60);
     setScreen('timer');
   };
 
   const handleGuidedConfig = (_type: unknown, selectedSessions: Session[]) => {
     setSessions(selectedSessions);
-    setTimeRemaining(selectedSessions[0].durationMinutes * 60);
     setScreen('timer');
   };
 
@@ -41,7 +39,6 @@ export function TimerScreen() {
     setScreen('mode-select');
     setMode(null);
     setSessions([]);
-    setTimeRemaining(0);
   };
 
   return (
@@ -65,9 +62,7 @@ export function TimerScreen() {
       )}
 
       {screen === 'timer' && (
-        <View style={styles.timerPlaceholder}>
-          {/* Timer will be implemented next */}
-        </View>
+        <ActiveTimer sessions={sessions} onBack={handleBack} />
       )}
     </View>
   );
@@ -77,10 +72,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-  },
-  timerPlaceholder: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });
