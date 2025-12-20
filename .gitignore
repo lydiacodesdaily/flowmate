@@ -78,6 +78,22 @@ web_modules/
 .next
 out
 
+# Expo
+.expo/
+dist/
+web-build/
+
+# Expo Native
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Metro
+.metro-health-check*
+
 # Nuxt.js build / generate output
 .nuxt
 dist

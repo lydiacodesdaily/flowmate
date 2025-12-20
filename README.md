@@ -1,6 +1,17 @@
-# Flowmate - Focus Timer
+# FlowMate Monorepo
 
-A beautiful and functional focus timer built with Next.js, TypeScript, and Tailwind CSS. Supports both Pomodoro technique and Guided Deep Work sessions. Features audio ticking, high-quality voice announcements, and Picture-in-Picture support.
+A beautiful and functional focus timer available on web and mobile platforms. Built with Next.js, React Native (Expo), TypeScript, and Tailwind CSS. Supports both Pomodoro technique and Guided Deep Work sessions. Features audio ticking, high-quality voice announcements, and Picture-in-Picture support on web.
+
+## Project Structure
+
+```
+flowmate/
+├── apps/
+│   ├── web/          # Next.js web application
+│   └── mobile/       # React Native (Expo) mobile app (coming soon)
+├── packages/
+│   └── shared/       # Shared business logic, types, and utilities
+```
 
 ## Features
 
@@ -94,19 +105,32 @@ Guided Deep Work mode uses structured check-in → focus → wrap-up cycles:
 
 ## Getting Started
 
-1. Install dependencies:
+### Prerequisites
+
+- Node.js 18+ and npm
+- For mobile development: Expo CLI and Expo Go app
+
+### Installation
+
 ```bash
+# Install all dependencies
 npm install
 ```
 
-2. Add your audio files to `/public/audio/countdown/` (or use the provided ones)
+### Development
 
-3. Run the development server:
+**Web App:**
 ```bash
 npm run dev
+# or
+npm run dev:web
 ```
+Open [http://localhost:3000](http://localhost:3000) in your browser
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+**Mobile App (Coming Soon):**
+```bash
+npm run dev:mobile
+```
 
 ## Usage
 
@@ -157,21 +181,21 @@ npm run build
 npm start
 ```
 
-## Project Structure
+## Monorepo Packages
 
-```
-flowmate/
-├── app/
-│   ├── page.tsx           # Main timer component
-│   ├── layout.tsx         # Root layout
-│   └── globals.css        # Global styles
-├── public/
-│   └── audio/
-│       ├── countdown/     # Voice announcements
-│       └── effects/       # Sound effects
-├── tailwind.config.ts     # Tailwind configuration
-└── package.json
-```
+### `@flowmate/web`
+Next.js web application with all features including Picture-in-Picture support.
+
+### `@flowmate/shared`
+Shared code used across all platforms:
+- TypeScript type definitions
+- Timer logic utilities
+- Statistics utilities
+- Audio configuration constants
+- Session configurations
+
+### `@flowmate/mobile` (Coming Soon)
+React Native mobile app with native audio, notifications, and widgets.
 
 ## License
 
