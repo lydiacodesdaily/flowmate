@@ -104,20 +104,12 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
         // For sessions <= 25 minutes: voice announcement every minute (we have m01-m24.mp3)
         // For sessions > 25 minutes: ding.mp3 every 5 minutes
         if (totalTime / 60 <= 25) {
-          // 25 minutes or less: announce every minute with voice
+          // 25 minutes or less: announce every minute with voice (no notifications)
           audioService.announceTimeRemaining(currentMinute);
-          notificationService.scheduleTimeRemainingNotification(
-            currentMinute,
-            currentSession.type
-          );
           lastAnnouncementMinuteRef.current = currentMinute;
         } else if (currentMinute % settings.announcementInterval === 0) {
-          // More than 25 minutes: ding every 5 minutes (or configured interval)
+          // More than 25 minutes: ding every 5 minutes (or configured interval, no notifications)
           audioService.announceSessionComplete(); // Play ding.mp3
-          notificationService.scheduleTimeRemainingNotification(
-            currentMinute,
-            currentSession.type
-          );
           lastAnnouncementMinuteRef.current = currentMinute;
         }
       }
