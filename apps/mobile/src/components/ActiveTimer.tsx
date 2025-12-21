@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Platform } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import type { Session } from '@flowmate/shared';
 import { useTimer } from '../hooks/useTimer';
 import { useKeepAwake } from '../hooks/useKeepAwake';
@@ -97,17 +98,26 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
 
       // Time announcements
       const settings = audioService.getSettings();
-      if (
-        currentMinute !== lastAnnouncementMinuteRef.current &&
-        currentMinute > 0 &&
-        currentMinute % settings.announcementInterval === 0
-      ) {
-        audioService.announceTimeRemaining(currentMinute);
-        notificationService.scheduleTimeRemainingNotification(
-          currentMinute,
-          currentSession.type
-        );
-        lastAnnouncementMinuteRef.current = currentMinute;
+      if (currentMinute !== lastAnnouncementMinuteRef.current && currentMinute > 0) {
+        // For sessions < 25 minutes: voice announcement every minute
+        // For sessions >= 25 minutes: ding.mp3 every 5 minutes
+        if (totalTime / 60 < 25) {
+          // Less than 25 minutes: announce every minute
+          audioService.announceTimeRemaining(currentMinute);
+          notificationService.scheduleTimeRemainingNotification(
+            currentMinute,
+            currentSession.type
+          );
+          lastAnnouncementMinuteRef.current = currentMinute;
+        } else if (currentMinute % settings.announcementInterval === 0) {
+          // 25+ minutes: ding every 5 minutes (or configured interval)
+          audioService.announceSessionComplete(); // Play ding.mp3
+          notificationService.scheduleTimeRemainingNotification(
+            currentMinute,
+            currentSession.type
+          );
+          lastAnnouncementMinuteRef.current = currentMinute;
+        }
       }
 
       // Minute change haptic
@@ -160,6 +170,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
 
   return (
     <View style={styles.container}>
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Text style={styles.backButtonText}>← Back</Text>
@@ -205,8 +216,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
+    paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    paddingBottom: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
     backgroundColor: '#fff',
