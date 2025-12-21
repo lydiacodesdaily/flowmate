@@ -44,7 +44,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
       await hapticService.success();
 
       // Audio announcement
-      await audioService.announceSessionComplete(session.type);
+      await audioService.announceSessionComplete();
 
       // Notification
       await notificationService.scheduleSessionCompleteNotification(session.type);
@@ -52,10 +52,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
       // Announce next session if not the last one
       if (sessionIndex < sessions.length - 1) {
         const nextSession = sessions[sessionIndex + 1];
-        await audioService.announceSessionStart(
-          nextSession.type,
-          nextSession.durationMinutes
-        );
+        await audioService.announceSessionStart(nextSession.type);
       }
     },
     onAllSessionsComplete: async () => {
@@ -105,7 +102,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
         currentMinute > 0 &&
         currentMinute % settings.announcementInterval === 0
       ) {
-        audioService.announceTimeRemaining(currentMinute, currentSession.type);
+        audioService.announceTimeRemaining(currentMinute);
         notificationService.scheduleTimeRemainingNotification(
           currentMinute,
           currentSession.type
@@ -123,10 +120,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
 
   const handleStart = async () => {
     if (currentSession) {
-      await audioService.announceSessionStart(
-        currentSession.type,
-        currentSession.durationMinutes
-      );
+      await audioService.announceSessionStart(currentSession.type);
       await notificationService.scheduleSessionStartNotification(
         currentSession.type,
         currentSession.durationMinutes

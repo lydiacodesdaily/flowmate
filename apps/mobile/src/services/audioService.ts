@@ -84,9 +84,7 @@ class AudioService {
     if (this.minuteAnnouncements.has(minute)) return;
 
     try {
-      const minuteStr = minute.toString().padStart(2, '0');
       const { sound } = await Audio.Sound.createAsync(
-        // Dynamically require based on minute number
         this.getMinuteAnnouncementPath(minute),
         { volume: this.settings.announcementVolume }
       );
@@ -148,7 +146,7 @@ class AudioService {
     }
   }
 
-  async announceTimeRemaining(minutes: number, sessionType: SessionType) {
+  async announceTimeRemaining(minutes: number) {
     if (this.settings.muteAll) return;
 
     // Load the announcement if not already loaded
@@ -164,7 +162,7 @@ class AudioService {
     }
   }
 
-  async announceSessionStart(sessionType: SessionType, durationMinutes: number) {
+  async announceSessionStart(sessionType: SessionType) {
     if (this.settings.muteAll) return;
 
     const soundKey = sessionType === 'focus' || sessionType === 'settle' ? 'focus' : 'break';
@@ -179,7 +177,7 @@ class AudioService {
     }
   }
 
-  async announceSessionComplete(sessionType: SessionType) {
+  async announceSessionComplete() {
     if (this.settings.muteAll) return;
 
     if (this.dingSound) {
