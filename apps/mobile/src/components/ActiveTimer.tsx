@@ -91,7 +91,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
   // Handle tick sounds and announcements
   useEffect(() => {
     if (status === 'running' && currentSession) {
-      const currentMinute = Math.floor(timeRemaining / 60);
+      const currentMinute = Math.ceil(timeRemaining / 60);
 
       // Play tick sound every second
       if (timeRemaining % 1 === 0 && timeRemaining > 0) {
@@ -101,10 +101,10 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
       // Time announcements
       const settings = audioService.getSettings();
       if (currentMinute !== lastAnnouncementMinuteRef.current && currentMinute > 0) {
-        // For sessions < 25 minutes: voice announcement every minute
-        // For sessions >= 25 minutes: ding.mp3 every 5 minutes
-        if (totalTime / 60 < 25) {
-          // Less than 25 minutes: announce every minute
+        // For sessions <= 25 minutes: voice announcement every minute (we have m01-m24.mp3)
+        // For sessions > 25 minutes: ding.mp3 every 5 minutes
+        if (totalTime / 60 <= 25) {
+          // 25 minutes or less: announce every minute with voice
           audioService.announceTimeRemaining(currentMinute);
           notificationService.scheduleTimeRemainingNotification(
             currentMinute,
@@ -112,7 +112,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
           );
           lastAnnouncementMinuteRef.current = currentMinute;
         } else if (currentMinute % settings.announcementInterval === 0) {
-          // 25+ minutes: ding every 5 minutes (or configured interval)
+          // More than 25 minutes: ding every 5 minutes (or configured interval)
           audioService.announceSessionComplete(); // Play ding.mp3
           notificationService.scheduleTimeRemainingNotification(
             currentMinute,
