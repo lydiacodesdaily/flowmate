@@ -42,7 +42,8 @@ export const GUIDED_CONFIGS: Record<GuidedType, Session[]> = {
     { type: 'settle', durationMinutes: 5 },
     { type: 'focus', durationMinutes: 25 },
     { type: 'break', durationMinutes: 5 },
-    { type: 'focus', durationMinutes: 25 }
+    { type: 'focus', durationMinutes: 20 },
+    { type: 'wrap', durationMinutes: 5 }
   ],
   'guided-90-pom': [
     { type: 'settle', durationMinutes: 5 },
@@ -50,7 +51,8 @@ export const GUIDED_CONFIGS: Record<GuidedType, Session[]> = {
     { type: 'break', durationMinutes: 5 },
     { type: 'focus', durationMinutes: 25 },
     { type: 'break', durationMinutes: 5 },
-    { type: 'focus', durationMinutes: 25 }
+    { type: 'focus', durationMinutes: 20 },
+    { type: 'wrap', durationMinutes: 5 }
   ],
   'guided-120-pom': [
     { type: 'settle', durationMinutes: 5 },
@@ -60,7 +62,7 @@ export const GUIDED_CONFIGS: Record<GuidedType, Session[]> = {
     { type: 'break', durationMinutes: 5 },
     { type: 'focus', durationMinutes: 25 },
     { type: 'break', durationMinutes: 5 },
-    { type: 'focus', durationMinutes: 25 },
+    { type: 'focus', durationMinutes: 20 },
     { type: 'wrap', durationMinutes: 5 }
   ],
   'guided-180-pom': [
@@ -75,7 +77,7 @@ export const GUIDED_CONFIGS: Record<GuidedType, Session[]> = {
     { type: 'break', durationMinutes: 5 },
     { type: 'focus', durationMinutes: 25 },
     { type: 'break', durationMinutes: 5 },
-    { type: 'focus', durationMinutes: 25 },
+    { type: 'focus', durationMinutes: 20 },
     { type: 'wrap', durationMinutes: 5 }
   ],
 
@@ -97,16 +99,18 @@ export const GUIDED_CONFIGS: Record<GuidedType, Session[]> = {
   ],
   'guided-120-deep': [
     { type: 'settle', durationMinutes: 5 },
-    { type: 'focus', durationMinutes: 55 },
-    { type: 'break', durationMinutes: 5 },
     { type: 'focus', durationMinutes: 50 },
+    { type: 'break', durationMinutes: 5 },
+    { type: 'focus', durationMinutes: 55 },
     { type: 'wrap', durationMinutes: 5 }
   ],
   'guided-180-deep': [
     { type: 'settle', durationMinutes: 5 },
-    { type: 'focus', durationMinutes: 85 },
+    { type: 'focus', durationMinutes: 50 },
     { type: 'break', durationMinutes: 5 },
-    { type: 'focus', durationMinutes: 80 },
+    { type: 'focus', durationMinutes: 50 },
+    { type: 'break', durationMinutes: 5 },
+    { type: 'focus', durationMinutes: 60 },
     { type: 'wrap', durationMinutes: 5 }
   ]
 };
