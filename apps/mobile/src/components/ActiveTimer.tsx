@@ -23,6 +23,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
   const insets = useSafeAreaInsets();
   const lastMinuteRef = useRef<number>(-1);
   const lastAnnouncementMinuteRef = useRef<number>(-1);
+  const lastAnnouncementSecondRef = useRef<number>(-1);
   const audioInitializedRef = useRef(false);
 
   const {
@@ -63,6 +64,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
       await audioService.announceAllComplete();
       lastMinuteRef.current = -1;
       lastAnnouncementMinuteRef.current = -1;
+      lastAnnouncementSecondRef.current = -1;
     },
   });
 
@@ -92,6 +94,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
   useEffect(() => {
     if (status === 'running' && currentSession) {
       const currentMinute = Math.ceil(timeRemaining / 60);
+      const currentSecond = Math.floor(timeRemaining);
 
       // Play tick sound every second
       if (timeRemaining % 1 === 0 && timeRemaining > 0) {
@@ -100,6 +103,8 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
 
       // Time announcements
       const settings = audioService.getSettings();
+
+      // Minute announcements (always check first)
       if (currentMinute !== lastAnnouncementMinuteRef.current && currentMinute > 0) {
         // For sessions <= 25 minutes: voice announcement every minute (we have m01-m24.mp3)
         // For sessions > 25 minutes: ding.mp3 every 5 minutes
@@ -114,13 +119,22 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
         }
       }
 
+      // Handle seconds countdown for last minute (<60 seconds, not at exactly 60)
+      if (currentSecond < 60 && currentSecond > 0) {
+        const secondsToAnnounce = [50, 40, 30, 20, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+        if (secondsToAnnounce.includes(currentSecond) && currentSecond !== lastAnnouncementSecondRef.current) {
+          audioService.announceSecondsRemaining(currentSecond);
+          lastAnnouncementSecondRef.current = currentSecond;
+        }
+      }
+
       // Minute change haptic
       if (currentMinute !== lastMinuteRef.current) {
         hapticService.light();
         lastMinuteRef.current = currentMinute;
       }
     }
-  }, [status, timeRemaining, currentSession]);
+  }, [status, timeRemaining, currentSession, totalTime]);
 
   const handleStart = async () => {
     if (currentSession) {
@@ -148,6 +162,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
     await hapticService.medium();
     lastMinuteRef.current = -1;
     lastAnnouncementMinuteRef.current = -1;
+    lastAnnouncementSecondRef.current = -1;
     reset();
   };
 

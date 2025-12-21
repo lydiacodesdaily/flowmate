@@ -7,6 +7,7 @@ class AudioService {
   private dingSound: Audio.Sound | null = null;
   private transitionSounds: Map<string, Audio.Sound> = new Map();
   private minuteAnnouncements: Map<number, Audio.Sound> = new Map();
+  private secondAnnouncements: Map<number, Audio.Sound> = new Map();
   private isAlternate = false;
   private settings: AudioSettings = {
     tickVolume: 0.5,
@@ -94,6 +95,22 @@ class AudioService {
     }
   }
 
+  async loadSecondAnnouncement(second: number) {
+    const validSeconds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50];
+    if (!validSeconds.includes(second)) return;
+    if (this.secondAnnouncements.has(second)) return;
+
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        this.getSecondAnnouncementPath(second),
+        { volume: this.settings.announcementVolume }
+      );
+      this.secondAnnouncements.set(second, sound);
+    } catch (error) {
+      console.error(`Failed to load second announcement for ${second}:`, error);
+    }
+  }
+
   private getMinuteAnnouncementPath(minute: number) {
     const minuteStr = minute.toString().padStart(2, '0');
     // Map minute numbers to their require paths
@@ -124,6 +141,28 @@ class AudioService {
       '24': require('../../assets/audio/countdown/minutes/m24.mp3'),
     };
     return paths[minuteStr];
+  }
+
+  private getSecondAnnouncementPath(second: number) {
+    const secondStr = second.toString().padStart(2, '0');
+    // Map second numbers to their require paths
+    const paths: { [key: string]: any } = {
+      '01': require('../../assets/audio/countdown/seconds/s01.mp3'),
+      '02': require('../../assets/audio/countdown/seconds/s02.mp3'),
+      '03': require('../../assets/audio/countdown/seconds/s03.mp3'),
+      '04': require('../../assets/audio/countdown/seconds/s04.mp3'),
+      '05': require('../../assets/audio/countdown/seconds/s05.mp3'),
+      '06': require('../../assets/audio/countdown/seconds/s06.mp3'),
+      '07': require('../../assets/audio/countdown/seconds/s07.mp3'),
+      '08': require('../../assets/audio/countdown/seconds/s08.mp3'),
+      '09': require('../../assets/audio/countdown/seconds/s09.mp3'),
+      '10': require('../../assets/audio/countdown/seconds/s10.mp3'),
+      '20': require('../../assets/audio/countdown/seconds/s20.mp3'),
+      '30': require('../../assets/audio/countdown/seconds/s30.mp3'),
+      '40': require('../../assets/audio/countdown/seconds/s40.mp3'),
+      '50': require('../../assets/audio/countdown/seconds/s50.mp3'),
+    };
+    return paths[secondStr];
   }
 
   async playTick(sessionType?: SessionType) {
@@ -158,6 +197,22 @@ class AudioService {
         await announcement.replayAsync();
       } catch (error) {
         console.error(`Failed to play minute announcement for ${minutes}:`, error);
+      }
+    }
+  }
+
+  async announceSecondsRemaining(seconds: number) {
+    if (this.settings.muteAll) return;
+
+    // Load the announcement if not already loaded
+    await this.loadSecondAnnouncement(seconds);
+
+    const announcement = this.secondAnnouncements.get(seconds);
+    if (announcement) {
+      try {
+        await announcement.replayAsync();
+      } catch (error) {
+        console.error(`Failed to play second announcement for ${seconds}:`, error);
       }
     }
   }
@@ -221,6 +276,10 @@ class AudioService {
       sound.setVolumeAsync(this.settings.announcementVolume);
     });
 
+    this.secondAnnouncements.forEach((sound) => {
+      sound.setVolumeAsync(this.settings.announcementVolume);
+    });
+
     this.transitionSounds.forEach((sound) => {
       sound.setVolumeAsync(this.settings.announcementVolume);
     });
@@ -249,6 +308,12 @@ class AudioService {
       await sound.unloadAsync();
     }
     this.minuteAnnouncements.clear();
+
+    // Cleanup all second announcements
+    for (const sound of this.secondAnnouncements.values()) {
+      await sound.unloadAsync();
+    }
+    this.secondAnnouncements.clear();
 
     // Cleanup transition sounds
     for (const sound of this.transitionSounds.values()) {
