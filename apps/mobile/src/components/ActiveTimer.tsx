@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,8 @@ import { useTimer } from '../hooks/useTimer';
 import { useKeepAwake } from '../hooks/useKeepAwake';
 import { TimerDisplay } from './TimerDisplay';
 import { TimerControls } from './TimerControls';
+import { TimerAdjustControls } from './TimerAdjustControls';
+import { AudioControls } from './AudioControls';
 import { ProgressBar } from './ProgressBar';
 import { SessionIndicators } from './SessionIndicators';
 import { audioService } from '../services/audioService';
@@ -26,6 +28,10 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
   const lastAnnouncementSecondRef = useRef<number>(-1);
   const audioInitializedRef = useRef(false);
 
+  // Audio settings state
+  const [muteAll, setMuteAll] = useState(false);
+  const [muteDuringBreaks, setMuteDuringBreaks] = useState(false);
+
   const {
     currentSessionIndex,
     currentSession,
@@ -38,6 +44,8 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
     resume,
     reset,
     skip,
+    addTime,
+    subtractTime,
   } = useTimer({
     sessions,
     onSessionComplete: async (session, sessionIndex) => {
@@ -177,6 +185,30 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
     onBack();
   };
 
+  const handleAddTime = async () => {
+    await hapticService.light();
+    addTime(300); // Add 5 minutes (300 seconds)
+  };
+
+  const handleSubtractTime = async () => {
+    await hapticService.light();
+    subtractTime(300); // Subtract 5 minutes (300 seconds)
+  };
+
+  const handleToggleMuteAll = async () => {
+    await hapticService.selection();
+    const newMuteAll = !muteAll;
+    setMuteAll(newMuteAll);
+    audioService.updateSettings({ muteAll: newMuteAll });
+  };
+
+  const handleToggleMuteDuringBreaks = async () => {
+    await hapticService.selection();
+    const newMuteDuringBreaks = !muteDuringBreaks;
+    setMuteDuringBreaks(newMuteDuringBreaks);
+    audioService.updateSettings({ muteDuringBreaks: newMuteDuringBreaks });
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -199,12 +231,25 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
             sessionType={currentSession?.type}
           />
 
+          <TimerAdjustControls
+            onAddTime={handleAddTime}
+            onSubtractTime={handleSubtractTime}
+            disabled={status === 'completed'}
+          />
+
           <View style={styles.progressContainer}>
             <ProgressBar progress={progress} />
           </View>
         </View>
 
         <View style={styles.controlsContainer}>
+          <AudioControls
+            muteAll={muteAll}
+            muteDuringBreaks={muteDuringBreaks}
+            onToggleMuteAll={handleToggleMuteAll}
+            onToggleMuteDuringBreaks={handleToggleMuteDuringBreaks}
+          />
+
           <TimerControls
             status={status}
             onStart={handleStart}

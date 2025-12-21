@@ -21,6 +21,8 @@ interface UseTimerReturn {
   resume: () => void;
   reset: () => void;
   skip: () => void;
+  addTime: (seconds: number) => void;
+  subtractTime: (seconds: number) => void;
 }
 
 export function useTimer({
@@ -149,6 +151,28 @@ export function useTimer({
     }
   }, [currentSessionIndex, sessions, onAllSessionsComplete]);
 
+  const addTime = useCallback((seconds: number) => {
+    setTimeRemaining((prev) => prev + seconds);
+
+    // If timer is running, update the end time
+    if (status === 'running' && endTimeRef.current) {
+      endTimeRef.current += seconds * 1000;
+    }
+  }, [status]);
+
+  const subtractTime = useCallback((seconds: number) => {
+    setTimeRemaining((prev) => {
+      const newTime = Math.max(0, prev - seconds);
+
+      // If timer is running, update the end time
+      if (status === 'running' && endTimeRef.current) {
+        endTimeRef.current = Date.now() + newTime * 1000;
+      }
+
+      return newTime;
+    });
+  }, [status]);
+
   return {
     currentSessionIndex,
     currentSession,
@@ -161,5 +185,7 @@ export function useTimer({
     resume,
     reset,
     skip,
+    addTime,
+    subtractTime,
   };
 }
