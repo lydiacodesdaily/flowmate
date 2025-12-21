@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Session } from '@flowmate/shared';
 import { useTimer } from '../hooks/useTimer';
 import { useKeepAwake } from '../hooks/useKeepAwake';
@@ -19,6 +20,7 @@ interface ActiveTimerProps {
 }
 
 export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
+  const insets = useSafeAreaInsets();
   const lastMinuteRef = useRef<number>(-1);
   const lastAnnouncementMinuteRef = useRef<number>(-1);
   const audioInitializedRef = useRef(false);
@@ -171,7 +173,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
@@ -216,7 +218,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 16,
     paddingBottom: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,

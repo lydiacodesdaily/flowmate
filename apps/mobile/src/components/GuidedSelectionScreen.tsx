@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { GuidedType, Session } from '@flowmate/shared';
 import { GUIDED_CONFIGS } from '@flowmate/shared';
 
@@ -29,10 +30,11 @@ const GUIDED_OPTIONS: Record<GuidedStyle, Array<{ type: GuidedType; title: strin
 
 export function GuidedSelectionScreen({ onSelectConfig, onBack }: GuidedSelectionScreenProps) {
   const [style, setStyle] = useState<GuidedStyle>('pom');
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>

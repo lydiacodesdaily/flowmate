@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PomodoroType, Session } from '@flowmate/shared';
 import { POMODORO_CONFIGS } from '@flowmate/shared';
 
@@ -16,9 +17,11 @@ const POMODORO_OPTIONS: Array<{ type: PomodoroType; title: string; description: 
 ];
 
 export function PomodoroSelectionScreen({ onSelectConfig, onBack }: PomodoroSelectionScreenProps) {
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>

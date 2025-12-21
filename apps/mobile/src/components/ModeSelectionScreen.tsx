@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ModeCard } from './ModeCard';
 import type { TimerMode } from '@flowmate/shared';
 
@@ -8,8 +9,16 @@ interface ModeSelectionScreenProps {
 }
 
 export function ModeSelectionScreen({ onSelectMode }: ModeSelectionScreenProps) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[
+        styles.contentContainer,
+        { paddingTop: insets.top + 20 }
+      ]}
+    >
       <Text style={styles.title}>Choose Your Focus Mode</Text>
       <Text style={styles.subtitle}>Select a timer mode to begin your session</Text>
 

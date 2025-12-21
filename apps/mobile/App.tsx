@@ -1,13 +1,16 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TimerScreen } from './src/screens/TimerScreen';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      <TimerScreen />
-    </View>
+    <SafeAreaProvider>
+      <View style={styles.container}>
+        <StatusBar style="auto" />
+        <TimerScreen />
+      </View>
+    </SafeAreaProvider>
   );
 }
 
