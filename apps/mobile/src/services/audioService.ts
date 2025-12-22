@@ -1,13 +1,14 @@
-import { Audio } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import type { AudioPlayer } from 'expo-audio';
 import type { AudioSettings, SessionType } from '@flowmate/shared';
 
 class AudioService {
-  private tickSound: Audio.Sound | null = null;
-  private alternateTickSound: Audio.Sound | null = null;
-  private dingSound: Audio.Sound | null = null;
-  private transitionSounds: Map<string, Audio.Sound> = new Map();
-  private minuteAnnouncements: Map<number, Audio.Sound> = new Map();
-  private secondAnnouncements: Map<number, Audio.Sound> = new Map();
+  private tickSound: AudioPlayer | null = null;
+  private alternateTickSound: AudioPlayer | null = null;
+  private dingSound: AudioPlayer | null = null;
+  private transitionSounds: Map<string, AudioPlayer> = new Map();
+  private minuteAnnouncements: Map<number, AudioPlayer> = new Map();
+  private secondAnnouncements: Map<number, AudioPlayer> = new Map();
   private isAlternate = false;
   private settings: AudioSettings = {
     tickVolume: 0.5,
@@ -21,11 +22,8 @@ class AudioService {
   async initialize() {
     try {
       // Set audio mode for mixing with other apps
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: true,
+      await setAudioModeAsync({
+        playsInSilentMode: true,
       });
     } catch (error) {
       console.error('Failed to initialize audio:', error);
@@ -35,26 +33,24 @@ class AudioService {
   async loadTickSounds() {
     try {
       // Load primary tick sound
-      const { sound: tick1 } = await Audio.Sound.createAsync(
-        require('../../assets/audio/effects/tick1.mp3'),
-        { volume: this.settings.tickVolume }
-      );
+      const tick1 = createAudioPlayer(require('../../assets/audio/effects/tick1.mp3'), {
+        keepAudioSessionActive: true,
+      });
+      tick1.volume = this.settings.tickVolume;
       this.tickSound = tick1;
 
       // Load alternate tick sound for alternating mode
       if (this.settings.tickSound === 'alternating') {
-        const { sound: tick2 } = await Audio.Sound.createAsync(
-          require('../../assets/audio/effects/tok1.mp3'),
-          { volume: this.settings.tickVolume }
-        );
+        const tick2 = createAudioPlayer(require('../../assets/audio/effects/tok1.mp3'), {
+          keepAudioSessionActive: true,
+        });
+        tick2.volume = this.settings.tickVolume;
         this.alternateTickSound = tick2;
       }
 
       // Load ding sound for session completion
-      const { sound: ding } = await Audio.Sound.createAsync(
-        require('../../assets/audio/effects/ding.mp3'),
-        { volume: this.settings.announcementVolume }
-      );
+      const ding = createAudioPlayer(require('../../assets/audio/effects/ding.mp3'));
+      ding.volume = this.settings.announcementVolume;
       this.dingSound = ding;
     } catch (error) {
       console.error('Failed to load tick sounds:', error);
@@ -70,9 +66,8 @@ class AudioService {
       ];
 
       for (const { key, file } of transitions) {
-        const { sound } = await Audio.Sound.createAsync(file, {
-          volume: this.settings.announcementVolume,
-        });
+        const sound = createAudioPlayer(file);
+        sound.volume = this.settings.announcementVolume;
         this.transitionSounds.set(key, sound);
       }
     } catch (error) {
@@ -85,10 +80,8 @@ class AudioService {
     if (this.minuteAnnouncements.has(minute)) return;
 
     try {
-      const { sound } = await Audio.Sound.createAsync(
-        this.getMinuteAnnouncementPath(minute),
-        { volume: this.settings.announcementVolume }
-      );
+      const sound = createAudioPlayer(this.getMinuteAnnouncementPath(minute));
+      sound.volume = this.settings.announcementVolume;
       this.minuteAnnouncements.set(minute, sound);
     } catch (error) {
       console.error(`Failed to load minute announcement for ${minute}:`, error);
@@ -101,10 +94,8 @@ class AudioService {
     if (this.secondAnnouncements.has(second)) return;
 
     try {
-      const { sound } = await Audio.Sound.createAsync(
-        this.getSecondAnnouncementPath(second),
-        { volume: this.settings.announcementVolume }
-      );
+      const sound = createAudioPlayer(this.getSecondAnnouncementPath(second));
+      sound.volume = this.settings.announcementVolume;
       this.secondAnnouncements.set(second, sound);
     } catch (error) {
       console.error(`Failed to load second announcement for ${second}:`, error);
@@ -175,10 +166,12 @@ class AudioService {
         this.isAlternate = !this.isAlternate;
 
         if (soundToPlay) {
-          await soundToPlay.replayAsync();
+          soundToPlay.currentTime = 0;
+          soundToPlay.play();
         }
       } else if (this.tickSound) {
-        await this.tickSound.replayAsync();
+        this.tickSound.currentTime = 0;
+        this.tickSound.play();
       }
     } catch (error) {
       console.error('Failed to play tick:', error);
@@ -194,7 +187,8 @@ class AudioService {
     const announcement = this.minuteAnnouncements.get(minutes);
     if (announcement) {
       try {
-        await announcement.replayAsync();
+        announcement.currentTime = 0;
+        announcement.play();
       } catch (error) {
         console.error(`Failed to play minute announcement for ${minutes}:`, error);
       }
@@ -210,7 +204,8 @@ class AudioService {
     const announcement = this.secondAnnouncements.get(seconds);
     if (announcement) {
       try {
-        await announcement.replayAsync();
+        announcement.currentTime = 0;
+        announcement.play();
       } catch (error) {
         console.error(`Failed to play second announcement for ${seconds}:`, error);
       }
@@ -225,7 +220,8 @@ class AudioService {
 
     if (sound) {
       try {
-        await sound.replayAsync();
+        sound.currentTime = 0;
+        sound.play();
       } catch (error) {
         console.error('Failed to play session start sound:', error);
       }
@@ -237,7 +233,8 @@ class AudioService {
 
     if (this.dingSound) {
       try {
-        await this.dingSound.replayAsync();
+        this.dingSound.currentTime = 0;
+        this.dingSound.play();
       } catch (error) {
         console.error('Failed to play ding sound:', error);
       }
@@ -250,7 +247,8 @@ class AudioService {
     const sound = this.transitionSounds.get('done');
     if (sound) {
       try {
-        await sound.replayAsync();
+        sound.currentTime = 0;
+        sound.play();
       } catch (error) {
         console.error('Failed to play completion sound:', error);
       }
@@ -262,26 +260,26 @@ class AudioService {
 
     // Update volume of existing sounds
     if (this.tickSound) {
-      this.tickSound.setVolumeAsync(this.settings.tickVolume);
+      this.tickSound.volume = this.settings.tickVolume;
     }
     if (this.alternateTickSound) {
-      this.alternateTickSound.setVolumeAsync(this.settings.tickVolume);
+      this.alternateTickSound.volume = this.settings.tickVolume;
     }
     if (this.dingSound) {
-      this.dingSound.setVolumeAsync(this.settings.announcementVolume);
+      this.dingSound.volume = this.settings.announcementVolume;
     }
 
     // Update volumes for all loaded announcements
     this.minuteAnnouncements.forEach((sound) => {
-      sound.setVolumeAsync(this.settings.announcementVolume);
+      sound.volume = this.settings.announcementVolume;
     });
 
     this.secondAnnouncements.forEach((sound) => {
-      sound.setVolumeAsync(this.settings.announcementVolume);
+      sound.volume = this.settings.announcementVolume;
     });
 
     this.transitionSounds.forEach((sound) => {
-      sound.setVolumeAsync(this.settings.announcementVolume);
+      sound.volume = this.settings.announcementVolume;
     });
   }
 
@@ -291,33 +289,33 @@ class AudioService {
 
   async cleanup() {
     if (this.tickSound) {
-      await this.tickSound.unloadAsync();
+      this.tickSound.remove();
       this.tickSound = null;
     }
     if (this.alternateTickSound) {
-      await this.alternateTickSound.unloadAsync();
+      this.alternateTickSound.remove();
       this.alternateTickSound = null;
     }
     if (this.dingSound) {
-      await this.dingSound.unloadAsync();
+      this.dingSound.remove();
       this.dingSound = null;
     }
 
     // Cleanup all minute announcements
     for (const sound of this.minuteAnnouncements.values()) {
-      await sound.unloadAsync();
+      sound.remove();
     }
     this.minuteAnnouncements.clear();
 
     // Cleanup all second announcements
     for (const sound of this.secondAnnouncements.values()) {
-      await sound.unloadAsync();
+      sound.remove();
     }
     this.secondAnnouncements.clear();
 
     // Cleanup transition sounds
     for (const sound of this.transitionSounds.values()) {
-      await sound.unloadAsync();
+      sound.remove();
     }
     this.transitionSounds.clear();
   }
