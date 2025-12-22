@@ -6,9 +6,10 @@ import type { TimerMode } from '@flowmate/shared';
 
 interface ModeSelectionScreenProps {
   onSelectMode: (mode: TimerMode) => void;
+  onViewStats: () => void;
 }
 
-export function ModeSelectionScreen({ onSelectMode }: ModeSelectionScreenProps) {
+export function ModeSelectionScreen({ onSelectMode, onViewStats }: ModeSelectionScreenProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -45,6 +46,14 @@ export function ModeSelectionScreen({ onSelectMode }: ModeSelectionScreenProps) 
           description="Your own duration"
           color="#8E8E93"
           onPress={() => onSelectMode('custom')}
+        />
+
+        <ModeCard
+          icon="📊"
+          title="Stats"
+          description="View your progress and streaks"
+          color="#8E8E93"
+          onPress={onViewStats}
         />
       </View>
     </ScrollView>

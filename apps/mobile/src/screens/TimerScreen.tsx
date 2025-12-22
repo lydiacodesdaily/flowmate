@@ -6,8 +6,9 @@ import { PomodoroSelectionScreen } from '../components/PomodoroSelectionScreen';
 import { GuidedSelectionScreen } from '../components/GuidedSelectionScreen';
 import { CustomTimerSelectionScreen } from '../components/CustomTimerSelectionScreen';
 import { ActiveTimer } from '../components/ActiveTimer';
+import { StatsScreen } from './StatsScreen';
 
-type Screen = 'mode-select' | 'pomodoro-select' | 'guided-select' | 'custom-select' | 'timer';
+type Screen = 'mode-select' | 'pomodoro-select' | 'guided-select' | 'custom-select' | 'timer' | 'stats';
 
 export function TimerScreen() {
   const [screen, setScreen] = useState<Screen>('mode-select');
@@ -46,10 +47,21 @@ export function TimerScreen() {
     setSessions([]);
   };
 
+  const handleViewStats = () => {
+    setScreen('stats');
+  };
+
+  const handleStatsBack = () => {
+    setScreen('mode-select');
+  };
+
   return (
     <View style={styles.container}>
       {screen === 'mode-select' && (
-        <ModeSelectionScreen onSelectMode={handleModeSelect} />
+        <ModeSelectionScreen
+          onSelectMode={handleModeSelect}
+          onViewStats={handleViewStats}
+        />
       )}
 
       {screen === 'pomodoro-select' && (
@@ -75,6 +87,10 @@ export function TimerScreen() {
 
       {screen === 'timer' && (
         <ActiveTimer sessions={sessions} onBack={handleBack} />
+      )}
+
+      {screen === 'stats' && (
+        <StatsScreen onBack={handleStatsBack} />
       )}
     </View>
   );
