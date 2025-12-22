@@ -166,11 +166,11 @@ class AudioService {
         this.isAlternate = !this.isAlternate;
 
         if (soundToPlay) {
-          soundToPlay.currentTime = 0;
+          await soundToPlay.seekTo(0);
           soundToPlay.play();
         }
       } else if (this.tickSound) {
-        this.tickSound.currentTime = 0;
+        await this.tickSound.seekTo(0);
         this.tickSound.play();
       }
     } catch (error) {
@@ -187,7 +187,7 @@ class AudioService {
     const announcement = this.minuteAnnouncements.get(minutes);
     if (announcement) {
       try {
-        announcement.currentTime = 0;
+        await announcement.seekTo(0);
         announcement.play();
       } catch (error) {
         console.error(`Failed to play minute announcement for ${minutes}:`, error);
@@ -204,7 +204,7 @@ class AudioService {
     const announcement = this.secondAnnouncements.get(seconds);
     if (announcement) {
       try {
-        announcement.currentTime = 0;
+        await announcement.seekTo(0);
         announcement.play();
       } catch (error) {
         console.error(`Failed to play second announcement for ${seconds}:`, error);
@@ -220,7 +220,7 @@ class AudioService {
 
     if (sound) {
       try {
-        sound.currentTime = 0;
+        await sound.seekTo(0);
         sound.play();
       } catch (error) {
         console.error('Failed to play session start sound:', error);
@@ -233,7 +233,7 @@ class AudioService {
 
     if (this.dingSound) {
       try {
-        this.dingSound.currentTime = 0;
+        await this.dingSound.seekTo(0);
         this.dingSound.play();
       } catch (error) {
         console.error('Failed to play ding sound:', error);
@@ -247,7 +247,7 @@ class AudioService {
     const sound = this.transitionSounds.get('done');
     if (sound) {
       try {
-        sound.currentTime = 0;
+        await sound.seekTo(0);
         sound.play();
       } catch (error) {
         console.error('Failed to play completion sound:', error);
