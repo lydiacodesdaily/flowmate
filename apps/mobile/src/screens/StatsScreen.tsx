@@ -5,12 +5,9 @@ import { statsService } from '../services/statsService';
 import { formatFocusTime } from '@flowmate/shared';
 import type { UserStats, DailyStat } from '@flowmate/shared';
 import { WeeklyChart } from '../components/WeeklyChart';
+import type { StatsScreenProps } from '../navigation/types';
 
-interface StatsScreenProps {
-  onBack: () => void;
-}
-
-export function StatsScreen({ onBack }: StatsScreenProps) {
+export function StatsScreen({ navigation }: StatsScreenProps) {
   const insets = useSafeAreaInsets();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [todayStats, setTodayStats] = useState<DailyStat | null>(null);
@@ -58,7 +55,7 @@ export function StatsScreen({ onBack }: StatsScreenProps) {
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backButtonText}>← back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>your progress</Text>

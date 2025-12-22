@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Modal, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { Session } from '@flowmate/shared';
 import { useTimer } from '../hooks/useTimer';
 import { useKeepAwake } from '../hooks/useKeepAwake';
 import { TimerDisplay } from './TimerDisplay';
@@ -15,13 +14,10 @@ import { audioService } from '../services/audioService';
 import { statsService } from '../services/statsService';
 import { hapticService } from '../services/hapticService';
 import { notificationService } from '../services/notificationService';
+import type { ActiveTimerScreenProps } from '../navigation/types';
 
-interface ActiveTimerProps {
-  sessions: Session[];
-  onBack: () => void;
-}
-
-export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
+export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
+  const { sessions } = route.params;
   const insets = useSafeAreaInsets();
   const lastMinuteRef = useRef<number>(-1);
   const lastAnnouncementMinuteRef = useRef<number>(-1);
@@ -183,7 +179,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
   const handleBack = async () => {
     await hapticService.selection();
     await notificationService.cancelAllNotifications();
-    onBack();
+    navigation.navigate('ModeSelection');
   };
 
   const handleAddTime = async () => {

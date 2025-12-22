@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Keyboard } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Session } from '@flowmate/shared';
-
-interface CustomTimerSelectionScreenProps {
-  onSelectConfig: (sessions: Session[]) => void;
-  onBack: () => void;
-}
+import type { CustomSelectionScreenProps } from '../navigation/types';
 
 const QUICK_PRESETS = [
   { minutes: 15, label: '15 min' },
@@ -14,7 +10,7 @@ const QUICK_PRESETS = [
   { minutes: 45, label: '45 min' },
 ];
 
-export function CustomTimerSelectionScreen({ onSelectConfig, onBack }: CustomTimerSelectionScreenProps) {
+export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreenProps) {
   const insets = useSafeAreaInsets();
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
@@ -25,7 +21,7 @@ export function CustomTimerSelectionScreen({ onSelectConfig, onBack }: CustomTim
 
   const handlePresetSelect = (minutes: number) => {
     const sessions = createCustomSession(minutes);
-    onSelectConfig(sessions);
+    navigation.navigate('ActiveTimer', { sessions });
   };
 
   const handleCustomSubmit = () => {
@@ -48,7 +44,7 @@ export function CustomTimerSelectionScreen({ onSelectConfig, onBack }: CustomTim
 
     Keyboard.dismiss();
     const sessions = createCustomSession(minutes);
-    onSelectConfig(sessions);
+    navigation.navigate('ActiveTimer', { sessions });
   };
 
   const handleInputChange = (text: string) => {
@@ -59,7 +55,7 @@ export function CustomTimerSelectionScreen({ onSelectConfig, onBack }: CustomTim
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
       </View>

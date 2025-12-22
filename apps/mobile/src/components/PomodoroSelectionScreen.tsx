@@ -1,13 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { PomodoroType, Session } from '@flowmate/shared';
+import type { PomodoroType } from '@flowmate/shared';
 import { POMODORO_CONFIGS } from '@flowmate/shared';
-
-interface PomodoroSelectionScreenProps {
-  onSelectConfig: (type: PomodoroType, sessions: Session[]) => void;
-  onBack: () => void;
-}
+import type { PomodoroSelectionScreenProps } from '../navigation/types';
 
 const POMODORO_OPTIONS: Array<{ type: PomodoroType; title: string; description: string }> = [
   { type: '1pom', title: '1 Pomodoro', description: '25 minutes of focused work' },
@@ -16,13 +12,13 @@ const POMODORO_OPTIONS: Array<{ type: PomodoroType; title: string; description: 
   { type: '5pom', title: '5 Pomodoros', description: '125 min focus with breaks' },
 ];
 
-export function PomodoroSelectionScreen({ onSelectConfig, onBack }: PomodoroSelectionScreenProps) {
+export function PomodoroSelectionScreen({ navigation }: PomodoroSelectionScreenProps) {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
       </View>
@@ -35,7 +31,7 @@ export function PomodoroSelectionScreen({ onSelectConfig, onBack }: PomodoroSele
           <TouchableOpacity
             key={type}
             style={styles.optionCard}
-            onPress={() => onSelectConfig(type, POMODORO_CONFIGS[type])}
+            onPress={() => navigation.navigate('ActiveTimer', { sessions: POMODORO_CONFIGS[type] })}
             activeOpacity={0.85}
           >
             <View style={styles.optionHeader}>

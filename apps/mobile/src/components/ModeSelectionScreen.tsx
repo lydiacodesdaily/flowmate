@@ -2,14 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ModeCard } from './ModeCard';
-import type { TimerMode } from '@flowmate/shared';
+import type { ModeSelectionScreenProps } from '../navigation/types';
 
-interface ModeSelectionScreenProps {
-  onSelectMode: (mode: TimerMode) => void;
-  onViewStats: () => void;
-}
-
-export function ModeSelectionScreen({ onSelectMode, onViewStats }: ModeSelectionScreenProps) {
+export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -29,7 +24,7 @@ export function ModeSelectionScreen({ onSelectMode, onViewStats }: ModeSelection
           title="Pomodoro"
           description="25-minute focus with short breaks"
           color="#8E8E93"
-          onPress={() => onSelectMode('pomodoro')}
+          onPress={() => navigation.navigate('PomodoroSelection')}
         />
 
         <ModeCard
@@ -37,7 +32,7 @@ export function ModeSelectionScreen({ onSelectMode, onViewStats }: ModeSelection
           title="Guided"
           description="Settle, focus, and wrap periods"
           color="#8E8E93"
-          onPress={() => onSelectMode('guided')}
+          onPress={() => navigation.navigate('GuidedSelection')}
         />
 
         <ModeCard
@@ -45,7 +40,7 @@ export function ModeSelectionScreen({ onSelectMode, onViewStats }: ModeSelection
           title="Custom"
           description="Your own duration"
           color="#8E8E93"
-          onPress={() => onSelectMode('custom')}
+          onPress={() => navigation.navigate('CustomSelection')}
         />
 
         <ModeCard
@@ -53,7 +48,7 @@ export function ModeSelectionScreen({ onSelectMode, onViewStats }: ModeSelection
           title="Stats"
           description="View your progress and streaks"
           color="#8E8E93"
-          onPress={onViewStats}
+          onPress={() => navigation.navigate('Stats')}
         />
       </View>
     </ScrollView>

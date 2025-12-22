@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { GuidedType, Session } from '@flowmate/shared';
+import type { GuidedType } from '@flowmate/shared';
 import { GUIDED_CONFIGS } from '@flowmate/shared';
-
-interface GuidedSelectionScreenProps {
-  onSelectConfig: (type: GuidedType, sessions: Session[]) => void;
-  onBack: () => void;
-}
+import type { GuidedSelectionScreenProps } from '../navigation/types';
 
 type GuidedStyle = 'pom' | 'deep';
 
@@ -28,14 +24,14 @@ const GUIDED_OPTIONS: Record<GuidedStyle, Array<{ type: GuidedType; title: strin
   ],
 };
 
-export function GuidedSelectionScreen({ onSelectConfig, onBack }: GuidedSelectionScreenProps) {
+export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps) {
   const [style, setStyle] = useState<GuidedStyle>('pom');
   const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
       </View>
@@ -69,7 +65,7 @@ export function GuidedSelectionScreen({ onSelectConfig, onBack }: GuidedSelectio
           <TouchableOpacity
             key={type}
             style={styles.optionCard}
-            onPress={() => onSelectConfig(type, GUIDED_CONFIGS[type])}
+            onPress={() => navigation.navigate('ActiveTimer', { sessions: GUIDED_CONFIGS[type] })}
             activeOpacity={0.85}
           >
             <View style={styles.optionHeader}>
