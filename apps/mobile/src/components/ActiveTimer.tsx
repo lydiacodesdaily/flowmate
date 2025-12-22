@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Modal, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Session } from '@flowmate/shared';
@@ -31,6 +31,7 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
   // Audio settings state
   const [muteAll, setMuteAll] = useState(false);
   const [muteDuringBreaks, setMuteDuringBreaks] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const {
     currentSessionIndex,
@@ -209,15 +210,26 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
     audioService.updateSettings({ muteDuringBreaks: newMuteDuringBreaks });
   };
 
+  const handleToggleSettings = async () => {
+    await hapticService.selection();
+    setShowSettings(!showSettings);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+
+      {/* Minimal header with back and settings */}
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
+          <Text style={styles.headerButtonText}>←</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleToggleSettings} style={styles.headerButton}>
+          <Text style={styles.headerButtonText}>⋯</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Main content - centered and spacious */}
       <View style={styles.content}>
         <SessionIndicators
           sessions={sessions}
@@ -231,25 +243,12 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
             sessionType={currentSession?.type}
           />
 
-          <TimerAdjustControls
-            onAddTime={handleAddTime}
-            onSubtractTime={handleSubtractTime}
-            disabled={status === 'completed'}
-          />
-
           <View style={styles.progressContainer}>
             <ProgressBar progress={progress} />
           </View>
         </View>
 
         <View style={styles.controlsContainer}>
-          <AudioControls
-            muteAll={muteAll}
-            muteDuringBreaks={muteDuringBreaks}
-            onToggleMuteAll={handleToggleMuteAll}
-            onToggleMuteDuringBreaks={handleToggleMuteDuringBreaks}
-          />
-
           <TimerControls
             status={status}
             onStart={handleStart}
@@ -260,6 +259,47 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
           />
         </View>
       </View>
+
+      {/* Settings modal - hidden secondary controls */}
+      <Modal
+        visible={showSettings}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleToggleSettings}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={handleToggleSettings}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Settings</Text>
+
+            <AudioControls
+              muteAll={muteAll}
+              muteDuringBreaks={muteDuringBreaks}
+              onToggleMuteAll={handleToggleMuteAll}
+              onToggleMuteDuringBreaks={handleToggleMuteDuringBreaks}
+            />
+
+            <View style={styles.modalDivider} />
+
+            <Text style={styles.modalSectionTitle}>Adjust Time</Text>
+            <TimerAdjustControls
+              onAddTime={handleAddTime}
+              onSubtractTime={handleSubtractTime}
+              disabled={status === 'completed'}
+            />
+
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={handleToggleSettings}
+            >
+              <Text style={styles.modalCloseButtonText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -267,37 +307,90 @@ export function ActiveTimer({ sessions, onBack }: ActiveTimerProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#FAFAFA',
   },
   header: {
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+    paddingHorizontal: 20,
+    backgroundColor: 'transparent',
   },
-  backButton: {
-    paddingVertical: 8,
+  headerButton: {
+    padding: 12,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  backButtonText: {
-    fontSize: 16,
-    color: '#E94B3C',
-    fontWeight: '600',
+  headerButtonText: {
+    fontSize: 24,
+    color: '#8E8E93',
+    fontWeight: '300',
   },
   content: {
     flex: 1,
-    justifyContent: 'space-between',
+    paddingTop: 16,
   },
   timerContainer: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    minHeight: 0,
   },
   progressContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+    width: '100%',
+    marginTop: 40,
   },
   controlsContainer: {
     paddingBottom: 40,
+    paddingTop: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FAFAFA',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 32,
+    paddingBottom: 48,
+    paddingHorizontal: 32,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '400',
+    color: '#8E8E93',
+    marginBottom: 28,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  modalSectionTitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#A0A0A0',
+    marginBottom: 16,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+  modalDivider: {
+    height: 1,
+    backgroundColor: '#EBEBF0',
+    marginVertical: 28,
+  },
+  modalCloseButton: {
+    marginTop: 32,
+    paddingVertical: 16,
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalCloseButtonText: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#8E8E93',
+    letterSpacing: 0.3,
   },
 });

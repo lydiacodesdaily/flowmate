@@ -21,26 +21,27 @@ export function PomodoroSelectionScreen({ onSelectConfig, onBack }: PomodoroSele
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Pomodoro Timer</Text>
-        <Text style={styles.subtitle}>Classic 25-minute focus sessions</Text>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>pomodoro</Text>
+        <Text style={styles.subtitle}>25-minute focus sessions</Text>
+
         {POMODORO_OPTIONS.map(({ type, title, description }) => (
           <TouchableOpacity
             key={type}
             style={styles.optionCard}
             onPress={() => onSelectConfig(type, POMODORO_CONFIGS[type])}
-            activeOpacity={0.7}
+            activeOpacity={0.85}
           >
             <View style={styles.optionHeader}>
               <Text style={styles.optionTitle}>{title}</Text>
               <Text style={styles.optionDuration}>
-                {POMODORO_CONFIGS[type].reduce((sum, s) => sum + s.durationMinutes, 0)} min
+                {POMODORO_CONFIGS[type].reduce((sum, s) => sum + s.durationMinutes, 0)}m
               </Text>
             </View>
             <Text style={styles.optionDescription}>{description}</Text>
@@ -65,50 +66,52 @@ export function PomodoroSelectionScreen({ onSelectConfig, onBack }: PomodoroSele
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FAFAFA',
   },
   header: {
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+    backgroundColor: 'transparent',
   },
   backButton: {
-    marginBottom: 16,
+    padding: 12,
+    minWidth: 44,
   },
   backText: {
-    fontSize: 16,
-    color: '#e74c3c',
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 24,
+    color: '#8E8E93',
+    fontWeight: '300',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: 32,
+    paddingTop: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '300',
+    color: '#3A3A3C',
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 15,
+    fontWeight: '300',
+    color: '#A0A0A0',
+    marginBottom: 32,
+    textAlign: 'center',
+    letterSpacing: 0.8,
   },
   optionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#e74c3c',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#EBEBF0',
+    padding: 24,
+    marginBottom: 12,
   },
   optionHeader: {
     flexDirection: 'row',
@@ -117,34 +120,38 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   optionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 18,
+    fontWeight: '400',
+    color: '#3A3A3C',
+    letterSpacing: 0.2,
   },
   optionDuration: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#e74c3c',
+    fontSize: 15,
+    fontWeight: '300',
+    color: '#8E8E93',
+    letterSpacing: 0.2,
   },
   optionDescription: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
+    fontWeight: '300',
+    color: '#8E8E93',
+    marginBottom: 16,
+    letterSpacing: 0.2,
   },
   sessionsPreview: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
     flexWrap: 'wrap',
   },
   sessionDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   focusDot: {
-    backgroundColor: '#e74c3c',
+    backgroundColor: '#A0A0A0',
   },
   breakDot: {
-    backgroundColor: '#27ae60',
+    backgroundColor: '#C7C7CC',
   },
 });

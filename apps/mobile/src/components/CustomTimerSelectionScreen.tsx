@@ -58,12 +58,10 @@ export function CustomTimerSelectionScreen({ onSelectConfig, onBack }: CustomTim
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Custom Timer</Text>
-        <Text style={styles.subtitle}>Set your own duration</Text>
       </View>
 
       <ScrollView
@@ -71,16 +69,16 @@ export function CustomTimerSelectionScreen({ onSelectConfig, onBack }: CustomTim
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>Enter minutes</Text>
-          <Text style={styles.inputHint}>e.g., 15, 45, 120</Text>
+        <Text style={styles.title}>your own pace</Text>
+        <Text style={styles.subtitle}>set any duration you need</Text>
 
+        <View style={styles.inputSection}>
           <TextInput
             style={[styles.input, error ? styles.inputError : null]}
             value={inputValue}
             onChangeText={handleInputChange}
-            placeholder="Enter duration"
-            placeholderTextColor="#999"
+            placeholder="minutes"
+            placeholderTextColor="#C7C7CC"
             keyboardType="numeric"
             returnKeyType="done"
             onSubmitEditing={handleCustomSubmit}
@@ -89,36 +87,33 @@ export function CustomTimerSelectionScreen({ onSelectConfig, onBack }: CustomTim
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          <Text style={styles.announcementInfo}>
-            Voice announcements begin at 25 minutes
-          </Text>
-
           <TouchableOpacity
             style={styles.startButton}
             onPress={handleCustomSubmit}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
-            <Text style={styles.startButtonText}>Start Timer</Text>
+            <Text style={styles.startButtonText}>begin</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.divider} />
+        <Text style={styles.orText}>or choose a preset</Text>
 
-        <View style={styles.presetsSection}>
-          <Text style={styles.presetsTitle}>Quick presets:</Text>
-          <View style={styles.presetButtons}>
-            {QUICK_PRESETS.map(({ minutes, label }) => (
-              <TouchableOpacity
-                key={minutes}
-                style={styles.presetButton}
-                onPress={() => handlePresetSelect(minutes)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.presetButtonText}>{label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+        <View style={styles.presetButtons}>
+          {QUICK_PRESETS.map(({ minutes, label }) => (
+            <TouchableOpacity
+              key={minutes}
+              style={styles.presetButton}
+              onPress={() => handlePresetSelect(minutes)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.presetButtonText}>{label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
+
+        <Text style={styles.hint}>
+          Voice announcements begin at 25 minutes
+        </Text>
       </ScrollView>
     </View>
   );
@@ -127,140 +122,116 @@ export function CustomTimerSelectionScreen({ onSelectConfig, onBack }: CustomTim
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#FAFAFA',
   },
   header: {
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+    backgroundColor: 'transparent',
   },
   backButton: {
-    marginBottom: 16,
+    padding: 12,
+    minWidth: 44,
   },
   backText: {
-    fontSize: 16,
-    color: '#e74c3c',
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 24,
+    color: '#8E8E93',
+    fontWeight: '300',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: 32,
+    paddingTop: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '300',
+    color: '#3A3A3C',
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 15,
+    fontWeight: '300',
+    color: '#A0A0A0',
+    marginBottom: 48,
+    textAlign: 'center',
+    letterSpacing: 0.8,
   },
   inputSection: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 24,
-    borderLeftWidth: 4,
-    borderLeftColor: '#e74c3c',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  inputLabel: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  inputHint: {
-    fontSize: 14,
-    color: '#999',
-    marginBottom: 16,
+    marginBottom: 32,
   },
   input: {
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#333',
+    borderWidth: 1,
+    borderColor: '#EBEBF0',
+    borderRadius: 16,
+    padding: 20,
+    fontSize: 52,
+    fontWeight: '200',
+    color: '#3A3A3C',
     textAlign: 'center',
-    backgroundColor: '#fafafa',
+    backgroundColor: '#FFF',
+    marginBottom: 16,
   },
   inputError: {
-    borderColor: '#e74c3c',
+    borderColor: '#D1A5A5',
   },
   errorText: {
-    color: '#e74c3c',
+    color: '#A08080',
     fontSize: 14,
-    marginTop: 8,
+    marginBottom: 12,
     textAlign: 'center',
-  },
-  announcementInfo: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 12,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    fontWeight: '300',
   },
   startButton: {
-    backgroundColor: '#e74c3c',
-    borderRadius: 8,
-    padding: 16,
-    marginTop: 20,
+    backgroundColor: '#6C7A89',
+    borderRadius: 16,
+    padding: 18,
     alignItems: 'center',
   },
   startButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '400',
+    letterSpacing: 0.5,
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#e0e0e0',
-    marginVertical: 24,
-  },
-  presetsSection: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 24,
-    borderLeftWidth: 4,
-    borderLeftColor: '#3498db',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  presetsTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 16,
+  orText: {
+    fontSize: 14,
+    fontWeight: '300',
+    color: '#C7C7CC',
+    marginBottom: 24,
+    textAlign: 'center',
+    letterSpacing: 0.8,
   },
   presetButtons: {
     flexDirection: 'row',
     gap: 12,
-    flexWrap: 'wrap',
+    marginBottom: 32,
   },
   presetButton: {
     flex: 1,
-    minWidth: 90,
-    backgroundColor: '#3498db',
-    borderRadius: 8,
-    padding: 16,
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#EBEBF0',
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
   },
   presetButtonText: {
-    color: '#fff',
+    color: '#3A3A3C',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '400',
+    letterSpacing: 0.2,
+  },
+  hint: {
+    fontSize: 13,
+    fontWeight: '300',
+    color: '#A0A0A0',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    letterSpacing: 0.3,
   },
 });

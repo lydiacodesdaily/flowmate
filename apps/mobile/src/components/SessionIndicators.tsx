@@ -12,32 +12,18 @@ export function SessionIndicators({
   currentSessionIndex,
 }: SessionIndicatorsProps) {
   const getSessionColor = (type: string) => {
+    // Very subtle, barely distinguishable grays
     switch (type) {
       case 'settle':
-        return '#4A90E2';
+        return '#B0B0B0';
       case 'focus':
-        return '#E94B3C';
+        return '#A0A0A0';
       case 'break':
-        return '#50C878';
+        return '#B8B8B8';
       case 'wrap':
-        return '#9B59B6';
+        return '#ABABAB';
       default:
-        return '#6C7A89';
-    }
-  };
-
-  const getSessionIcon = (type: string) => {
-    switch (type) {
-      case 'settle':
-        return 'S';
-      case 'focus':
-        return 'F';
-      case 'break':
-        return 'B';
-      case 'wrap':
-        return 'W';
-      default:
-        return '?';
+        return '#A8A8A8';
     }
   };
 
@@ -59,25 +45,14 @@ export function SessionIndicators({
                 style={[
                   styles.indicator,
                   {
-                    backgroundColor: isActive || isPast ? color : '#E0E0E0',
-                    borderWidth: isActive ? 3 : 0,
-                    borderColor: isActive ? color : 'transparent',
+                    backgroundColor: isActive ? color : isPast ? `${color}40` : '#F2F2F7',
+                    opacity: isPast ? 0.5 : 1,
                   },
                 ]}
-              >
-                <Text
-                  style={[
-                    styles.indicatorText,
-                    {
-                      color: isActive || isPast ? '#fff' : '#999',
-                      opacity: isPast ? 0.6 : 1,
-                    },
-                  ]}
-                >
-                  {getSessionIcon(session.type)}
-                </Text>
-              </View>
-              <Text style={styles.duration}>{session.durationMinutes}m</Text>
+              />
+              {isActive && (
+                <Text style={styles.duration}>{session.durationMinutes}m</Text>
+              )}
             </View>
           );
         })}
@@ -88,30 +63,27 @@ export function SessionIndicators({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 16,
+    paddingVertical: 8,
+    marginBottom: 40,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    gap: 12,
+    paddingHorizontal: 32,
+    gap: 10,
+    alignItems: 'center',
   },
   sessionWrapper: {
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
   },
   indicator: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  indicatorText: {
-    fontSize: 16,
-    fontWeight: '700',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   duration: {
     fontSize: 12,
-    color: '#666',
-    fontWeight: '600',
+    color: '#A0A0A0',
+    fontWeight: '300',
+    letterSpacing: 0.3,
   },
 });

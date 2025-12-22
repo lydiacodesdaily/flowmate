@@ -9,12 +9,12 @@ interface ModeCardProps {
   onPress: () => void;
 }
 
-export function ModeCard({ title, description, icon, color, onPress }: ModeCardProps) {
+export function ModeCard({ title, description, icon, onPress }: ModeCardProps) {
   return (
     <TouchableOpacity
-      style={[styles.card, { borderLeftColor: color, borderLeftWidth: 4 }]}
+      style={styles.card}
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={0.85}
     >
       <View style={styles.content}>
         <Text style={styles.icon}>{icon}</Text>
@@ -29,36 +29,36 @@ export function ModeCard({ title, description, icon, color, onPress }: ModeCardP
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#EBEBF0',
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    padding: 24,
   },
   icon: {
-    fontSize: 40,
-    marginRight: 16,
+    fontSize: 32,
+    marginRight: 20,
+    opacity: 0.8,
   },
   textContainer: {
     flex: 1,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '400',
+    color: '#3A3A3C',
+    marginBottom: 6,
+    letterSpacing: 0.2,
   },
   description: {
     fontSize: 14,
-    color: '#666',
+    fontWeight: '300',
+    color: '#8E8E93',
     lineHeight: 20,
+    letterSpacing: 0.2,
   },
 });

@@ -16,34 +16,34 @@ export function ModeSelectionScreen({ onSelectMode }: ModeSelectionScreenProps) 
       style={styles.container}
       contentContainerStyle={[
         styles.contentContainer,
-        { paddingTop: insets.top + 20 }
+        { paddingTop: insets.top + 40 }
       ]}
     >
-      <Text style={styles.title}>Choose Your Focus Mode</Text>
-      <Text style={styles.subtitle}>Select a timer mode to begin your session</Text>
+      <Text style={styles.title}>ready when you are</Text>
+      <Text style={styles.subtitle}>choose a focus mode</Text>
 
       <View style={styles.cardsContainer}>
         <ModeCard
           icon="🍅"
           title="Pomodoro"
-          description="Classic 25-minute focus sessions with short breaks"
-          color="#e74c3c"
+          description="25-minute focus with short breaks"
+          color="#8E8E93"
           onPress={() => onSelectMode('pomodoro')}
         />
 
         <ModeCard
           icon="🎯"
-          title="Guided Deep Work"
-          description="Structured sessions with settle, focus, and wrap periods"
-          color="#3498db"
+          title="Guided"
+          description="Settle, focus, and wrap periods"
+          color="#8E8E93"
           onPress={() => onSelectMode('guided')}
         />
 
         <ModeCard
           icon="⚙️"
-          title="Custom Timer"
-          description="Build your own session with custom durations"
-          color="#9b59b6"
+          title="Custom"
+          description="Your own duration"
+          color="#8E8E93"
           onPress={() => onSelectMode('custom')}
         />
       </View>
@@ -54,24 +54,29 @@ export function ModeSelectionScreen({ onSelectMode }: ModeSelectionScreenProps) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FAFAFA',
   },
   contentContainer: {
-    padding: 20,
+    padding: 32,
+    paddingBottom: 60,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 24,
+    fontWeight: '300',
+    color: '#3A3A3C',
     marginBottom: 8,
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 32,
+    fontSize: 15,
+    fontWeight: '300',
+    color: '#A0A0A0',
+    marginBottom: 48,
     textAlign: 'center',
+    letterSpacing: 0.8,
   },
   cardsContainer: {
-    marginTop: 8,
+    gap: 16,
   },
 });

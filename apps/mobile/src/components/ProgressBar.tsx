@@ -10,9 +10,9 @@ interface ProgressBarProps {
 
 export function ProgressBar({
   progress,
-  color = '#E94B3C',
-  backgroundColor = '#E0E0E0',
-  height = 6,
+  color = '#6C7A89',
+  backgroundColor = '#EBEBF0',
+  height = 4,
 }: ProgressBarProps) {
   const clampedProgress = Math.max(0, Math.min(1, progress));
 
@@ -35,10 +35,10 @@ export function ProgressBar({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    borderRadius: 3,
+    borderRadius: 2,
     overflow: 'hidden',
   },
   fill: {
-    borderRadius: 3,
+    borderRadius: 2,
   },
 });

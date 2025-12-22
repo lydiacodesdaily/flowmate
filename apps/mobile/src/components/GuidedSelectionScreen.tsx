@@ -34,45 +34,48 @@ export function GuidedSelectionScreen({ onSelectConfig, onBack }: GuidedSelectio
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Guided Deep Work</Text>
-        <Text style={styles.subtitle}>Structured sessions for focused work</Text>
+      </View>
+
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>guided</Text>
+        <Text style={styles.subtitle}>structured focus sessions</Text>
 
         <View style={styles.styleSelector}>
           <TouchableOpacity
             style={[styles.styleButton, style === 'pom' && styles.styleButtonActive]}
             onPress={() => setStyle('pom')}
+            activeOpacity={0.85}
           >
             <Text style={[styles.styleButtonText, style === 'pom' && styles.styleButtonTextActive]}>
-              Pomodoro Style
+              Pomodoro
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.styleButton, style === 'deep' && styles.styleButtonActive]}
             onPress={() => setStyle('deep')}
+            activeOpacity={0.85}
           >
             <Text style={[styles.styleButtonText, style === 'deep' && styles.styleButtonTextActive]}>
-              Deep Focus
+              Deep
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {GUIDED_OPTIONS[style].map(({ type, title, description }) => (
           <TouchableOpacity
             key={type}
             style={styles.optionCard}
             onPress={() => onSelectConfig(type, GUIDED_CONFIGS[type])}
-            activeOpacity={0.7}
+            activeOpacity={0.85}
           >
             <View style={styles.optionHeader}>
               <Text style={styles.optionTitle}>{title}</Text>
               <Text style={styles.optionDuration}>
-                {GUIDED_CONFIGS[type].reduce((sum, s) => sum + s.durationMinutes, 0)} min
+                {GUIDED_CONFIGS[type].reduce((sum, s) => sum + s.durationMinutes, 0)}m
               </Text>
             </View>
             <Text style={styles.optionDescription}>{description}</Text>
@@ -100,74 +103,80 @@ export function GuidedSelectionScreen({ onSelectConfig, onBack }: GuidedSelectio
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FAFAFA',
   },
   header: {
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+    backgroundColor: 'transparent',
   },
   backButton: {
-    marginBottom: 16,
+    padding: 12,
+    minWidth: 44,
   },
   backText: {
-    fontSize: 16,
-    color: '#3498db',
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-  },
-  styleSelector: {
-    flexDirection: 'row',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    padding: 4,
-  },
-  styleButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  styleButtonActive: {
-    backgroundColor: '#3498db',
-  },
-  styleButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-  },
-  styleButtonTextActive: {
-    color: '#fff',
+    fontSize: 24,
+    color: '#8E8E93',
+    fontWeight: '300',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: 32,
+    paddingTop: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '300',
+    color: '#3A3A3C',
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 15,
+    fontWeight: '300',
+    color: '#A0A0A0',
+    marginBottom: 28,
+    textAlign: 'center',
+    letterSpacing: 0.8,
+  },
+  styleSelector: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EBEBF0',
+    padding: 4,
+    marginBottom: 24,
+  },
+  styleButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  styleButtonActive: {
+    backgroundColor: '#F2F2F7',
+  },
+  styleButtonText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#8E8E93',
+    letterSpacing: 0.2,
+  },
+  styleButtonTextActive: {
+    color: '#3A3A3C',
+    fontWeight: '400',
   },
   optionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#3498db',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#EBEBF0',
+    padding: 24,
+    marginBottom: 12,
   },
   optionHeader: {
     flexDirection: 'row',
@@ -176,40 +185,44 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   optionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 18,
+    fontWeight: '400',
+    color: '#3A3A3C',
+    letterSpacing: 0.2,
   },
   optionDuration: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3498db',
+    fontSize: 15,
+    fontWeight: '300',
+    color: '#8E8E93',
+    letterSpacing: 0.2,
   },
   optionDescription: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
+    fontWeight: '300',
+    color: '#8E8E93',
+    marginBottom: 16,
+    letterSpacing: 0.2,
   },
   sessionsPreview: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
     flexWrap: 'wrap',
   },
   sessionDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   settleDot: {
-    backgroundColor: '#95a5a6',
+    backgroundColor: '#B0B0B0',
   },
   focusDot: {
-    backgroundColor: '#3498db',
+    backgroundColor: '#A0A0A0',
   },
   breakDot: {
-    backgroundColor: '#27ae60',
+    backgroundColor: '#C7C7CC',
   },
   wrapDot: {
-    backgroundColor: '#f39c12',
+    backgroundColor: '#ABABAB',
   },
 });
