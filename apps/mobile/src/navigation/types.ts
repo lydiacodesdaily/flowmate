@@ -1,47 +1,55 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { Session } from '@flowmate/shared';
 
-export type RootStackParamList = {
+// Focus Stack - contains all focus mode related screens
+export type FocusStackParamList = {
   ModeSelection: undefined;
   PomodoroSelection: undefined;
   GuidedSelection: undefined;
   CustomSelection: undefined;
   ActiveTimer: { sessions: Session[] };
-  Stats: undefined;
-  Settings: undefined;
 };
 
+// Bottom Tab Navigator
+export type TabParamList = {
+  FocusTab: undefined;
+  StatsTab: undefined;
+  SettingsTab: undefined;
+};
+
+// Root Stack (wraps the tabs)
+export type RootStackParamList = {
+  MainTabs: undefined;
+};
+
+// Focus Stack Screen Props
 export type ModeSelectionScreenProps = NativeStackScreenProps<
-  RootStackParamList,
+  FocusStackParamList,
   'ModeSelection'
 >;
 
 export type PomodoroSelectionScreenProps = NativeStackScreenProps<
-  RootStackParamList,
+  FocusStackParamList,
   'PomodoroSelection'
 >;
 
 export type GuidedSelectionScreenProps = NativeStackScreenProps<
-  RootStackParamList,
+  FocusStackParamList,
   'GuidedSelection'
 >;
 
 export type CustomSelectionScreenProps = NativeStackScreenProps<
-  RootStackParamList,
+  FocusStackParamList,
   'CustomSelection'
 >;
 
 export type ActiveTimerScreenProps = NativeStackScreenProps<
-  RootStackParamList,
+  FocusStackParamList,
   'ActiveTimer'
 >;
 
-export type StatsScreenProps = NativeStackScreenProps<
-  RootStackParamList,
-  'Stats'
->;
-
-export type SettingsScreenProps = NativeStackScreenProps<
-  RootStackParamList,
-  'Settings'
->;
+// Tab Screen Props
+export type FocusTabScreenProps = BottomTabScreenProps<TabParamList, 'FocusTab'>;
+export type StatsScreenProps = BottomTabScreenProps<TabParamList, 'StatsTab'>;
+export type SettingsScreenProps = BottomTabScreenProps<TabParamList, 'SettingsTab'>;

@@ -38,27 +38,11 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
         />
 
         <ModeCard
-          icon="⚙️"
+          icon="⏱️"
           title="Custom"
           description="Your own duration"
           color="#8E8E93"
           onPress={() => navigation.navigate('CustomSelection')}
-        />
-
-        <ModeCard
-          icon="📊"
-          title="Stats"
-          description="View your progress and streaks"
-          color="#8E8E93"
-          onPress={() => navigation.navigate('Stats')}
-        />
-
-        <ModeCard
-          icon="🎨"
-          title="Settings"
-          description="Appearance and audio preferences"
-          color="#8E8E93"
-          onPress={() => navigation.navigate('Settings')}
         />
       </View>
     </ScrollView>

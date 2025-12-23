@@ -1,39 +1,63 @@
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { RootStackParamList } from './types';
-import { ModeSelectionScreen } from '../components/ModeSelectionScreen';
-import { PomodoroSelectionScreen } from '../components/PomodoroSelectionScreen';
-import { GuidedSelectionScreen } from '../components/GuidedSelectionScreen';
-import { CustomTimerSelectionScreen } from '../components/CustomTimerSelectionScreen';
-import { ActiveTimer } from '../components/ActiveTimer';
+import { Text } from 'react-native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import type { TabParamList } from './types';
+import { FocusStack } from './FocusStack';
 import { StatsScreen } from '../screens/StatsScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { useTheme } from '../theme';
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
 
 export function RootNavigator() {
+  const { theme } = useTheme();
+
   return (
-    <Stack.Navigator
-      initialRouteName="ModeSelection"
+    <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        animation: 'slide_from_right',
-        contentStyle: { backgroundColor: '#FAFAFA' },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textTertiary,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
+          borderTopWidth: 0.5,
+          paddingBottom: 20,
+          paddingTop: 8,
+          height: 80,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+          letterSpacing: 0.3,
+          marginTop: 4,
+        },
       }}
     >
-      <Stack.Screen name="ModeSelection" component={ModeSelectionScreen} />
-      <Stack.Screen name="PomodoroSelection" component={PomodoroSelectionScreen} />
-      <Stack.Screen name="GuidedSelection" component={GuidedSelectionScreen} />
-      <Stack.Screen name="CustomSelection" component={CustomTimerSelectionScreen} />
-      <Stack.Screen
-        name="ActiveTimer"
-        component={ActiveTimer}
+      <Tab.Screen
+        name="FocusTab"
+        component={FocusStack}
         options={{
-          gestureEnabled: false, // Prevent swipe back during active timer
+          tabBarLabel: 'Focus',
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>🕒</Text>,
         }}
       />
-      <Stack.Screen name="Stats" component={StatsScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
-    </Stack.Navigator>
+      <Tab.Screen
+        name="StatsTab"
+        component={StatsScreen}
+        options={{
+          tabBarLabel: 'Stats',
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>📊</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="SettingsTab"
+        component={SettingsScreen}
+        options={{
+          tabBarLabel: 'Settings',
+          tabBarIcon: () => <Text style={{ fontSize: 24 }}>⚙️</Text>,
+        }}
+      />
+    </Tab.Navigator>
   );
 }

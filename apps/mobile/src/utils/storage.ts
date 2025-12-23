@@ -26,3 +26,46 @@ export const saveStats = async (stats: UserStats): Promise<void> => {
     console.error('Failed to save stats:', error);
   }
 };
+
+/**
+ * Notification preferences storage
+ */
+
+export interface NotificationSettings {
+  enabled: boolean;
+  sessionComplete: boolean;
+  sessionStart: boolean;
+  timeRemaining: boolean;
+  sound: boolean;
+}
+
+const NOTIFICATION_SETTINGS_KEY = '@flowmate:notification-settings';
+
+export const getDefaultNotificationSettings = (): NotificationSettings => ({
+  enabled: true,
+  sessionComplete: true,
+  sessionStart: true,
+  timeRemaining: false,
+  sound: true,
+});
+
+export const loadNotificationSettings = async (): Promise<NotificationSettings> => {
+  try {
+    const stored = await AsyncStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+    if (!stored) return getDefaultNotificationSettings();
+
+    const settings = JSON.parse(stored) as NotificationSettings;
+    return settings;
+  } catch (error) {
+    console.error('Failed to load notification settings:', error);
+    return getDefaultNotificationSettings();
+  }
+};
+
+export const saveNotificationSettings = async (settings: NotificationSettings): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save notification settings:', error);
+  }
+};

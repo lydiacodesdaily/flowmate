@@ -1,21 +1,31 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { SessionType } from '@flowmate/shared';
-
-// Configure notification behavior
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+import {
+  loadNotificationSettings,
+  saveNotificationSettings,
+  getDefaultNotificationSettings,
+  type NotificationSettings
+} from '../utils/storage';
 
 class NotificationService {
   private permissionGranted = false;
+  private settings: NotificationSettings = getDefaultNotificationSettings();
 
   async initialize() {
+    // Load saved settings
+    this.settings = await loadNotificationSettings();
+
+    // Configure notification handler with dynamic sound setting
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldPlaySound: this.settings.sound,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('timer', {
         name: 'Timer Notifications',
@@ -41,8 +51,29 @@ class NotificationService {
     return this.permissionGranted;
   }
 
+  getSettings(): NotificationSettings {
+    return { ...this.settings };
+  }
+
+  async updateSettings(newSettings: Partial<NotificationSettings>) {
+    this.settings = { ...this.settings, ...newSettings };
+    await saveNotificationSettings(this.settings);
+
+    // Update notification handler if sound setting changed
+    if (newSettings.sound !== undefined) {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldPlaySound: this.settings.sound,
+          shouldSetBadge: false,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+    }
+  }
+
   async scheduleSessionCompleteNotification(sessionType: SessionType) {
-    if (!this.permissionGranted) {
+    if (!this.permissionGranted || !this.settings.enabled || !this.settings.sessionComplete) {
       return;
     }
 
@@ -52,7 +83,7 @@ class NotificationService {
       content: {
         title: 'Session Complete',
         body: `${sessionName} finished. Time for the next session!`,
-        sound: true,
+        sound: this.settings.sound,
         priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger: null, // Send immediately
@@ -60,7 +91,7 @@ class NotificationService {
   }
 
   async scheduleSessionStartNotification(sessionType: SessionType, durationMinutes: number) {
-    if (!this.permissionGranted) {
+    if (!this.permissionGranted || !this.settings.enabled || !this.settings.sessionStart) {
       return;
     }
 
@@ -70,7 +101,7 @@ class NotificationService {
       content: {
         title: 'Session Started',
         body: `${durationMinutes} minute ${sessionName} has begun`,
-        sound: true,
+        sound: this.settings.sound,
         priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger: null,
@@ -78,7 +109,7 @@ class NotificationService {
   }
 
   async scheduleTimeRemainingNotification(minutes: number, sessionType: SessionType) {
-    if (!this.permissionGranted) {
+    if (!this.permissionGranted || !this.settings.enabled || !this.settings.timeRemaining) {
       return;
     }
 
