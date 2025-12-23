@@ -1,6 +1,8 @@
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import type { AudioPlayer } from 'expo-audio';
 import type { AudioSettings, SessionType } from '@flowmate/shared';
+import { AppState } from 'react-native';
+import type { AppStateStatus } from 'react-native';
 
 class AudioService {
   private tickSound: AudioPlayer | null = null;
@@ -10,6 +12,7 @@ class AudioService {
   private minuteAnnouncements: Map<number, AudioPlayer> = new Map();
   private secondAnnouncements: Map<number, AudioPlayer> = new Map();
   private isAlternate = false;
+  private appStateSubscription: any = null;
   private settings: AudioSettings = {
     tickVolume: 0.5,
     announcementVolume: 0.7,
@@ -21,14 +24,35 @@ class AudioService {
 
   async initialize() {
     try {
-      // Set audio mode for mixing with other apps
+      // Set audio mode for background playback and mixing with other apps
       await setAudioModeAsync({
         playsInSilentMode: true,
+        // Allow audio to continue playing in background
+        shouldPlayInBackground: true,
+        // Mix with other apps (like music players) - announcements will briefly lower their volume
+        interruptionMode: 'duckOthers',
       });
+
+      // Listen for app state changes to handle background/foreground transitions
+      this.appStateSubscription = AppState.addEventListener('change', this.handleAppStateChange);
     } catch (error) {
       console.error('Failed to initialize audio:', error);
     }
   }
+
+  private handleAppStateChange = async (nextAppState: AppStateStatus) => {
+    // Reactivate audio session for both foreground and background states
+    try {
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        interruptionMode: 'duckOthers',
+      });
+      console.log(`Audio session reactivated (state: ${nextAppState})`);
+    } catch (error) {
+      console.error('Failed to reactivate audio session:', error);
+    }
+  };
 
   async loadTickSounds() {
     try {
@@ -49,7 +73,9 @@ class AudioService {
       }
 
       // Load ding sound for session completion
-      const ding = createAudioPlayer(require('../../assets/audio/effects/ding.mp3'));
+      const ding = createAudioPlayer(require('../../assets/audio/effects/ding.mp3'), {
+        keepAudioSessionActive: true,
+      });
       ding.volume = this.settings.announcementVolume;
       this.dingSound = ding;
     } catch (error) {
@@ -66,7 +92,9 @@ class AudioService {
       ];
 
       for (const { key, file } of transitions) {
-        const sound = createAudioPlayer(file);
+        const sound = createAudioPlayer(file, {
+          keepAudioSessionActive: true,
+        });
         sound.volume = this.settings.announcementVolume;
         this.transitionSounds.set(key, sound);
       }
@@ -80,7 +108,9 @@ class AudioService {
     if (this.minuteAnnouncements.has(minute)) return;
 
     try {
-      const sound = createAudioPlayer(this.getMinuteAnnouncementPath(minute));
+      const sound = createAudioPlayer(this.getMinuteAnnouncementPath(minute), {
+        keepAudioSessionActive: true,
+      });
       sound.volume = this.settings.announcementVolume;
       this.minuteAnnouncements.set(minute, sound);
     } catch (error) {
@@ -94,7 +124,9 @@ class AudioService {
     if (this.secondAnnouncements.has(second)) return;
 
     try {
-      const sound = createAudioPlayer(this.getSecondAnnouncementPath(second));
+      const sound = createAudioPlayer(this.getSecondAnnouncementPath(second), {
+        keepAudioSessionActive: true,
+      });
       sound.volume = this.settings.announcementVolume;
       this.secondAnnouncements.set(second, sound);
     } catch (error) {
@@ -288,6 +320,12 @@ class AudioService {
   }
 
   async cleanup() {
+    // Remove app state listener
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+      this.appStateSubscription = null;
+    }
+
     if (this.tickSound) {
       this.tickSound.remove();
       this.tickSound = null;
