@@ -33,7 +33,6 @@ export default function Home() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [enableConfetti, setEnableConfetti] = useState(true);
-  const [enableMinuteAnnouncements, setEnableMinuteAnnouncements] = useState(true);
   const [minuteAnnouncementInterval, setMinuteAnnouncementInterval] = useState(1);
   const [enableFinalCountdown, setEnableFinalCountdown] = useState(true);
   const [enableDingCheckpoints, setEnableDingCheckpoints] = useState(true);
@@ -700,11 +699,6 @@ export default function Home() {
         setEnableConfetti(savedEnableConfetti === 'true');
       }
 
-      const savedEnableMinuteAnnouncements = localStorage.getItem('enableMinuteAnnouncements');
-      if (savedEnableMinuteAnnouncements !== null) {
-        setEnableMinuteAnnouncements(savedEnableMinuteAnnouncements === 'true');
-      }
-
       const savedMinuteAnnouncementInterval = localStorage.getItem('minuteAnnouncementInterval');
       if (savedMinuteAnnouncementInterval !== null) {
         setMinuteAnnouncementInterval(parseInt(savedMinuteAnnouncementInterval, 10));
@@ -906,8 +900,8 @@ export default function Home() {
             }
             // For all other cases (focus <= 25 min, breaks, custom): announce minutes 1-25
             // Don't announce at the very start (when minutesRemaining === focusDurationMinutes)
-            else if (enableMinuteAnnouncements && minutesRemaining <= 25 && minutesRemaining < focusDurationMinutes && minutesRemaining % minuteAnnouncementIntervalRef.current === 0) {
-              console.log(`Announcing: ${minutesRemaining} minutes (interval: ${minuteAnnouncementIntervalRef.current}, enableMinuteAnnouncements: ${enableMinuteAnnouncements})`);
+            else if (minutesRemaining <= 25 && minutesRemaining < focusDurationMinutes && minutesRemaining % minuteAnnouncementIntervalRef.current === 0) {
+              console.log(`Announcing: ${minutesRemaining} minutes (interval: ${minuteAnnouncementIntervalRef.current})`);
               speak(`${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`);
             }
             lastMinuteAnnouncedRef.current = minutesRemaining;
@@ -1112,8 +1106,6 @@ export default function Home() {
         setMuteBreak={setMuteBreak}
         enableConfetti={enableConfetti}
         setEnableConfetti={setEnableConfetti}
-        enableMinuteAnnouncements={enableMinuteAnnouncements}
-        setEnableMinuteAnnouncements={setEnableMinuteAnnouncements}
         minuteAnnouncementInterval={minuteAnnouncementInterval}
         setMinuteAnnouncementInterval={setMinuteAnnouncementInterval}
         enableFinalCountdown={enableFinalCountdown}

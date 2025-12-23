@@ -13,8 +13,6 @@ interface SettingsModalProps {
   setMuteBreak: (mute: boolean) => void;
   enableConfetti: boolean;
   setEnableConfetti: (enable: boolean) => void;
-  enableMinuteAnnouncements: boolean;
-  setEnableMinuteAnnouncements: (enable: boolean) => void;
   minuteAnnouncementInterval: number;
   setMinuteAnnouncementInterval: (interval: number) => void;
   enableFinalCountdown: boolean;
@@ -37,8 +35,6 @@ export const SettingsModal = ({
   setMuteBreak,
   enableConfetti,
   setEnableConfetti,
-  enableMinuteAnnouncements,
-  setEnableMinuteAnnouncements,
   minuteAnnouncementInterval,
   setMinuteAnnouncementInterval,
   enableFinalCountdown,
@@ -96,9 +92,18 @@ export const SettingsModal = ({
                 <button
                     id="tick-sound-enabled"
                     onClick={() => {
-                      const newVolume = tickVolume > 0 ? 0 : 0.05;
-                      setTickVolume(newVolume);
-                      localStorage.setItem('tickVolume', String(newVolume));
+                      if (tickVolume > 0) {
+                        // Turn off - save current volume and set to 0
+                        localStorage.setItem('lastTickVolume', String(tickVolume));
+                        setTickVolume(0);
+                        localStorage.setItem('tickVolume', '0');
+                      } else {
+                        // Turn on - restore last saved volume or use default
+                        const savedVolume = localStorage.getItem('lastTickVolume');
+                        const newVolume = savedVolume ? parseFloat(savedVolume) : 0.05;
+                        setTickVolume(newVolume);
+                        localStorage.setItem('tickVolume', String(newVolume));
+                      }
                     }}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
                       tickVolume > 0 ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
@@ -183,9 +188,18 @@ export const SettingsModal = ({
                 <button
                   id="voice-announcements"
                   onClick={() => {
-                    const newVolume = announcementVolume > 0 ? 0 : 0.20;
-                    setAnnouncementVolume(newVolume);
-                    localStorage.setItem('announcementVolume', String(newVolume));
+                    if (announcementVolume > 0) {
+                      // Turn off - save current volume and set to 0
+                      localStorage.setItem('lastAnnouncementVolume', String(announcementVolume));
+                      setAnnouncementVolume(0);
+                      localStorage.setItem('announcementVolume', '0');
+                    } else {
+                      // Turn on - restore last saved volume or use default
+                      const savedVolume = localStorage.getItem('lastAnnouncementVolume');
+                      const newVolume = savedVolume ? parseFloat(savedVolume) : 0.20;
+                      setAnnouncementVolume(newVolume);
+                      localStorage.setItem('announcementVolume', String(newVolume));
+                    }
                   }}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
                     announcementVolume > 0 ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
@@ -227,46 +241,25 @@ export const SettingsModal = ({
 
                   {/* Minute Announcements */}
                   <div>
-                    <div className="flex items-center justify-between py-1.5">
-                      <label htmlFor="minute-announcements" className="text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
-                        Interval
-                      </label>
-                      <button
-                        id="minute-announcements"
-                        onClick={() => {
-                          setEnableMinuteAnnouncements(!enableMinuteAnnouncements);
-                          localStorage.setItem('enableMinuteAnnouncements', String(!enableMinuteAnnouncements));
-                        }}
-                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
-                          enableMinuteAnnouncements ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                            enableMinuteAnnouncements ? 'translate-x-5' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    {enableMinuteAnnouncements && (
-                      <select
-                        id="minute-interval"
-                        value={minuteAnnouncementInterval}
-                        onChange={(e) => {
-                          const newInterval = parseInt(e.target.value, 10);
-                          setMinuteAnnouncementInterval(newInterval);
-                          localStorage.setItem('minuteAnnouncementInterval', String(newInterval));
-                        }}
-                        className="w-full px-3 py-1.5 mt-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 cursor-pointer"
-                      >
-                        <option value="1">Every 1 minute</option>
-                        <option value="2">Every 2 minutes</option>
-                        <option value="3">Every 3 minutes</option>
-                        <option value="5">Every 5 minutes</option>
-                        <option value="10">Every 10 minutes</option>
-                      </select>
-                    )}
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                      Interval
+                    </label>
+                    <select
+                      id="minute-interval"
+                      value={minuteAnnouncementInterval}
+                      onChange={(e) => {
+                        const newInterval = parseInt(e.target.value, 10);
+                        setMinuteAnnouncementInterval(newInterval);
+                        localStorage.setItem('minuteAnnouncementInterval', String(newInterval));
+                      }}
+                      className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 cursor-pointer"
+                    >
+                      <option value="1">Every 1 minute</option>
+                      <option value="2">Every 2 minutes</option>
+                      <option value="3">Every 3 minutes</option>
+                      <option value="5">Every 5 minutes</option>
+                      <option value="10">Every 10 minutes</option>
+                    </select>
                   </div>
 
                   {/* Seconds Countdown */}

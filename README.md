@@ -127,7 +127,7 @@ npm run dev:web
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser
 
-**Mobile App (Coming Soon):**
+**Mobile App:**
 ```bash
 npm run dev:mobile
 ```
