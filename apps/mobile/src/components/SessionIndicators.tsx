@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../theme';
 import type { Session } from '@flowmate/shared';
 
@@ -29,63 +29,43 @@ export function SessionIndicators({
     }
   };
 
-  const getSessionColor = (isActive: boolean, isPast: boolean) => {
-    if (isPast) {
-      return theme.colors.textTertiary;
-    }
-    if (isActive) {
-      return theme.colors.primary;
-    }
-    return theme.colors.textSecondary;
-  };
+  const currentSession = sessions[currentSessionIndex];
+  const nextSession = currentSessionIndex < sessions.length - 1 ? sessions[currentSessionIndex + 1] : null;
+  const currentLabel = currentSession ? getSessionLabel(currentSession.type) : '';
+  const nextLabel = nextSession ? getSessionLabel(nextSession.type) : null;
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {sessions.map((session, index) => {
-          const isActive = index === currentSessionIndex;
-          const isPast = index < currentSessionIndex;
-          const color = getSessionColor(isActive, isPast);
-          const label = getSessionLabel(session.type);
+      <View style={styles.sessionInfo}>
+        <Text style={[styles.sessionLabel, { color: theme.colors.primary }]}>
+          {currentLabel} {currentSession?.durationMinutes}m
+        </Text>
+        {nextLabel && (
+          <Text style={[styles.nextSession, { color: theme.colors.textTertiary }]}>
+            Up next: {nextLabel} {nextSession?.durationMinutes}m
+          </Text>
+        )}
+      </View>
 
-          return (
-            <View key={index} style={styles.sessionWrapper}>
-              <View
-                style={[
-                  styles.sessionCard,
-                  {
-                    opacity: isPast ? 0.4 : 1,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.sessionLabel,
-                    { color, fontWeight: isActive ? '500' : '300' },
-                  ]}
-                >
-                  {label}
-                </Text>
-                <Text
-                  style={[
-                    styles.sessionDuration,
-                    { color, fontWeight: isActive ? '500' : '300' },
-                  ]}
-                >
-                  {session.durationMinutes}m
-                </Text>
-              </View>
-              {index < sessions.length - 1 && (
-                <Text style={[styles.arrow, { color: theme.colors.border }]}>→</Text>
-              )}
-            </View>
-          );
-        })}
-      </ScrollView>
+      {/* Progress dots */}
+      <View style={styles.progressDots}>
+        {sessions.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.dot,
+              {
+                backgroundColor: index === currentSessionIndex
+                  ? theme.colors.primary
+                  : index < currentSessionIndex
+                    ? theme.colors.textTertiary
+                    : theme.colors.border,
+                opacity: index < currentSessionIndex ? 0.4 : 1,
+              },
+            ]}
+          />
+        ))}
+      </View>
     </View>
   );
 }
@@ -94,33 +74,31 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: 8,
     marginBottom: 40,
-  },
-  scrollContent: {
-    paddingHorizontal: 32,
-    gap: 8,
     alignItems: 'center',
-    flexDirection: 'row',
   },
-  sessionWrapper: {
-    flexDirection: 'row',
+  sessionInfo: {
     alignItems: 'center',
-    gap: 8,
-  },
-  sessionCard: {
-    alignItems: 'center',
+    marginBottom: 12,
   },
   sessionLabel: {
-    fontSize: 11,
+    fontSize: 14,
+    fontWeight: '500',
     letterSpacing: 0.3,
-    textTransform: 'uppercase',
+    marginBottom: 4,
   },
-  sessionDuration: {
-    fontSize: 13,
-    letterSpacing: 0.2,
-    marginTop: 2,
-  },
-  arrow: {
+  nextSession: {
     fontSize: 12,
     fontWeight: '300',
+    letterSpacing: 0.2,
+  },
+  progressDots: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
 });
