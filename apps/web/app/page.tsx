@@ -779,13 +779,16 @@ export default function Home() {
       if (tickSound === 'tick-tok-alternate.mp3') {
         tickAudioRef.current = new Audio(`/audio/effects/tick1.mp3`);
         tickAudioRef.current.volume = tickVolume;
+        tickAudioRef.current.load(); // Preload the audio
 
         tokAudioRef.current = new Audio(`/audio/effects/tok1.mp3`);
         tokAudioRef.current.volume = tickVolume;
+        tokAudioRef.current.load(); // Preload the audio
       } else {
         // Initialize single tick audio element
-        if (!tickAudioRef.current || tickAudioRef.current.src !== `/audio/effects/${tickSound}`) {
+        if (!tickAudioRef.current || !tickAudioRef.current.src.endsWith(`/audio/effects/${tickSound}`)) {
           tickAudioRef.current = new Audio(`/audio/effects/${tickSound}`);
+          tickAudioRef.current.load(); // Preload the audio
         }
         tickAudioRef.current.volume = tickVolume;
         tokAudioRef.current = null;
