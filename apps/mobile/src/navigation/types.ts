@@ -8,6 +8,7 @@ export type RootStackParamList = {
   CustomSelection: undefined;
   ActiveTimer: { sessions: Session[] };
   Stats: undefined;
+  Settings: undefined;
 };
 
 export type ModeSelectionScreenProps = NativeStackScreenProps<
@@ -38,4 +39,9 @@ export type ActiveTimerScreenProps = NativeStackScreenProps<
 export type StatsScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'Stats'
+>;
+
+export type SettingsScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  'Settings'
 >;

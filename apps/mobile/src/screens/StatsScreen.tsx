@@ -6,8 +6,10 @@ import { formatFocusTime } from '@flowmate/shared';
 import type { UserStats, DailyStat } from '@flowmate/shared';
 import { WeeklyChart } from '../components/WeeklyChart';
 import type { StatsScreenProps } from '../navigation/types';
+import { useTheme } from '../theme';
 
 export function StatsScreen({ navigation }: StatsScreenProps) {
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [todayStats, setTodayStats] = useState<DailyStat | null>(null);
@@ -36,15 +38,15 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
 
   if (!stats) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>loading stats...</Text>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <Text style={[styles.loadingText, { color: theme.colors.textTertiary }]}>loading stats...</Text>
       </View>
     );
   }
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       contentContainerStyle={[
         styles.contentContainer,
         { paddingTop: insets.top + 20 }
@@ -56,24 +58,24 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← back</Text>
+          <Text style={[styles.backButtonText, { color: theme.colors.textSecondary }]}>← back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>your progress</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>your progress</Text>
       </View>
 
       {/* Today's Stats */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>today</Text>
-        <View style={styles.statCard}>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>focus time</Text>
-            <Text style={styles.statValue}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textTertiary }]}>today</Text>
+        <View style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
+          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
+            <Text style={[styles.statLabel, { color: theme.colors.text }]}>focus time</Text>
+            <Text style={[styles.statValue, { color: theme.colors.text }]}>
               {formatFocusTime(todayStats?.focusTimeMinutes || 0)}
             </Text>
           </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>sessions</Text>
-            <Text style={styles.statValue}>
+          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
+            <Text style={[styles.statLabel, { color: theme.colors.text }]}>sessions</Text>
+            <Text style={[styles.statValue, { color: theme.colors.text }]}>
               {todayStats?.sessionsCompleted || 0}
             </Text>
           </View>
@@ -82,44 +84,44 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
 
       {/* Streaks */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>streaks</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textTertiary }]}>streaks</Text>
         <View style={styles.streakContainer}>
-          <View style={styles.streakCard}>
+          <View style={[styles.streakCard, { backgroundColor: theme.colors.surface }]}>
             <Text style={styles.streakEmoji}>🔥</Text>
-            <Text style={styles.streakValue}>{stats.currentStreak}</Text>
-            <Text style={styles.streakLabel}>current</Text>
+            <Text style={[styles.streakValue, { color: theme.colors.text }]}>{stats.currentStreak}</Text>
+            <Text style={[styles.streakLabel, { color: theme.colors.textTertiary }]}>current</Text>
           </View>
-          <View style={styles.streakCard}>
+          <View style={[styles.streakCard, { backgroundColor: theme.colors.surface }]}>
             <Text style={styles.streakEmoji}>⭐</Text>
-            <Text style={styles.streakValue}>{stats.longestStreak}</Text>
-            <Text style={styles.streakLabel}>longest</Text>
+            <Text style={[styles.streakValue, { color: theme.colors.text }]}>{stats.longestStreak}</Text>
+            <Text style={[styles.streakLabel, { color: theme.colors.textTertiary }]}>longest</Text>
           </View>
         </View>
       </View>
 
       {/* Weekly Chart */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>last 7 days</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textTertiary }]}>last 7 days</Text>
         <WeeklyChart weekStats={weekStats} />
       </View>
 
       {/* All Time Stats */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>all time</Text>
-        <View style={styles.statCard}>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>total focus time</Text>
-            <Text style={styles.statValue}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textTertiary }]}>all time</Text>
+        <View style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
+          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
+            <Text style={[styles.statLabel, { color: theme.colors.text }]}>total focus time</Text>
+            <Text style={[styles.statValue, { color: theme.colors.text }]}>
               {formatFocusTime(stats.totalFocusTime)}
             </Text>
           </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>total sessions</Text>
-            <Text style={styles.statValue}>{stats.totalSessions}</Text>
+          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
+            <Text style={[styles.statLabel, { color: theme.colors.text }]}>total sessions</Text>
+            <Text style={[styles.statValue, { color: theme.colors.text }]}>{stats.totalSessions}</Text>
           </View>
-          <View style={styles.statRow}>
-            <Text style={styles.statLabel}>days active</Text>
-            <Text style={styles.statValue}>{stats.dailyStats.length}</Text>
+          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
+            <Text style={[styles.statLabel, { color: theme.colors.text }]}>days active</Text>
+            <Text style={[styles.statValue, { color: theme.colors.text }]}>{stats.dailyStats.length}</Text>
           </View>
         </View>
       </View>
@@ -130,7 +132,6 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
   contentContainer: {
     padding: 24,
@@ -139,7 +140,6 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     fontWeight: '300',
-    color: '#A0A0A0',
     textAlign: 'center',
     marginTop: 100,
   },
@@ -153,13 +153,11 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 16,
     fontWeight: '300',
-    color: '#8E8E93',
     letterSpacing: 0.5,
   },
   title: {
     fontSize: 28,
     fontWeight: '300',
-    color: '#3A3A3C',
     letterSpacing: 0.5,
   },
   section: {
@@ -168,13 +166,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '400',
-    color: '#A0A0A0',
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     marginBottom: 12,
   },
   statCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
@@ -189,18 +185,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   statLabel: {
     fontSize: 16,
     fontWeight: '300',
-    color: '#3A3A3C',
     letterSpacing: 0.3,
   },
   statValue: {
     fontSize: 18,
     fontWeight: '500',
-    color: '#3A3A3C',
   },
   streakContainer: {
     flexDirection: 'row',
@@ -208,7 +201,6 @@ const styles = StyleSheet.create({
   },
   streakCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
@@ -225,13 +217,11 @@ const styles = StyleSheet.create({
   streakValue: {
     fontSize: 32,
     fontWeight: '600',
-    color: '#3A3A3C',
     marginBottom: 4,
   },
   streakLabel: {
     fontSize: 13,
     fontWeight: '300',
-    color: '#A0A0A0',
     letterSpacing: 0.5,
   },
 });

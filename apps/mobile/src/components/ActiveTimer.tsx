@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Modal, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimer } from '../hooks/useTimer';
@@ -14,11 +14,13 @@ import { audioService } from '../services/audioService';
 import { statsService } from '../services/statsService';
 import { hapticService } from '../services/hapticService';
 import { notificationService } from '../services/notificationService';
+import { useTheme } from '../theme';
 import type { ActiveTimerScreenProps } from '../navigation/types';
 
 export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const { sessions } = route.params;
   const insets = useSafeAreaInsets();
+  const { theme, isDark } = useTheme();
   const lastMinuteRef = useRef<number>(-1);
   const lastAnnouncementMinuteRef = useRef<number>(-1);
   const lastAnnouncementSecondRef = useRef<number>(-1);
@@ -212,16 +214,16 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       {/* Minimal header with back and settings */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
-          <Text style={styles.headerButtonText}>←</Text>
+          <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>←</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleToggleSettings} style={styles.headerButton}>
-          <Text style={styles.headerButtonText}>⋯</Text>
+          <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>⋯</Text>
         </TouchableOpacity>
       </View>
 
@@ -264,12 +266,12 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         onRequestClose={handleToggleSettings}
       >
         <TouchableOpacity
-          style={styles.modalOverlay}
+          style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}
           activeOpacity={1}
           onPress={handleToggleSettings}
         >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Settings</Text>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
+            <Text style={[styles.modalTitle, { color: theme.colors.textTertiary }]}>Settings</Text>
 
             <AudioControls
               muteAll={muteAll}
@@ -278,9 +280,9 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
               onToggleMuteDuringBreaks={handleToggleMuteDuringBreaks}
             />
 
-            <View style={styles.modalDivider} />
+            <View style={[styles.modalDivider, { backgroundColor: theme.colors.border }]} />
 
-            <Text style={styles.modalSectionTitle}>Adjust Time</Text>
+            <Text style={[styles.modalSectionTitle, { color: theme.colors.textTertiary }]}>Adjust Time</Text>
             <TimerAdjustControls
               onAddTime={handleAddTime}
               onSubtractTime={handleSubtractTime}
@@ -291,7 +293,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
               style={styles.modalCloseButton}
               onPress={handleToggleSettings}
             >
-              <Text style={styles.modalCloseButtonText}>Done</Text>
+              <Text style={[styles.modalCloseButtonText, { color: theme.colors.textTertiary }]}>Done</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -303,7 +305,6 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
   header: {
     flexDirection: 'row',
@@ -320,7 +321,6 @@ const styles = StyleSheet.create({
   },
   headerButtonText: {
     fontSize: 24,
-    color: '#8E8E93',
     fontWeight: '300',
   },
   content: {
@@ -344,11 +344,9 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FAFAFA',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 32,
@@ -358,7 +356,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 17,
     fontWeight: '400',
-    color: '#8E8E93',
     marginBottom: 28,
     textAlign: 'center',
     letterSpacing: 0.5,
@@ -366,14 +363,12 @@ const styles = StyleSheet.create({
   modalSectionTitle: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#A0A0A0',
     marginBottom: 16,
     textAlign: 'center',
     letterSpacing: 0.3,
   },
   modalDivider: {
     height: 1,
-    backgroundColor: '#EBEBF0',
     marginVertical: 28,
   },
   modalCloseButton: {
@@ -386,7 +381,6 @@ const styles = StyleSheet.create({
   modalCloseButtonText: {
     fontSize: 16,
     fontWeight: '400',
-    color: '#8E8E93',
     letterSpacing: 0.3,
   },
 });

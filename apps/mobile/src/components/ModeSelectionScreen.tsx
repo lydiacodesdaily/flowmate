@@ -2,21 +2,23 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ModeCard } from './ModeCard';
+import { useTheme } from '../theme';
 import type { ModeSelectionScreenProps } from '../navigation/types';
 
 export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       contentContainerStyle={[
         styles.contentContainer,
         { paddingTop: insets.top + 40 }
       ]}
     >
-      <Text style={styles.title}>ready when you are</Text>
-      <Text style={styles.subtitle}>choose a focus mode</Text>
+      <Text style={[styles.title, { color: theme.colors.text }]}>ready when you are</Text>
+      <Text style={[styles.subtitle, { color: theme.colors.textTertiary }]}>choose a focus mode</Text>
 
       <View style={styles.cardsContainer}>
         <ModeCard
@@ -50,6 +52,14 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
           color="#8E8E93"
           onPress={() => navigation.navigate('Stats')}
         />
+
+        <ModeCard
+          icon="🎨"
+          title="Settings"
+          description="Appearance and audio preferences"
+          color="#8E8E93"
+          onPress={() => navigation.navigate('Settings')}
+        />
       </View>
     </ScrollView>
   );
@@ -58,7 +68,6 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
   contentContainer: {
     padding: 32,
@@ -67,7 +76,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '300',
-    color: '#3A3A3C',
     marginBottom: 8,
     textAlign: 'center',
     letterSpacing: 0.5,
@@ -75,7 +83,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     fontWeight: '300',
-    color: '#A0A0A0',
     marginBottom: 48,
     textAlign: 'center',
     letterSpacing: 0.8,

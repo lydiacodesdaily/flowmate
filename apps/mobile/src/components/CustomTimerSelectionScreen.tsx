@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Keyboa
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Session } from '@flowmate/shared';
 import type { CustomSelectionScreenProps } from '../navigation/types';
+import { useTheme } from '../theme';
 
 const QUICK_PRESETS = [
   { minutes: 15, label: '15 min' },
@@ -11,6 +12,7 @@ const QUICK_PRESETS = [
 ];
 
 export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreenProps) {
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
@@ -53,10 +55,10 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
+          <Text style={[styles.backText, { color: theme.colors.textSecondary }]}>←</Text>
         </TouchableOpacity>
       </View>
 
@@ -65,26 +67,33 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>your own pace</Text>
-        <Text style={styles.subtitle}>set any duration you need</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>your own pace</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textTertiary }]}>set any duration you need</Text>
 
         <View style={styles.inputSection}>
           <TextInput
-            style={[styles.input, error ? styles.inputError : null]}
+            style={[
+              styles.input,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: error ? '#D1A5A5' : theme.colors.border,
+                color: theme.colors.text,
+              },
+            ]}
             value={inputValue}
             onChangeText={handleInputChange}
             placeholder="minutes"
-            placeholderTextColor="#C7C7CC"
+            placeholderTextColor={theme.colors.border}
             keyboardType="numeric"
             returnKeyType="done"
             onSubmitEditing={handleCustomSubmit}
             autoFocus={false}
           />
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? <Text style={[styles.errorText, { color: '#A08080' }]}>{error}</Text> : null}
 
           <TouchableOpacity
-            style={styles.startButton}
+            style={[styles.startButton, { backgroundColor: theme.colors.primary }]}
             onPress={handleCustomSubmit}
             activeOpacity={0.85}
           >
@@ -92,22 +101,22 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.orText}>or choose a preset</Text>
+        <Text style={[styles.orText, { color: theme.colors.border }]}>or choose a preset</Text>
 
         <View style={styles.presetButtons}>
           {QUICK_PRESETS.map(({ minutes, label }) => (
             <TouchableOpacity
               key={minutes}
-              style={styles.presetButton}
+              style={[styles.presetButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
               onPress={() => handlePresetSelect(minutes)}
               activeOpacity={0.85}
             >
-              <Text style={styles.presetButtonText}>{label}</Text>
+              <Text style={[styles.presetButtonText, { color: theme.colors.text }]}>{label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={styles.hint}>
+        <Text style={[styles.hint, { color: theme.colors.textTertiary }]}>
           Voice announcements begin at 25 minutes
         </Text>
       </ScrollView>
@@ -118,7 +127,6 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
   header: {
     paddingHorizontal: 20,
@@ -131,7 +139,6 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 24,
-    color: '#8E8E93',
     fontWeight: '300',
   },
   scrollView: {
@@ -144,7 +151,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '300',
-    color: '#3A3A3C',
     marginBottom: 8,
     textAlign: 'center',
     letterSpacing: 0.5,
@@ -152,7 +158,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     fontWeight: '300',
-    color: '#A0A0A0',
     marginBottom: 48,
     textAlign: 'center',
     letterSpacing: 0.8,
@@ -162,28 +167,20 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#EBEBF0',
     borderRadius: 16,
     padding: 20,
     fontSize: 52,
     fontWeight: '200',
-    color: '#3A3A3C',
     textAlign: 'center',
-    backgroundColor: '#FFF',
     marginBottom: 16,
   },
-  inputError: {
-    borderColor: '#D1A5A5',
-  },
   errorText: {
-    color: '#A08080',
     fontSize: 14,
     marginBottom: 12,
     textAlign: 'center',
     fontWeight: '300',
   },
   startButton: {
-    backgroundColor: '#6C7A89',
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
@@ -197,7 +194,6 @@ const styles = StyleSheet.create({
   orText: {
     fontSize: 14,
     fontWeight: '300',
-    color: '#C7C7CC',
     marginBottom: 24,
     textAlign: 'center',
     letterSpacing: 0.8,
@@ -209,15 +205,12 @@ const styles = StyleSheet.create({
   },
   presetButton: {
     flex: 1,
-    backgroundColor: '#FFF',
     borderWidth: 1,
-    borderColor: '#EBEBF0',
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
   },
   presetButtonText: {
-    color: '#3A3A3C',
     fontSize: 16,
     fontWeight: '400',
     letterSpacing: 0.2,
@@ -225,7 +218,6 @@ const styles = StyleSheet.create({
   hint: {
     fontSize: 13,
     fontWeight: '300',
-    color: '#A0A0A0',
     textAlign: 'center',
     fontStyle: 'italic',
     letterSpacing: 0.3,

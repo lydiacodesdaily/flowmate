@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../theme';
 
 interface TimerDisplayProps {
   timeRemaining: number;
@@ -11,6 +12,8 @@ export function TimerDisplay({
   timeRemaining,
   sessionLabel,
 }: TimerDisplayProps) {
+  const { theme } = useTheme();
+
   const formatTime = (seconds: number): string => {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -25,9 +28,9 @@ export function TimerDisplay({
   return (
     <View style={styles.container}>
       {sessionLabel && (
-        <Text style={styles.label}>{sessionLabel}</Text>
+        <Text style={[styles.label, { color: theme.colors.textTertiary }]}>{sessionLabel}</Text>
       )}
-      <Text style={styles.time}>{formatTime(timeRemaining)}</Text>
+      <Text style={[styles.time, { color: theme.colors.text }]}>{formatTime(timeRemaining)}</Text>
     </View>
   );
 }
@@ -41,7 +44,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '300',
-    color: '#A0A0A0',
     textTransform: 'lowercase',
     letterSpacing: 1,
     marginBottom: 28,
@@ -49,7 +51,6 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 72,
     fontWeight: '200',
-    color: '#3A3A3C',
     fontVariant: ['tabular-nums'],
     letterSpacing: -1.5,
   },

@@ -27,7 +27,7 @@ export interface Session {
 export interface AudioSettings {
   tickVolume: number;
   announcementVolume: number;
-  tickSound: 'alternating' | 'single';
+  tickSound: 'alternating' | 'single' | 'none';
   muteAll: boolean;
   muteDuringBreaks: boolean;
   announcementInterval: 1 | 2 | 3 | 5 | 10;

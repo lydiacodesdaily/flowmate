@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../theme';
 
 interface TimerAdjustControlsProps {
   onAddTime: () => void;
@@ -12,26 +13,36 @@ export function TimerAdjustControls({
   onSubtractTime,
   disabled = false,
 }: TimerAdjustControlsProps) {
+  const { theme } = useTheme();
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.adjustButton, disabled && styles.disabled]}
+        style={[
+          styles.adjustButton,
+          { backgroundColor: theme.colors.surface, borderColor: theme.colors.primary },
+          disabled && { borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceSecondary },
+        ]}
         onPress={onSubtractTime}
         disabled={disabled}
         activeOpacity={0.7}
       >
-        <Text style={[styles.adjustIcon, disabled && styles.disabledText]}>−</Text>
-        <Text style={[styles.adjustLabel, disabled && styles.disabledText]}>5 min</Text>
+        <Text style={[styles.adjustIcon, { color: theme.colors.primary }, disabled && { color: theme.colors.textTertiary }]}>−</Text>
+        <Text style={[styles.adjustLabel, { color: theme.colors.primary }, disabled && { color: theme.colors.textTertiary }]}>5 min</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.adjustButton, disabled && styles.disabled]}
+        style={[
+          styles.adjustButton,
+          { backgroundColor: theme.colors.surface, borderColor: theme.colors.primary },
+          disabled && { borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceSecondary },
+        ]}
         onPress={onAddTime}
         disabled={disabled}
         activeOpacity={0.7}
       >
-        <Text style={[styles.adjustIcon, disabled && styles.disabledText]}>+</Text>
-        <Text style={[styles.adjustLabel, disabled && styles.disabledText]}>5 min</Text>
+        <Text style={[styles.adjustIcon, { color: theme.colors.primary }, disabled && { color: theme.colors.textTertiary }]}>+</Text>
+        <Text style={[styles.adjustLabel, { color: theme.colors.primary }, disabled && { color: theme.colors.textTertiary }]}>5 min</Text>
       </TouchableOpacity>
     </View>
   );
@@ -47,29 +58,18 @@ const styles = StyleSheet.create({
   adjustButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     borderWidth: 2,
-    borderColor: '#E94B3C',
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 16,
     gap: 6,
   },
-  disabled: {
-    borderColor: '#D0D0D0',
-    backgroundColor: '#F5F5F5',
-  },
   adjustIcon: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#E94B3C',
   },
   adjustLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#E94B3C',
-  },
-  disabledText: {
-    color: '#999',
   },
 });

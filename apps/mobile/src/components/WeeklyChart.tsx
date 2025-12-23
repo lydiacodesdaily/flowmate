@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../theme';
 import type { DailyStat } from '@flowmate/shared';
 
 interface WeeklyChartProps {
@@ -7,6 +8,7 @@ interface WeeklyChartProps {
 }
 
 export function WeeklyChart({ weekStats }: WeeklyChartProps) {
+  const { theme } = useTheme();
   // Fill in missing days with zero stats for the last 7 days
   const getLast7Days = (): DailyStat[] => {
     const days: DailyStat[] = [];
@@ -47,7 +49,7 @@ export function WeeklyChart({ weekStats }: WeeklyChartProps) {
   const maxMinutes = Math.max(...last7Days.map((d) => d.focusTimeMinutes), 1);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
       <View style={styles.chartContainer}>
         {last7Days.map((stat, index) => {
           const heightPercentage = (stat.focusTimeMinutes / maxMinutes) * 100;
@@ -61,15 +63,15 @@ export function WeeklyChart({ weekStats }: WeeklyChartProps) {
                     styles.bar,
                     {
                       height: `${Math.max(heightPercentage, 2)}%`,
-                      backgroundColor: isToday ? '#8E8E93' : '#D1D1D6',
+                      backgroundColor: isToday ? theme.colors.textTertiary : theme.colors.border,
                     },
                   ]}
                 />
               </View>
-              <Text style={[styles.dayLabel, isToday && styles.todayLabel]}>
+              <Text style={[styles.dayLabel, { color: theme.colors.textTertiary }, isToday && { color: theme.colors.text, fontWeight: '500' }]}>
                 {getDayLabel(stat.date)}
               </Text>
-              <Text style={styles.minutesLabel}>
+              <Text style={[styles.minutesLabel, { color: theme.colors.border }]}>
                 {stat.focusTimeMinutes > 0 ? `${stat.focusTimeMinutes}m` : ''}
               </Text>
             </View>
@@ -78,7 +80,7 @@ export function WeeklyChart({ weekStats }: WeeklyChartProps) {
       </View>
 
       {maxMinutes === 1 && (
-        <Text style={styles.emptyMessage}>no focus time recorded yet</Text>
+        <Text style={[styles.emptyMessage, { color: theme.colors.textTertiary }]}>no focus time recorded yet</Text>
       )}
     </View>
   );
@@ -86,7 +88,6 @@ export function WeeklyChart({ weekStats }: WeeklyChartProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
@@ -123,25 +124,18 @@ const styles = StyleSheet.create({
   dayLabel: {
     fontSize: 11,
     fontWeight: '400',
-    color: '#A0A0A0',
     marginTop: 8,
     letterSpacing: 0.3,
-  },
-  todayLabel: {
-    color: '#3A3A3C',
-    fontWeight: '500',
   },
   minutesLabel: {
     fontSize: 10,
     fontWeight: '300',
-    color: '#C0C0C0',
     marginTop: 2,
     height: 12,
   },
   emptyMessage: {
     fontSize: 14,
     fontWeight: '300',
-    color: '#A0A0A0',
     textAlign: 'center',
     marginTop: 12,
     letterSpacing: 0.3,

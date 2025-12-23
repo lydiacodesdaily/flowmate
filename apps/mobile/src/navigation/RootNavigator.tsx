@@ -7,6 +7,7 @@ import { GuidedSelectionScreen } from '../components/GuidedSelectionScreen';
 import { CustomTimerSelectionScreen } from '../components/CustomTimerSelectionScreen';
 import { ActiveTimer } from '../components/ActiveTimer';
 import { StatsScreen } from '../screens/StatsScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -32,6 +33,7 @@ export function RootNavigator() {
         }}
       />
       <Stack.Screen name="Stats" component={StatsScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );
 }

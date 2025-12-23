@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { GuidedType } from '@flowmate/shared';
 import { GUIDED_CONFIGS } from '@flowmate/shared';
 import type { GuidedSelectionScreenProps } from '../navigation/types';
+import { useTheme } from '../theme';
 
 type GuidedStyle = 'pom' | 'deep';
 
@@ -25,37 +26,38 @@ const GUIDED_OPTIONS: Record<GuidedStyle, Array<{ type: GuidedType; title: strin
 };
 
 export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps) {
+  const { theme } = useTheme();
   const [style, setStyle] = useState<GuidedStyle>('pom');
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backText}>←</Text>
+          <Text style={[styles.backText, { color: theme.colors.textSecondary }]}>←</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>guided</Text>
-        <Text style={styles.subtitle}>structured focus sessions</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>guided</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textTertiary }]}>structured focus sessions</Text>
 
-        <View style={styles.styleSelector}>
+        <View style={[styles.styleSelector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
           <TouchableOpacity
-            style={[styles.styleButton, style === 'pom' && styles.styleButtonActive]}
+            style={[styles.styleButton, style === 'pom' && { backgroundColor: theme.colors.background }]}
             onPress={() => setStyle('pom')}
             activeOpacity={0.85}
           >
-            <Text style={[styles.styleButtonText, style === 'pom' && styles.styleButtonTextActive]}>
+            <Text style={[styles.styleButtonText, { color: style === 'pom' ? theme.colors.text : theme.colors.textSecondary }]}>
               Pomodoro
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.styleButton, style === 'deep' && styles.styleButtonActive]}
+            style={[styles.styleButton, style === 'deep' && { backgroundColor: theme.colors.background }]}
             onPress={() => setStyle('deep')}
             activeOpacity={0.85}
           >
-            <Text style={[styles.styleButtonText, style === 'deep' && styles.styleButtonTextActive]}>
+            <Text style={[styles.styleButtonText, { color: style === 'deep' ? theme.colors.text : theme.colors.textSecondary }]}>
               Deep
             </Text>
           </TouchableOpacity>
@@ -64,30 +66,32 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
         {GUIDED_OPTIONS[style].map(({ type, title, description }) => (
           <TouchableOpacity
             key={type}
-            style={styles.optionCard}
+            style={[styles.optionCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
             onPress={() => navigation.navigate('ActiveTimer', { sessions: GUIDED_CONFIGS[type] })}
             activeOpacity={0.85}
           >
             <View style={styles.optionHeader}>
-              <Text style={styles.optionTitle}>{title}</Text>
-              <Text style={styles.optionDuration}>
+              <Text style={[styles.optionTitle, { color: theme.colors.text }]}>{title}</Text>
+              <Text style={[styles.optionDuration, { color: theme.colors.textSecondary }]}>
                 {GUIDED_CONFIGS[type].reduce((sum, s) => sum + s.durationMinutes, 0)}m
               </Text>
             </View>
-            <Text style={styles.optionDescription}>{description}</Text>
+            <Text style={[styles.optionDescription, { color: theme.colors.textSecondary }]}>{description}</Text>
             <View style={styles.sessionsPreview}>
-              {GUIDED_CONFIGS[type].map((session, idx) => (
-                <View
-                  key={idx}
-                  style={[
-                    styles.sessionDot,
-                    session.type === 'settle' && styles.settleDot,
-                    session.type === 'focus' && styles.focusDot,
-                    session.type === 'break' && styles.breakDot,
-                    session.type === 'wrap' && styles.wrapDot,
-                  ]}
-                />
-              ))}
+              {GUIDED_CONFIGS[type].map((session, idx) => {
+                let dotColor = theme.colors.textTertiary;
+                if (session.type === 'settle') dotColor = theme.colors.textSecondary;
+                if (session.type === 'focus') dotColor = theme.colors.textTertiary;
+                if (session.type === 'break') dotColor = theme.colors.border;
+                if (session.type === 'wrap') dotColor = theme.colors.textSecondary;
+
+                return (
+                  <View
+                    key={idx}
+                    style={[styles.sessionDot, { backgroundColor: dotColor }]}
+                  />
+                );
+              })}
             </View>
           </TouchableOpacity>
         ))}
@@ -99,7 +103,6 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
   header: {
     paddingHorizontal: 20,
@@ -112,7 +115,6 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 24,
-    color: '#8E8E93',
     fontWeight: '300',
   },
   scrollView: {
@@ -125,7 +127,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '300',
-    color: '#3A3A3C',
     marginBottom: 8,
     textAlign: 'center',
     letterSpacing: 0.5,
@@ -133,17 +134,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     fontWeight: '300',
-    color: '#A0A0A0',
     marginBottom: 28,
     textAlign: 'center',
     letterSpacing: 0.8,
   },
   styleSelector: {
     flexDirection: 'row',
-    backgroundColor: '#FFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#EBEBF0',
     padding: 4,
     marginBottom: 24,
   },
@@ -153,24 +151,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  styleButtonActive: {
-    backgroundColor: '#F2F2F7',
-  },
   styleButtonText: {
     fontSize: 14,
     fontWeight: '400',
-    color: '#8E8E93',
     letterSpacing: 0.2,
   },
-  styleButtonTextActive: {
-    color: '#3A3A3C',
-    fontWeight: '400',
-  },
   optionCard: {
-    backgroundColor: '#FFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#EBEBF0',
     padding: 24,
     marginBottom: 12,
   },
@@ -183,19 +171,16 @@ const styles = StyleSheet.create({
   optionTitle: {
     fontSize: 18,
     fontWeight: '400',
-    color: '#3A3A3C',
     letterSpacing: 0.2,
   },
   optionDuration: {
     fontSize: 15,
     fontWeight: '300',
-    color: '#8E8E93',
     letterSpacing: 0.2,
   },
   optionDescription: {
     fontSize: 14,
     fontWeight: '300',
-    color: '#8E8E93',
     marginBottom: 16,
     letterSpacing: 0.2,
   },
@@ -208,17 +193,5 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-  },
-  settleDot: {
-    backgroundColor: '#B0B0B0',
-  },
-  focusDot: {
-    backgroundColor: '#A0A0A0',
-  },
-  breakDot: {
-    backgroundColor: '#C7C7CC',
-  },
-  wrapDot: {
-    backgroundColor: '#ABABAB',
   },
 });

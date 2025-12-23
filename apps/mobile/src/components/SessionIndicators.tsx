@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useTheme } from '../theme';
 import type { Session } from '@flowmate/shared';
 
 interface SessionIndicatorsProps {
@@ -11,19 +12,21 @@ export function SessionIndicators({
   sessions,
   currentSessionIndex,
 }: SessionIndicatorsProps) {
+  const { theme } = useTheme();
+
   const getSessionColor = (type: string) => {
     // Very subtle, barely distinguishable grays
     switch (type) {
       case 'settle':
-        return '#B0B0B0';
+        return theme.colors.textSecondary;
       case 'focus':
-        return '#A0A0A0';
+        return theme.colors.textTertiary;
       case 'break':
-        return '#B8B8B8';
+        return theme.colors.textSecondary;
       case 'wrap':
-        return '#ABABAB';
+        return theme.colors.textSecondary;
       default:
-        return '#A8A8A8';
+        return theme.colors.textTertiary;
     }
   };
 
@@ -45,13 +48,13 @@ export function SessionIndicators({
                 style={[
                   styles.indicator,
                   {
-                    backgroundColor: isActive ? color : isPast ? `${color}40` : '#F2F2F7',
+                    backgroundColor: isActive ? color : isPast ? `${color}40` : theme.colors.border,
                     opacity: isPast ? 0.5 : 1,
                   },
                 ]}
               />
               {isActive && (
-                <Text style={styles.duration}>{session.durationMinutes}m</Text>
+                <Text style={[styles.duration, { color: theme.colors.textTertiary }]}>{session.durationMinutes}m</Text>
               )}
             </View>
           );
@@ -82,7 +85,6 @@ const styles = StyleSheet.create({
   },
   duration: {
     fontSize: 12,
-    color: '#A0A0A0',
     fontWeight: '300',
     letterSpacing: 0.3,
   },

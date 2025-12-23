@@ -1,184 +1,178 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  Switch,
   TouchableOpacity,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { AudioSettings } from '@flowmate/shared';
-import { audioService } from '../services/audioService';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../theme';
+import type { ThemeMode } from '../theme';
+import type { SettingsScreenProps } from '../navigation/types';
 
-const SETTINGS_STORAGE_KEY = '@flowmate:settings';
+export function SettingsScreen({ navigation }: SettingsScreenProps) {
+  const insets = useSafeAreaInsets();
+  const { theme, themeMode, setThemeMode } = useTheme();
 
-const defaultSettings: AudioSettings = {
-  tickVolume: 0.5,
-  announcementVolume: 0.7,
-  tickSound: 'single',
-  muteAll: false,
-  muteDuringBreaks: false,
-  announcementInterval: 5,
-};
-
-export function SettingsScreen() {
-  const [settings, setSettings] = useState<AudioSettings>(defaultSettings);
-
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    try {
-      const data = await AsyncStorage.getItem(SETTINGS_STORAGE_KEY);
-      if (data) {
-        const loaded = JSON.parse(data);
-        setSettings(loaded);
-        audioService.updateSettings(loaded);
-      }
-    } catch (error) {
-      console.error('Failed to load settings:', error);
+  const getThemeLabel = (mode: ThemeMode): string => {
+    switch (mode) {
+      case 'light':
+        return 'Light';
+      case 'dark':
+        return 'Dark';
+      case 'system':
+        return 'System';
     }
-  };
-
-  const saveSettings = async (newSettings: AudioSettings) => {
-    try {
-      setSettings(newSettings);
-      audioService.updateSettings(newSettings);
-      await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-    }
-  };
-
-  const updateSetting = <K extends keyof AudioSettings>(
-    key: K,
-    value: AudioSettings[K]
-  ) => {
-    saveSettings({ ...settings, [key]: value });
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Audio</Text>
+    <View style={[styles.wrapper, { backgroundColor: theme.colors.surfaceSecondary }]}>
+      {/* Header with back button */}
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
+          <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>←</Text>
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Settings</Text>
+        <View style={styles.headerButton} />
+      </View>
 
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Mute All</Text>
-          <Switch
-            value={settings.muteAll}
-            onValueChange={(value) => updateSetting('muteAll', value)}
-          />
-        </View>
-
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Mute During Breaks</Text>
-          <Switch
-            value={settings.muteDuringBreaks}
-            onValueChange={(value) => updateSetting('muteDuringBreaks', value)}
-            disabled={settings.muteAll}
-          />
-        </View>
+      <ScrollView style={styles.container}>
+        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Appearance</Text>
 
         <View style={styles.settingRow}>
           <View style={styles.settingLabelContainer}>
-            <Text style={styles.settingLabel}>Tick Sound</Text>
-            <Text style={styles.settingValue}>{settings.tickSound}</Text>
+            <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Theme</Text>
+            <Text style={[styles.settingValue, { color: theme.colors.textSecondary }]}>
+              {getThemeLabel(themeMode)}
+            </Text>
           </View>
-          <View style={styles.segmentControl}>
+          <View style={[styles.segmentControl, { borderColor: theme.colors.primary }]}>
             <TouchableOpacity
               style={[
                 styles.segment,
-                settings.tickSound === 'single' && styles.segmentActive,
+                { backgroundColor: theme.colors.surface },
+                themeMode === 'light' && [styles.segmentActive, { backgroundColor: theme.colors.primary }],
               ]}
-              onPress={() => updateSetting('tickSound', 'single')}
-              disabled={settings.muteAll}
+              onPress={() => setThemeMode('light')}
             >
               <Text
                 style={[
                   styles.segmentText,
-                  settings.tickSound === 'single' && styles.segmentTextActive,
+                  { color: theme.colors.primary },
+                  themeMode === 'light' && styles.segmentTextActive,
                 ]}
               >
-                Single
+                Light
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.segment,
-                settings.tickSound === 'alternating' && styles.segmentActive,
+                { backgroundColor: theme.colors.surface },
+                themeMode === 'dark' && [styles.segmentActive, { backgroundColor: theme.colors.primary }],
               ]}
-              onPress={() => updateSetting('tickSound', 'alternating')}
-              disabled={settings.muteAll}
+              onPress={() => setThemeMode('dark')}
             >
               <Text
                 style={[
                   styles.segmentText,
-                  settings.tickSound === 'alternating' && styles.segmentTextActive,
+                  { color: theme.colors.primary },
+                  themeMode === 'dark' && styles.segmentTextActive,
                 ]}
               >
-                Alternating
+                Dark
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.segment,
+                { backgroundColor: theme.colors.surface },
+                themeMode === 'system' && [styles.segmentActive, { backgroundColor: theme.colors.primary }],
+              ]}
+              onPress={() => setThemeMode('system')}
+            >
+              <Text
+                style={[
+                  styles.segmentText,
+                  { color: theme.colors.primary },
+                  themeMode === 'system' && styles.segmentTextActive,
+                ]}
+              >
+                System
               </Text>
             </TouchableOpacity>
           </View>
         </View>
+      </View>
 
-        <View style={styles.settingRow}>
-          <View style={styles.settingLabelContainer}>
-            <Text style={styles.settingLabel}>Tick Volume</Text>
-            <Text style={styles.settingValue}>{Math.round(settings.tickVolume * 100)}%</Text>
-          </View>
-        </View>
+      <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Audio</Text>
 
-        <View style={styles.settingRow}>
-          <View style={styles.settingLabelContainer}>
-            <Text style={styles.settingLabel}>Announcement Volume</Text>
-            <Text style={styles.settingValue}>
-              {Math.round(settings.announcementVolume * 100)}%
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.settingRow}>
-          <View style={styles.settingLabelContainer}>
-            <Text style={styles.settingLabel}>Announcement Interval</Text>
-            <Text style={styles.settingValue}>
-              Every {settings.announcementInterval} {settings.announcementInterval === 1 ? 'minute' : 'minutes'}
-            </Text>
-          </View>
+        <View style={styles.infoCard}>
+          <Text style={[styles.infoIcon]}>🎵</Text>
+          <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
+            Audio settings have moved to the timer screen.{'\n'}
+            Tap the ⋯ menu while running a timer to adjust.
+          </Text>
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Version</Text>
-          <Text style={styles.settingValue}>1.0.0</Text>
+      <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>About</Text>
+        <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
+          <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Version</Text>
+          <Text style={[styles.settingValue, { color: theme.colors.textSecondary }]}>1.0.0</Text>
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 8,
+    paddingHorizontal: 20,
+    backgroundColor: 'transparent',
+  },
+  headerButton: {
+    padding: 12,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerButtonText: {
+    fontSize: 24,
+    fontWeight: '300',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '500',
+    letterSpacing: 0.3,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   section: {
-    backgroundColor: '#fff',
     marginTop: 24,
     paddingVertical: 8,
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
     textTransform: 'uppercase',
     paddingHorizontal: 16,
     paddingVertical: 8,
     marginBottom: 8,
+    letterSpacing: 0.5,
   },
   settingRow: {
     flexDirection: 'row',
@@ -187,19 +181,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: 'transparent',
   },
   settingLabelContainer: {
     flex: 1,
   },
   settingLabel: {
     fontSize: 16,
-    color: '#333',
     fontWeight: '500',
   },
   settingValue: {
     fontSize: 14,
-    color: '#666',
     marginTop: 4,
   },
   segmentControl: {
@@ -207,22 +199,34 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E94B3C',
   },
   segment: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#fff',
   },
-  segmentActive: {
-    backgroundColor: '#E94B3C',
-  },
+  segmentActive: {},
   segmentText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#E94B3C',
   },
   segmentTextActive: {
     color: '#fff',
+  },
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  infoIcon: {
+    fontSize: 24,
+    marginTop: 2,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: 0.2,
   },
 });

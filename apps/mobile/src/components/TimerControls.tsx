@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../theme';
 import type { TimerStatus } from '../hooks/useTimer';
 
 interface TimerControlsProps {
@@ -19,12 +20,14 @@ export function TimerControls({
   onReset,
   onSkip,
 }: TimerControlsProps) {
+  const { theme } = useTheme();
+
   return (
     <View style={styles.container}>
       <View style={styles.mainControls}>
         {status === 'idle' && (
           <TouchableOpacity
-            style={[styles.button, styles.primaryButton]}
+            style={[styles.button, { backgroundColor: theme.colors.textSecondary }]}
             onPress={onStart}
           >
             <Text style={styles.primaryButtonText}>Start</Text>
@@ -33,7 +36,7 @@ export function TimerControls({
 
         {status === 'running' && (
           <TouchableOpacity
-            style={[styles.button, styles.primaryButton]}
+            style={[styles.button, { backgroundColor: theme.colors.textSecondary }]}
             onPress={onPause}
           >
             <Text style={styles.primaryButtonText}>Pause</Text>
@@ -43,23 +46,23 @@ export function TimerControls({
         {status === 'paused' && (
           <>
             <TouchableOpacity
-              style={[styles.button, styles.primaryButton]}
+              style={[styles.button, { backgroundColor: theme.colors.textSecondary }]}
               onPress={onResume}
             >
               <Text style={styles.primaryButtonText}>Resume</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, styles.secondaryButton]}
+              style={[styles.button, styles.secondaryButton, { borderColor: theme.colors.border }]}
               onPress={onReset}
             >
-              <Text style={styles.secondaryButtonText}>Reset</Text>
+              <Text style={[styles.secondaryButtonText, { color: theme.colors.text }]}>Reset</Text>
             </TouchableOpacity>
           </>
         )}
 
         {status === 'completed' && (
           <TouchableOpacity
-            style={[styles.button, styles.primaryButton]}
+            style={[styles.button, { backgroundColor: theme.colors.textSecondary }]}
             onPress={onReset}
           >
             <Text style={styles.primaryButtonText}>Start Again</Text>
@@ -70,7 +73,7 @@ export function TimerControls({
       {status !== 'idle' && status !== 'completed' && onSkip && (
         <View style={styles.secondaryControls}>
           <TouchableOpacity style={styles.textButton} onPress={onSkip}>
-            <Text style={styles.textButtonText}>Skip Session</Text>
+            <Text style={[styles.textButtonText, { color: theme.colors.textTertiary }]}>Skip Session</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -96,9 +99,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  primaryButton: {
-    backgroundColor: '#6C7A89',
-  },
   primaryButtonText: {
     color: '#fff',
     fontSize: 18,
@@ -108,10 +108,8 @@ const styles = StyleSheet.create({
   secondaryButton: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: '#C7C7CC',
   },
   secondaryButtonText: {
-    color: '#3A3A3C',
     fontSize: 18,
     fontWeight: '500',
     letterSpacing: 0.2,
@@ -125,7 +123,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   textButtonText: {
-    color: '#8E8E93',
     fontSize: 15,
     fontWeight: '400',
     letterSpacing: 0.3,
