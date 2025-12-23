@@ -11,17 +11,17 @@ type GuidedStyle = 'pom' | 'deep';
 const GUIDED_OPTIONS: Record<GuidedStyle, Array<{ type: GuidedType; title: string; description: string }>> = {
   pom: [
     { type: 'guided-30-pom', title: '30 Minutes', description: 'Settle, focus 25, wrap' },
-    { type: 'guided-60-pom', title: '60 Minutes', description: '2 pomodoros with break' },
-    { type: 'guided-90-pom', title: '90 Minutes', description: '3 pomodoros with breaks' },
-    { type: 'guided-120-pom', title: '2 Hours', description: '4 pomodoros with breaks & wrap' },
-    { type: 'guided-180-pom', title: '3 Hours', description: '6 pomodoros with breaks & wrap' },
+    { type: 'guided-60-pom', title: '60 Minutes', description: 'Settle, 25+20 focus, wrap' },
+    { type: 'guided-90-pom', title: '90 Minutes', description: 'Settle, 25+25+20 focus, wrap' },
+    { type: 'guided-120-pom', title: '2 Hours', description: 'Settle, 25+25+25+20 focus, wrap' },
+    { type: 'guided-180-pom', title: '3 Hours', description: 'Settle, 5x25+20 focus, wrap' },
   ],
   deep: [
     { type: 'guided-30-deep', title: '30 Minutes', description: 'Settle, focus 25, wrap' },
     { type: 'guided-60-deep', title: '60 Minutes', description: 'Settle, focus 50, wrap' },
     { type: 'guided-90-deep', title: '90 Minutes', description: 'Settle, focus 80, wrap' },
-    { type: 'guided-120-deep', title: '2 Hours', description: '2 long focus blocks with break' },
-    { type: 'guided-180-deep', title: '3 Hours', description: '2 deep blocks (85+80 min)' },
+    { type: 'guided-120-deep', title: '2 Hours', description: 'Settle, 50+55 focus, wrap' },
+    { type: 'guided-180-deep', title: '3 Hours', description: 'Settle, 50+50+60 focus, wrap' },
   ],
 };
 
@@ -77,22 +77,6 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
               </Text>
             </View>
             <Text style={[styles.optionDescription, { color: theme.colors.textSecondary }]}>{description}</Text>
-            <View style={styles.sessionsPreview}>
-              {GUIDED_CONFIGS[type].map((session, idx) => {
-                let dotColor = theme.colors.textTertiary;
-                if (session.type === 'settle') dotColor = theme.colors.textSecondary;
-                if (session.type === 'focus') dotColor = theme.colors.textTertiary;
-                if (session.type === 'break') dotColor = theme.colors.border;
-                if (session.type === 'wrap') dotColor = theme.colors.textSecondary;
-
-                return (
-                  <View
-                    key={idx}
-                    style={[styles.sessionDot, { backgroundColor: dotColor }]}
-                  />
-                );
-              })}
-            </View>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -181,17 +165,6 @@ const styles = StyleSheet.create({
   optionDescription: {
     fontSize: 14,
     fontWeight: '300',
-    marginBottom: 16,
     letterSpacing: 0.2,
-  },
-  sessionsPreview: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  sessionDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
   },
 });

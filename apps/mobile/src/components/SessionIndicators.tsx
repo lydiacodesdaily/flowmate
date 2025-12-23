@@ -14,20 +14,29 @@ export function SessionIndicators({
 }: SessionIndicatorsProps) {
   const { theme } = useTheme();
 
-  const getSessionColor = (type: string) => {
-    // Very subtle, barely distinguishable grays
+  const getSessionLabel = (type: string) => {
     switch (type) {
       case 'settle':
-        return theme.colors.textSecondary;
+        return 'Settle';
       case 'focus':
-        return theme.colors.textTertiary;
+        return 'Focus';
       case 'break':
-        return theme.colors.textSecondary;
+        return 'Break';
       case 'wrap':
-        return theme.colors.textSecondary;
+        return 'Wrap';
       default:
-        return theme.colors.textTertiary;
+        return type;
     }
+  };
+
+  const getSessionColor = (isActive: boolean, isPast: boolean) => {
+    if (isPast) {
+      return theme.colors.textTertiary;
+    }
+    if (isActive) {
+      return theme.colors.primary;
+    }
+    return theme.colors.textSecondary;
   };
 
   return (
@@ -40,21 +49,38 @@ export function SessionIndicators({
         {sessions.map((session, index) => {
           const isActive = index === currentSessionIndex;
           const isPast = index < currentSessionIndex;
-          const color = getSessionColor(session.type);
+          const color = getSessionColor(isActive, isPast);
+          const label = getSessionLabel(session.type);
 
           return (
             <View key={index} style={styles.sessionWrapper}>
               <View
                 style={[
-                  styles.indicator,
+                  styles.sessionCard,
                   {
-                    backgroundColor: isActive ? color : isPast ? `${color}40` : theme.colors.border,
-                    opacity: isPast ? 0.5 : 1,
+                    opacity: isPast ? 0.4 : 1,
                   },
                 ]}
-              />
-              {isActive && (
-                <Text style={[styles.duration, { color: theme.colors.textTertiary }]}>{session.durationMinutes}m</Text>
+              >
+                <Text
+                  style={[
+                    styles.sessionLabel,
+                    { color, fontWeight: isActive ? '500' : '300' },
+                  ]}
+                >
+                  {label}
+                </Text>
+                <Text
+                  style={[
+                    styles.sessionDuration,
+                    { color, fontWeight: isActive ? '500' : '300' },
+                  ]}
+                >
+                  {session.durationMinutes}m
+                </Text>
+              </View>
+              {index < sessions.length - 1 && (
+                <Text style={[styles.arrow, { color: theme.colors.border }]}>→</Text>
               )}
             </View>
           );
@@ -71,21 +97,30 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 32,
-    gap: 10,
+    gap: 8,
     alignItems: 'center',
+    flexDirection: 'row',
   },
   sessionWrapper: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  indicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  sessionCard: {
+    alignItems: 'center',
   },
-  duration: {
+  sessionLabel: {
+    fontSize: 11,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  sessionDuration: {
+    fontSize: 13,
+    letterSpacing: 0.2,
+    marginTop: 2,
+  },
+  arrow: {
     fontSize: 12,
     fontWeight: '300',
-    letterSpacing: 0.3,
   },
 });

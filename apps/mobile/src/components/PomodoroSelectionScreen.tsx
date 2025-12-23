@@ -43,17 +43,6 @@ export function PomodoroSelectionScreen({ navigation }: PomodoroSelectionScreenP
               </Text>
             </View>
             <Text style={[styles.optionDescription, { color: theme.colors.textSecondary }]}>{description}</Text>
-            <View style={styles.sessionsPreview}>
-              {POMODORO_CONFIGS[type].map((session, idx) => (
-                <View
-                  key={idx}
-                  style={[
-                    styles.sessionDot,
-                    { backgroundColor: session.type === 'focus' ? theme.colors.textTertiary : theme.colors.border },
-                  ]}
-                />
-              ))}
-            </View>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -124,17 +113,6 @@ const styles = StyleSheet.create({
   optionDescription: {
     fontSize: 14,
     fontWeight: '300',
-    marginBottom: 16,
     letterSpacing: 0.2,
-  },
-  sessionsPreview: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  sessionDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
   },
 });
