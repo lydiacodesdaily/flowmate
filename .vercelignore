@@ -1,0 +1,51 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs (exclude root-level builds)
+/.next
+/out
+/dist
+/build
+
+# Mobile app
+apps/mobile
+
+# Other packages (exclude everything except web)
+packages/*
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+.env
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Expo
+.expo
+.expo-shared
+
+# Vercel
+.vercel
+
+# Logs
+*.log
