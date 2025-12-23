@@ -173,17 +173,42 @@ export function AudioControls({
         {/* Tick Volume */}
         <View style={styles.customSection}>
           <Text style={[styles.customLabel, { color: theme.colors.text }]}>
-            Tick Volume: {Math.round(currentSettings.tickVolume * 100)}%
+            Tick Volume
           </Text>
-          <View style={styles.volumeButtons}>
+          <View style={styles.volumeControl}>
+            <TouchableOpacity
+              style={[styles.volumeAdjustButton, { borderColor: theme.colors.border }]}
+              onPress={() => updateCustomSetting('tickVolume', Math.max(0, currentSettings.tickVolume - 0.01))}
+              disabled={currentSettings.tickVolume <= 0}
+            >
+              <Text style={[styles.volumeAdjustText, { color: theme.colors.text }]}>−</Text>
+            </TouchableOpacity>
+
+            <View style={[styles.volumeDisplay, { borderColor: theme.colors.border }]}>
+              <Text style={[styles.volumeDisplayText, { color: theme.colors.text }]}>
+                {Math.round(currentSettings.tickVolume * 100)}%
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.volumeAdjustButton, { borderColor: theme.colors.border }]}
+              onPress={() => updateCustomSetting('tickVolume', Math.min(1, currentSettings.tickVolume + 0.01))}
+              disabled={currentSettings.tickVolume >= 1}
+            >
+              <Text style={[styles.volumeAdjustText, { color: theme.colors.text }]}>+</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Quick presets */}
+          <View style={styles.volumePresets}>
             {[0, 0.25, 0.5, 0.75, 1].map((vol) => (
               <TouchableOpacity
                 key={vol}
                 style={[
-                  styles.volumeButton,
+                  styles.presetPill,
                   { borderColor: theme.colors.border },
-                  currentSettings.tickVolume === vol && {
-                    backgroundColor: theme.colors.primary,
+                  Math.abs(currentSettings.tickVolume - vol) < 0.01 && {
+                    backgroundColor: theme.colors.primaryLight,
                     borderColor: theme.colors.primary,
                   },
                 ]}
@@ -191,9 +216,9 @@ export function AudioControls({
               >
                 <Text
                   style={[
-                    styles.volumeButtonText,
-                    { color: theme.colors.text },
-                    currentSettings.tickVolume === vol && styles.segmentTextActive,
+                    styles.presetPillText,
+                    { color: theme.colors.textSecondary },
+                    Math.abs(currentSettings.tickVolume - vol) < 0.01 && { color: theme.colors.primary },
                   ]}
                 >
                   {Math.round(vol * 100)}
@@ -206,17 +231,42 @@ export function AudioControls({
         {/* Announcement Volume */}
         <View style={styles.customSection}>
           <Text style={[styles.customLabel, { color: theme.colors.text }]}>
-            Announcement Volume: {Math.round(currentSettings.announcementVolume * 100)}%
+            Announcement Volume
           </Text>
-          <View style={styles.volumeButtons}>
+          <View style={styles.volumeControl}>
+            <TouchableOpacity
+              style={[styles.volumeAdjustButton, { borderColor: theme.colors.border }]}
+              onPress={() => updateCustomSetting('announcementVolume', Math.max(0, currentSettings.announcementVolume - 0.01))}
+              disabled={currentSettings.announcementVolume <= 0}
+            >
+              <Text style={[styles.volumeAdjustText, { color: theme.colors.text }]}>−</Text>
+            </TouchableOpacity>
+
+            <View style={[styles.volumeDisplay, { borderColor: theme.colors.border }]}>
+              <Text style={[styles.volumeDisplayText, { color: theme.colors.text }]}>
+                {Math.round(currentSettings.announcementVolume * 100)}%
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.volumeAdjustButton, { borderColor: theme.colors.border }]}
+              onPress={() => updateCustomSetting('announcementVolume', Math.min(1, currentSettings.announcementVolume + 0.01))}
+              disabled={currentSettings.announcementVolume >= 1}
+            >
+              <Text style={[styles.volumeAdjustText, { color: theme.colors.text }]}>+</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Quick presets */}
+          <View style={styles.volumePresets}>
             {[0, 0.25, 0.5, 0.75, 1].map((vol) => (
               <TouchableOpacity
                 key={vol}
                 style={[
-                  styles.volumeButton,
+                  styles.presetPill,
                   { borderColor: theme.colors.border },
-                  currentSettings.announcementVolume === vol && {
-                    backgroundColor: theme.colors.primary,
+                  Math.abs(currentSettings.announcementVolume - vol) < 0.01 && {
+                    backgroundColor: theme.colors.primaryLight,
                     borderColor: theme.colors.primary,
                   },
                 ]}
@@ -224,9 +274,9 @@ export function AudioControls({
               >
                 <Text
                   style={[
-                    styles.volumeButtonText,
-                    { color: theme.colors.text },
-                    currentSettings.announcementVolume === vol && styles.segmentTextActive,
+                    styles.presetPillText,
+                    { color: theme.colors.textSecondary },
+                    Math.abs(currentSettings.announcementVolume - vol) < 0.01 && { color: theme.colors.primary },
                   ]}
                 >
                   {Math.round(vol * 100)}
@@ -461,19 +511,51 @@ const styles = StyleSheet.create({
   segmentTextActive: {
     color: '#FFFFFF',
   },
-  volumeButtons: {
+  volumeControl: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
   },
-  volumeButton: {
+  volumeAdjustButton: {
+    borderWidth: 2,
+    borderRadius: 8,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  volumeAdjustText: {
+    fontSize: 24,
+    fontWeight: '300',
+    lineHeight: 28,
+  },
+  volumeDisplay: {
     flex: 1,
     borderWidth: 2,
     borderRadius: 8,
     paddingVertical: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  volumeButtonText: {
-    fontSize: 12,
+  volumeDisplayText: {
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  volumePresets: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  presetPill: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingVertical: 6,
+    alignItems: 'center',
+  },
+  presetPillText: {
+    fontSize: 11,
     fontWeight: '500',
   },
   toggleRow: {
