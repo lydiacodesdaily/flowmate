@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { TabParamList } from './types';
 import { FocusStack } from './FocusStack';
 import { StatsScreen } from '../screens/StatsScreen';
@@ -11,6 +12,7 @@ const Tab = createBottomTabNavigator<TabParamList>();
 
 export function RootNavigator() {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -22,9 +24,11 @@ export function RootNavigator() {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
           borderTopWidth: 0.5,
-          paddingBottom: 20,
+          paddingBottom: insets.bottom + 8,
           paddingTop: 8,
-          height: 80,
+          paddingLeft: insets.left + 8,
+          paddingRight: insets.right + 8,
+          height: 64 + insets.bottom,
         },
         tabBarLabelStyle: {
           fontSize: 12,
