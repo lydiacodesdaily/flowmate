@@ -244,6 +244,12 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
           <View style={styles.progressContainer}>
             <ProgressBar progress={progress} />
           </View>
+
+          <TimerAdjustControls
+            onAddTime={handleAddTime}
+            onSubtractTime={handleSubtractTime}
+            disabled={status === 'completed'}
+          />
         </View>
 
         <View style={styles.controlsContainer}>
@@ -258,7 +264,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         </View>
       </View>
 
-      {/* Settings modal - hidden secondary controls */}
+      {/* Audio settings modal */}
       <Modal
         visible={showSettings}
         transparent={true}
@@ -271,22 +277,13 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
           onPress={handleToggleSettings}
         >
           <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
-            <Text style={[styles.modalTitle, { color: theme.colors.textTertiary }]}>Settings</Text>
+            <Text style={[styles.modalTitle, { color: theme.colors.textTertiary }]}>Audio Settings</Text>
 
             <AudioControls
               muteAll={muteAll}
               muteDuringBreaks={muteDuringBreaks}
               onToggleMuteAll={handleToggleMuteAll}
               onToggleMuteDuringBreaks={handleToggleMuteDuringBreaks}
-            />
-
-            <View style={[styles.modalDivider, { backgroundColor: theme.colors.border }]} />
-
-            <Text style={[styles.modalSectionTitle, { color: theme.colors.textTertiary }]}>Adjust Time</Text>
-            <TimerAdjustControls
-              onAddTime={handleAddTime}
-              onSubtractTime={handleSubtractTime}
-              disabled={status === 'completed'}
             />
 
             <TouchableOpacity
@@ -359,17 +356,6 @@ const styles = StyleSheet.create({
     marginBottom: 28,
     textAlign: 'center',
     letterSpacing: 0.5,
-  },
-  modalSectionTitle: {
-    fontSize: 14,
-    fontWeight: '400',
-    marginBottom: 16,
-    textAlign: 'center',
-    letterSpacing: 0.3,
-  },
-  modalDivider: {
-    height: 1,
-    marginVertical: 28,
   },
   modalCloseButton: {
     marginTop: 32,
