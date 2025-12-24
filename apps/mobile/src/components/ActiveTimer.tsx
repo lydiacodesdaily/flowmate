@@ -86,6 +86,12 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         await audioService.loadTickSounds();
         await audioService.loadTransitionSounds();
         await notificationService.initialize();
+
+        // Load saved audio settings and sync with local state
+        const settings = audioService.getSettings();
+        setMuteAll(settings.muteAll);
+        setMuteDuringBreaks(settings.muteDuringBreaks);
+
         audioInitializedRef.current = true;
       }
     };

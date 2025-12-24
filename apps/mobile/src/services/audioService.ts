@@ -3,6 +3,8 @@ import type { AudioPlayer } from 'expo-audio';
 import type { AudioSettings, SessionType } from '@flowmate/shared';
 import { AppState } from 'react-native';
 import type { AppStateStatus } from 'react-native';
+import { loadAudioSettings, saveAudioSettings } from '../utils/storage';
+import type { AudioSettingsStorage } from '../utils/storage';
 
 class AudioService {
   private tickSound: AudioPlayer | null = null;
@@ -25,6 +27,17 @@ class AudioService {
 
   async initialize() {
     try {
+      // Load saved settings from storage
+      const savedSettings = await loadAudioSettings();
+      this.settings = {
+        tickVolume: savedSettings.tickVolume,
+        announcementVolume: savedSettings.announcementVolume,
+        tickSound: savedSettings.tickSound,
+        muteAll: savedSettings.muteAll,
+        muteDuringBreaks: savedSettings.muteDuringBreaks,
+        announcementInterval: savedSettings.announcementInterval,
+      };
+
       // Set audio mode for background playback and mixing with other apps
       await setAudioModeAsync({
         playsInSilentMode: true,
@@ -303,9 +316,25 @@ class AudioService {
     }
   }
 
-  updateSettings(newSettings: Partial<AudioSettings>) {
+  async updateSettings(newSettings: Partial<AudioSettings>) {
     const oldTickSound = this.settings.tickSound;
     this.settings = { ...this.settings, ...newSettings };
+
+    // Persist settings to storage (load current profile to preserve it)
+    try {
+      const currentStorage = await loadAudioSettings();
+      await saveAudioSettings({
+        ...currentStorage,
+        tickVolume: this.settings.tickVolume,
+        announcementVolume: this.settings.announcementVolume,
+        tickSound: this.settings.tickSound,
+        muteAll: this.settings.muteAll,
+        muteDuringBreaks: this.settings.muteDuringBreaks,
+        announcementInterval: this.settings.announcementInterval,
+      });
+    } catch (error) {
+      console.error('Failed to save audio settings:', error);
+    }
 
     // If tick sound type changed, reload the tick sounds
     if (newSettings.tickSound && newSettings.tickSound !== oldTickSound) {

@@ -69,3 +69,50 @@ export const saveNotificationSettings = async (settings: NotificationSettings): 
     console.error('Failed to save notification settings:', error);
   }
 };
+
+/**
+ * Audio settings storage
+ */
+
+export interface AudioSettingsStorage {
+  tickVolume: number;
+  announcementVolume: number;
+  tickSound: 'single' | 'alternating' | 'beep';
+  muteAll: boolean;
+  muteDuringBreaks: boolean;
+  announcementInterval: 1 | 2 | 3 | 5 | 10;
+  selectedProfile: 'silent' | 'minimal' | 'balanced' | 'detailed' | 'custom';
+}
+
+const AUDIO_SETTINGS_KEY = '@flowmate:audio-settings';
+
+export const getDefaultAudioSettings = (): AudioSettingsStorage => ({
+  tickVolume: 0.5,
+  announcementVolume: 0.7,
+  tickSound: 'single',
+  muteAll: false,
+  muteDuringBreaks: false,
+  announcementInterval: 1,
+  selectedProfile: 'balanced',
+});
+
+export const loadAudioSettings = async (): Promise<AudioSettingsStorage> => {
+  try {
+    const stored = await AsyncStorage.getItem(AUDIO_SETTINGS_KEY);
+    if (!stored) return getDefaultAudioSettings();
+
+    const settings = JSON.parse(stored) as AudioSettingsStorage;
+    return settings;
+  } catch (error) {
+    console.error('Failed to load audio settings:', error);
+    return getDefaultAudioSettings();
+  }
+};
+
+export const saveAudioSettings = async (settings: AudioSettingsStorage): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(AUDIO_SETTINGS_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save audio settings:', error);
+  }
+};

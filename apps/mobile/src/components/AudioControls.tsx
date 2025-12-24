@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, ScrollView } from 'react-native';
 import type { AudioSettings } from '@flowmate/shared';
 import { audioService } from '../services/audioService';
 import { useTheme } from '../theme';
+import { loadAudioSettings, saveAudioSettings } from '../utils/storage';
 
 interface AudioControlsProps {
   muteAll: boolean;
@@ -90,11 +91,32 @@ export function AudioControls({
   const [selectedPreset, setSelectedPreset] = useState<PresetProfile>('balanced');
   const [currentSettings, setCurrentSettings] = useState<AudioSettings>(audioService.getSettings());
 
-  const handlePresetSelect = (preset: AudioPreset) => {
+  // Load saved profile on mount
+  useEffect(() => {
+    const loadSavedProfile = async () => {
+      const savedSettings = await loadAudioSettings();
+      setSelectedPreset(savedSettings.selectedProfile);
+      setCurrentSettings(audioService.getSettings());
+    };
+    loadSavedProfile();
+  }, []);
+
+  const handlePresetSelect = async (preset: AudioPreset) => {
     setSelectedPreset(preset.id);
     setShowCustom(false);
-    audioService.updateSettings(preset.settings as AudioSettings);
+    await audioService.updateSettings(preset.settings as AudioSettings);
     setCurrentSettings(audioService.getSettings());
+
+    // Persist the selected profile
+    try {
+      const currentStorage = await loadAudioSettings();
+      await saveAudioSettings({
+        ...currentStorage,
+        selectedProfile: preset.id,
+      });
+    } catch (error) {
+      console.error('Failed to save selected profile:', error);
+    }
 
     // Update parent state
     if (preset.settings.muteAll !== undefined) {
@@ -109,9 +131,20 @@ export function AudioControls({
     }
   };
 
-  const handleCustomize = () => {
+  const handleCustomize = async () => {
     setSelectedPreset('custom');
     setShowCustom(true);
+
+    // Persist the custom profile selection
+    try {
+      const currentStorage = await loadAudioSettings();
+      await saveAudioSettings({
+        ...currentStorage,
+        selectedProfile: 'custom',
+      });
+    } catch (error) {
+      console.error('Failed to save custom profile selection:', error);
+    }
   };
 
   const updateCustomSetting = <K extends keyof AudioSettings>(
