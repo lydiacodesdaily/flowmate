@@ -25,7 +25,11 @@ export const EFFECT_AUDIO_FILES = {
   ding: 'ding',
   tick: 'tick',
   tick1: 'tick1',
-  tok1: 'tok1'
+  tok1: 'tok1',
+  tick2: 'tick2',
+  tok2: 'tok2',
+  beep: 'beep',
+  single_tick: 'single_tick'
 };
 
 // Audio file path builders
@@ -38,7 +42,7 @@ export const getSecondAudioPath = (seconds: number): string =>
 export const getTransitionAudioPath = (type: 'focus' | 'break' | 'done'): string =>
   `/audio/countdown/transitions/${type}.mp3`;
 
-export const getEffectAudioPath = (effect: 'ding' | 'tick' | 'tick1' | 'tok1'): string => {
-  const extension = effect === 'tick' ? 'm4a' : 'mp3';
+export const getEffectAudioPath = (effect: 'ding' | 'tick' | 'tick1' | 'tok1' | 'tick2' | 'tok2' | 'beep' | 'single_tick'): string => {
+  const extension = effect === 'tick' ? 'm4a' : (effect === 'tick2' || effect === 'tok2' || effect === 'beep' || effect === 'single_tick' ? 'wav' : 'mp3');
   return `/audio/effects/${effect}.${extension}`;
 };

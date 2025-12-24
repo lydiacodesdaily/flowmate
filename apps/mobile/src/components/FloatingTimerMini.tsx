@@ -9,6 +9,7 @@ import {
   GestureResponderEvent,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NavigationProp } from '@react-navigation/native';
 import { useTimerContext } from '../contexts/TimerContext';
 import { useTheme } from '../theme/ThemeContext';
@@ -20,6 +21,7 @@ export function FloatingTimerMini() {
   const navigation = useNavigation<RootNavigationProp>();
   const { isActive, currentPhase, formattedTime, status, pause, resume, sessions } = useTimerContext();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(100)).current; // Start below screen
 
   // Animate in/out based on isActive
@@ -79,6 +81,10 @@ export function FloatingTimerMini() {
   const phaseDisplay = getPhaseDisplay();
   const isPaused = status === 'paused';
 
+  // Tab bar height (64) + bottom inset + spacing above
+  const tabBarHeight = 64 + insets.bottom;
+  const bottomOffset = tabBarHeight + 4; // 8px spacing above tab bar
+
   return (
     <Animated.View
       style={[
@@ -86,10 +92,12 @@ export function FloatingTimerMini() {
         {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
+          bottom: bottomOffset,
           transform: [{ translateY: slideAnim }],
         },
       ]}
     >
+      {/* Whole bar is tappable - navigates to timer */}
       <TouchableOpacity
         onPress={handlePress}
         style={styles.mainArea}
@@ -112,6 +120,7 @@ export function FloatingTimerMini() {
         </Text>
       </TouchableOpacity>
 
+      {/* Pause/Resume button - secondary action */}
       <TouchableOpacity
         onPress={handleTogglePlayPause}
         style={[styles.controlButton, { borderColor: theme.colors.border }]}
@@ -126,24 +135,24 @@ export function FloatingTimerMini() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
-    height: 64,
+    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    borderTopWidth: 1,
+    paddingVertical: 8,
+    borderTopWidth: 0.5,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowOffset: { width: 0, height: -1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 3,
       },
       android: {
-        elevation: 8,
+        elevation: 4,
       },
     }),
   },

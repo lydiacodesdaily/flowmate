@@ -778,6 +778,15 @@ export default function Home() {
         tokAudioRef.current = new Audio(`/audio/effects/tok1.mp3`);
         tokAudioRef.current.volume = tickVolume;
         tokAudioRef.current.load(); // Preload the audio
+      } else if (tickSound === 'tick-tok-alternate-2.wav') {
+        // Handle alternating tick2-tok2 sound
+        tickAudioRef.current = new Audio(`/audio/effects/tick2.wav`);
+        tickAudioRef.current.volume = tickVolume;
+        tickAudioRef.current.load(); // Preload the audio
+
+        tokAudioRef.current = new Audio(`/audio/effects/tok2.wav`);
+        tokAudioRef.current.volume = tickVolume;
+        tokAudioRef.current.load(); // Preload the audio
       } else {
         // Initialize single tick audio element
         if (!tickAudioRef.current || !tickAudioRef.current.src.endsWith(`/audio/effects/${tickSound}`)) {

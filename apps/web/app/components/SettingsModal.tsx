@@ -132,9 +132,11 @@ export const SettingsModal = ({
                       disabled={tickVolume === 0}
                       className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200 disabled:cursor-not-allowed"
                     >
-                      <option value="tick1.mp3">Single</option>
+                      <option value="single_tick.wav">Single</option>
                       <option value="tick-tok-alternate.mp3">Alternating</option>
+                      <option value="tick-tok-alternate-2.wav">Alternating 2</option>
                       <option value="tick.m4a">Classic</option>
+                      <option value="beep.wav">Beep</option>
                       <option value="beep1.mp3">High Beep</option>
                       <option value="beep2.mp3">Low Beep</option>
                     </select>
