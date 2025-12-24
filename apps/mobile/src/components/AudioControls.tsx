@@ -29,9 +29,10 @@ const PRESETS: AudioPreset[] = [
     description: 'No sounds',
     settings: {
       muteAll: true,
-      tickSound: 'none',
+      tickSound: 'single',
       tickVolume: 0,
       announcementVolume: 0,
+      announcementInterval: 1,
     },
   },
   {
@@ -41,10 +42,10 @@ const PRESETS: AudioPreset[] = [
     description: 'Announcements only',
     settings: {
       muteAll: false,
-      tickSound: 'none',
+      tickSound: 'single',
       tickVolume: 0,
       announcementVolume: 0.7,
-      announcementInterval: 5,
+      announcementInterval: 1,
       muteDuringBreaks: true,
     },
   },
@@ -58,7 +59,7 @@ const PRESETS: AudioPreset[] = [
       tickSound: 'single',
       tickVolume: 0.3,
       announcementVolume: 0.7,
-      announcementInterval: 5,
+      announcementInterval: 3,
       muteDuringBreaks: false,
     },
   },
@@ -87,14 +88,13 @@ export function AudioControls({
   const { theme } = useTheme();
   const [showCustom, setShowCustom] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<PresetProfile>('balanced');
-
-  // Get current settings from audio service
-  const currentSettings = audioService.getSettings();
+  const [currentSettings, setCurrentSettings] = useState<AudioSettings>(audioService.getSettings());
 
   const handlePresetSelect = (preset: AudioPreset) => {
     setSelectedPreset(preset.id);
     setShowCustom(false);
     audioService.updateSettings(preset.settings as AudioSettings);
+    setCurrentSettings(audioService.getSettings());
 
     // Update parent state
     if (preset.settings.muteAll !== undefined) {
@@ -119,6 +119,7 @@ export function AudioControls({
     value: AudioSettings[K]
   ) => {
     audioService.updateSettings({ [key]: value });
+    setCurrentSettings(audioService.getSettings());
 
     // Update parent state if needed
     if (key === 'muteAll' && value !== muteAll) {
@@ -143,7 +144,7 @@ export function AudioControls({
         <View style={styles.customSection}>
           <Text style={[styles.customLabel, { color: theme.colors.text }]}>Tick Sound</Text>
           <View style={styles.segmentRow}>
-            {(['none', 'single', 'alternating'] as const).map((option) => (
+            {(['single', 'alternating', 'beep'] as const).map((option) => (
               <TouchableOpacity
                 key={option}
                 style={[
@@ -163,7 +164,7 @@ export function AudioControls({
                     currentSettings.tickSound === option && styles.segmentTextActive,
                   ]}
                 >
-                  {option === 'none' ? 'None' : option === 'single' ? 'Single' : 'Alt'}
+                  {option === 'single' ? 'Single' : option === 'alternating' ? 'Alt' : 'Beep'}
                 </Text>
               </TouchableOpacity>
             ))}
