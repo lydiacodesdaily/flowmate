@@ -4,6 +4,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider, useTheme } from './src/theme';
+import { TimerProvider } from './src/contexts/TimerContext';
+import { FloatingTimerMini } from './src/components/FloatingTimerMini';
 
 function AppContent() {
   const { theme, isDark } = useTheme();
@@ -13,6 +15,7 @@ function AppContent() {
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <RootNavigator />
+        <FloatingTimerMini />
       </View>
     </NavigationContainer>
   );
@@ -22,7 +25,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <AppContent />
+        <TimerProvider>
+          <AppContent />
+        </TimerProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

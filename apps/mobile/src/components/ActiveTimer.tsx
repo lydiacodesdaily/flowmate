@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Modal } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTimer } from '../hooks/useTimer';
+import { useTimerContext } from '../contexts/TimerContext';
 import { useKeepAwake } from '../hooks/useKeepAwake';
 import { TimerDisplay } from './TimerDisplay';
 import { TimerControls } from './TimerControls';
@@ -18,13 +18,14 @@ import { useTheme } from '../theme';
 import type { ActiveTimerScreenProps } from '../navigation/types';
 
 export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
-  const { sessions } = route.params;
+  const { sessions: routeSessions } = route.params;
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
   const lastMinuteRef = useRef<number>(-1);
   const lastAnnouncementMinuteRef = useRef<number>(-1);
   const lastAnnouncementSecondRef = useRef<number>(-1);
   const audioInitializedRef = useRef(false);
+  const timerInitializedRef = useRef(false);
 
   // Audio settings state
   const [muteAll, setMuteAll] = useState(false);
@@ -32,22 +33,38 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const [showSettings, setShowSettings] = useState(false);
 
   const {
+    sessions,
     currentSessionIndex,
     currentSession,
     timeRemaining,
     totalTime,
     status,
     progress,
-    start,
+    startTimer,
     pause,
     resume,
     reset,
     skip,
     addTime,
     subtractTime,
-  } = useTimer({
-    sessions,
-    onSessionComplete: async (session, sessionIndex) => {
+    setSessionCompleteCallback,
+    setAllSessionsCompleteCallback,
+  } = useTimerContext();
+
+  // Initialize timer with route sessions on mount (only if not already started)
+  useEffect(() => {
+    if (!timerInitializedRef.current && routeSessions && routeSessions.length > 0) {
+      // Only start timer if it's not already active
+      if (status === 'idle') {
+        startTimer(routeSessions);
+      }
+      timerInitializedRef.current = true;
+    }
+  }, [routeSessions, startTimer, status]);
+
+  // Set up callbacks for session completion
+  useEffect(() => {
+    setSessionCompleteCallback(async (session, sessionIndex) => {
       // Record session stats
       await statsService.recordSession(session);
 
@@ -65,15 +82,16 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         const nextSession = sessions[sessionIndex + 1];
         await audioService.announceSessionStart(nextSession.type);
       }
-    },
-    onAllSessionsComplete: async () => {
+    });
+
+    setAllSessionsCompleteCallback(async () => {
       await hapticService.heavy();
       await audioService.announceAllComplete();
       lastMinuteRef.current = -1;
       lastAnnouncementMinuteRef.current = -1;
       lastAnnouncementSecondRef.current = -1;
-    },
-  });
+    });
+  }, [sessions, setSessionCompleteCallback, setAllSessionsCompleteCallback]);
 
   // Keep screen awake when timer is running
   useKeepAwake(status === 'running');
@@ -160,7 +178,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       );
     }
     await hapticService.medium();
-    start();
+    resume();
   };
 
   const handlePause = async () => {
