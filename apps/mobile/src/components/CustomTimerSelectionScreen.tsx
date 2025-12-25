@@ -112,7 +112,7 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
             value={inputValue}
             onChangeText={handleInputChange}
             placeholder="minutes"
-            placeholderTextColor={theme.colors.border}
+            placeholderTextColor={theme.colors.textSecondary}
             keyboardType="numeric"
             returnKeyType="done"
             onSubmitEditing={handleCustomSubmit}
@@ -130,7 +130,7 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.orText, { color: theme.colors.border }]}>or choose a preset</Text>
+        <Text style={[styles.orText, { color: theme.colors.textTertiary }]}>or choose a preset</Text>
 
         <View style={styles.presetButtons}>
           {QUICK_PRESETS.map(({ minutes, label }) => (

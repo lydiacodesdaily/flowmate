@@ -130,7 +130,7 @@ export function FloatingTimerMini() {
 
   // Tab bar height (64) + bottom inset + spacing above
   const tabBarHeight = 64 + insets.bottom;
-  const bottomOffset = tabBarHeight + 4; // 8px spacing above tab bar
+  const bottomOffset = tabBarHeight; // no spacing above tab bar
 
   return (
     <Animated.View

@@ -62,7 +62,7 @@ export function WeeklyChart({ weekStats }: WeeklyChartProps) {
                   style={[
                     styles.bar,
                     {
-                      height: `${Math.max(heightPercentage, 2)}%`,
+                      height: `${Math.min(Math.max(heightPercentage, 2), 100)}%`,
                       backgroundColor: isToday ? theme.colors.textTertiary : theme.colors.border,
                     },
                   ]}
@@ -71,7 +71,7 @@ export function WeeklyChart({ weekStats }: WeeklyChartProps) {
               <Text style={[styles.dayLabel, { color: theme.colors.textTertiary }, isToday && { color: theme.colors.text, fontWeight: '500' }]}>
                 {getDayLabel(stat.date)}
               </Text>
-              <Text style={[styles.minutesLabel, { color: theme.colors.border }]}>
+              <Text style={[styles.minutesLabel, { color: theme.colors.textSecondary }]}>
                 {stat.focusTimeMinutes > 0 ? `${stat.focusTimeMinutes}m` : ''}
               </Text>
             </View>
