@@ -31,7 +31,7 @@ class NotificationService {
         name: 'Timer Notifications',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#E94B3C',
+        lightColor: '#3FA9F5',
       });
     }
 

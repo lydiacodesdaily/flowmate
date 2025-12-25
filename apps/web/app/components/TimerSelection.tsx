@@ -138,7 +138,7 @@ export const TimerSelection = ({
           <div>
             <p className="text-sm text-slate-600 dark:text-slate-400 text-center mb-3">Quick presets:</p>
             <div className="grid grid-cols-3 gap-3">
-              {[15, 30, 45].map((preset) => (
+              {[5, 10, 50].map((preset) => (
                 <button
                   key={preset}
                   onClick={() => startCustomSession(preset)}

@@ -7,9 +7,9 @@ import { useTheme } from '../theme';
 import { useTimerContext } from '../contexts/TimerContext';
 
 const QUICK_PRESETS = [
-  { minutes: 15, label: '15 min' },
-  { minutes: 30, label: '30 min' },
-  { minutes: 45, label: '45 min' },
+  { minutes: 5, label: '5 min' },
+  { minutes: 10, label: '10 min' },
+  { minutes: 50, label: '50 min' },
 ];
 
 export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreenProps) {
@@ -105,7 +105,7 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
               styles.input,
               {
                 backgroundColor: theme.colors.surface,
-                borderColor: error ? '#D1A5A5' : theme.colors.border,
+                borderColor: error ? theme.colors.error : theme.colors.border,
                 color: theme.colors.text,
               },
             ]}
@@ -119,7 +119,7 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
             autoFocus={false}
           />
 
-          {error ? <Text style={[styles.errorText, { color: '#A08080' }]}>{error}</Text> : null}
+          {error ? <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text> : null}
 
           <TouchableOpacity
             style={[styles.startButton, { backgroundColor: theme.colors.primary }]}
