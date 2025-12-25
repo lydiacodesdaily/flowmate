@@ -83,6 +83,11 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       if (sessionIndex < sessions.length - 1) {
         const nextSession = sessions[sessionIndex + 1];
         await audioService.announceSessionStart(nextSession.type);
+        // Notify about auto-starting next session (user may not be looking at screen)
+        await notificationService.scheduleSessionStartNotification(
+          nextSession.type,
+          nextSession.durationMinutes
+        );
       }
     });
 
@@ -174,10 +179,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const handleStart = async () => {
     if (currentSession) {
       await audioService.announceSessionStart(currentSession.type);
-      await notificationService.scheduleSessionStartNotification(
-        currentSession.type,
-        currentSession.durationMinutes
-      );
+      // No notification on manual start - user is already engaged
     }
     await hapticService.medium();
     resume();

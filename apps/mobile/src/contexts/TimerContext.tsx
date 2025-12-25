@@ -170,10 +170,12 @@ export function TimerProvider({ children }: TimerProviderProps) {
       intervalRef.current = null;
     }
     endTimeRef.current = null;
+
+    // Reset to the first session without clearing the sessions array
+    // This keeps the session data intact for display purposes
     setCurrentSessionIndex(0);
     setTimeRemaining(sessions[0]?.durationMinutes * 60 || 0);
     setStatus('idle');
-    setSessions([]);
   }, [sessions]);
 
   const skip = useCallback(() => {
