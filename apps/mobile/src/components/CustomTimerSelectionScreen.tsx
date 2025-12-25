@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Keyboard, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Session } from '@flowmate/shared';
 import type { CustomSelectionScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
+import { useTimerContext } from '../contexts/TimerContext';
 
 const QUICK_PRESETS = [
   { minutes: 15, label: '15 min' },
@@ -13,6 +14,7 @@ const QUICK_PRESETS = [
 
 export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreenProps) {
   const { theme } = useTheme();
+  const { isActive, reset } = useTimerContext();
   const insets = useSafeAreaInsets();
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
@@ -21,9 +23,36 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
     return [{ type: 'focus', durationMinutes: minutes }];
   };
 
+  const startSession = (sessions: Session[]) => {
+    if (isActive) {
+      // Show alert if there's an active timer
+      Alert.alert(
+        'Active Session in Progress',
+        'You have an active timer running. Do you want to end it and start a new session?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'End & Start New',
+            style: 'destructive',
+            onPress: () => {
+              reset();
+              navigation.navigate('ActiveTimer', { sessions });
+            },
+          },
+        ]
+      );
+    } else {
+      // No active timer, proceed normally
+      navigation.navigate('ActiveTimer', { sessions });
+    }
+  };
+
   const handlePresetSelect = (minutes: number) => {
     const sessions = createCustomSession(minutes);
-    navigation.navigate('ActiveTimer', { sessions });
+    startSession(sessions);
   };
 
   const handleCustomSubmit = () => {
@@ -46,7 +75,7 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
 
     Keyboard.dismiss();
     const sessions = createCustomSession(minutes);
-    navigation.navigate('ActiveTimer', { sessions });
+    startSession(sessions);
   };
 
   const handleInputChange = (text: string) => {

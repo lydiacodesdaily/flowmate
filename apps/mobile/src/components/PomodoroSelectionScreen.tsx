@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PomodoroType } from '@flowmate/shared';
 import { POMODORO_CONFIGS } from '@flowmate/shared';
 import type { PomodoroSelectionScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
+import { useTimerContext } from '../contexts/TimerContext';
 
 const POMODORO_OPTIONS: Array<{ type: PomodoroType; title: string; description: string }> = [
   { type: '1pom', title: '1 Pomodoro', description: '25 minutes of focused work' },
@@ -15,7 +16,35 @@ const POMODORO_OPTIONS: Array<{ type: PomodoroType; title: string; description: 
 
 export function PomodoroSelectionScreen({ navigation }: PomodoroSelectionScreenProps) {
   const { theme } = useTheme();
+  const { isActive, reset } = useTimerContext();
   const insets = useSafeAreaInsets();
+
+  const handleSessionSelect = (pomodoroType: PomodoroType) => {
+    if (isActive) {
+      // Show alert if there's an active timer
+      Alert.alert(
+        'Active Session in Progress',
+        'You have an active timer running. Do you want to end it and start a new session?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'End & Start New',
+            style: 'destructive',
+            onPress: () => {
+              reset();
+              navigation.navigate('ActiveTimer', { sessions: POMODORO_CONFIGS[pomodoroType] });
+            },
+          },
+        ]
+      );
+    } else {
+      // No active timer, proceed normally
+      navigation.navigate('ActiveTimer', { sessions: POMODORO_CONFIGS[pomodoroType] });
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -33,7 +62,7 @@ export function PomodoroSelectionScreen({ navigation }: PomodoroSelectionScreenP
           <TouchableOpacity
             key={type}
             style={[styles.optionCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
-            onPress={() => navigation.navigate('ActiveTimer', { sessions: POMODORO_CONFIGS[type] })}
+            onPress={() => handleSessionSelect(type)}
             activeOpacity={0.85}
           >
             <View style={styles.optionHeader}>

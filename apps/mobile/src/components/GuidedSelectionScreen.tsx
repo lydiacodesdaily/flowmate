@@ -1,34 +1,63 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { GuidedType } from '@flowmate/shared';
 import { GUIDED_CONFIGS } from '@flowmate/shared';
 import type { GuidedSelectionScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
+import { useTimerContext } from '../contexts/TimerContext';
 
 type GuidedStyle = 'pom' | 'deep';
 
 const GUIDED_OPTIONS: Record<GuidedStyle, Array<{ type: GuidedType; title: string; description: string }>> = {
   pom: [
-    { type: 'guided-30-pom', title: '30 Minutes', description: 'Settle, focus 25, wrap' },
-    { type: 'guided-60-pom', title: '60 Minutes', description: 'Settle, 25+20 focus, wrap' },
-    { type: 'guided-90-pom', title: '90 Minutes', description: 'Settle, 25+25+20 focus, wrap' },
-    { type: 'guided-120-pom', title: '2 Hours', description: 'Settle, 25+25+25+20 focus, wrap' },
-    { type: 'guided-180-pom', title: '3 Hours', description: 'Settle, 5x25+20 focus, wrap' },
+    { type: 'guided-30-pom', title: '30 Minutes', description: '3m settle → 25m focus → 2m wrap' },
+    { type: 'guided-60-pom', title: '60 Minutes', description: '5m settle → 25m+20m focus → 5m wrap' },
+    { type: 'guided-90-pom', title: '90 Minutes', description: '5m settle → 25m+25m+20m focus → 5m wrap' },
+    { type: 'guided-120-pom', title: '2 Hours', description: '5m settle → 25m+25m+25m+20m focus → 5m wrap' },
+    { type: 'guided-180-pom', title: '3 Hours', description: '5m settle → 6 focus blocks → 5m wrap' },
   ],
   deep: [
-    { type: 'guided-30-deep', title: '30 Minutes', description: 'Settle, focus 25, wrap' },
-    { type: 'guided-60-deep', title: '60 Minutes', description: 'Settle, focus 50, wrap' },
-    { type: 'guided-90-deep', title: '90 Minutes', description: 'Settle, focus 80, wrap' },
-    { type: 'guided-120-deep', title: '2 Hours', description: 'Settle, 50+55 focus, wrap' },
-    { type: 'guided-180-deep', title: '3 Hours', description: 'Settle, 50+50+60 focus, wrap' },
+    { type: 'guided-30-deep', title: '30 Minutes', description: '3m settle → 25m focus → 2m wrap' },
+    { type: 'guided-60-deep', title: '60 Minutes', description: '5m settle → 50m focus → 5m wrap' },
+    { type: 'guided-90-deep', title: '90 Minutes', description: '5m settle → 80m focus → 5m wrap' },
+    { type: 'guided-120-deep', title: '2 Hours', description: '5m settle → 50m+55m focus → 5m wrap' },
+    { type: 'guided-180-deep', title: '3 Hours', description: '5m settle → 50m+50m+60m focus → 5m wrap' },
   ],
 };
 
 export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps) {
   const { theme } = useTheme();
+  const { isActive, reset } = useTimerContext();
   const [style, setStyle] = useState<GuidedStyle>('pom');
   const insets = useSafeAreaInsets();
+
+  const handleSessionSelect = (guidedType: GuidedType) => {
+    if (isActive) {
+      // Show alert if there's an active timer
+      Alert.alert(
+        'Active Session in Progress',
+        'You have an active timer running. Do you want to end it and start a new session?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'End & Start New',
+            style: 'destructive',
+            onPress: () => {
+              reset();
+              navigation.navigate('ActiveTimer', { sessions: GUIDED_CONFIGS[guidedType] });
+            },
+          },
+        ]
+      );
+    } else {
+      // No active timer, proceed normally
+      navigation.navigate('ActiveTimer', { sessions: GUIDED_CONFIGS[guidedType] });
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -67,7 +96,7 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
           <TouchableOpacity
             key={type}
             style={[styles.optionCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
-            onPress={() => navigation.navigate('ActiveTimer', { sessions: GUIDED_CONFIGS[type] })}
+            onPress={() => handleSessionSelect(type)}
             activeOpacity={0.85}
           >
             <View style={styles.optionHeader}>
