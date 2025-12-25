@@ -8,7 +8,7 @@ import {
   Platform,
   GestureResponderEvent,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NavigationProp } from '@react-navigation/native';
 import { useTimerContext } from '../contexts/TimerContext';
@@ -24,9 +24,28 @@ export function FloatingTimerMini() {
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(100)).current; // Start below screen
 
-  // Animate in/out based on isActive
+  // Check if we're currently on the ActiveTimer screen
+  const isOnActiveTimerScreen = useNavigationState((state) => {
+    if (!state) return false;
+
+    // Navigate through the state tree to find the current route
+    const tabState = state.routes[state.index];
+    if (tabState?.name === 'FocusTab' && tabState.state) {
+      const focusStackState = tabState.state;
+      if (focusStackState.index !== undefined) {
+        const currentRoute = focusStackState.routes[focusStackState.index];
+        return currentRoute?.name === 'ActiveTimer';
+      }
+    }
+    return false;
+  });
+
+  // Determine if floating timer should be visible
+  const shouldShow = isActive && !isOnActiveTimerScreen;
+
+  // Animate in/out based on shouldShow
   useEffect(() => {
-    if (isActive) {
+    if (shouldShow) {
       // Slide up
       Animated.timing(slideAnim, {
         toValue: 0,
@@ -41,9 +60,9 @@ export function FloatingTimerMini() {
         useNativeDriver: true,
       }).start();
     }
-  }, [isActive, slideAnim]);
+  }, [shouldShow, slideAnim]);
 
-  if (!isActive) return null;
+  if (!shouldShow) return null;
 
   const handlePress = () => {
     // Navigate to ActiveTimer screen in FocusTab with sessions parameter
