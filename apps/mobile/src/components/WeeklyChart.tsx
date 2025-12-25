@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   },
   barWrapper: {
     width: '100%',
-    height: '100%',
+    flex: 1,
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingHorizontal: 4,
