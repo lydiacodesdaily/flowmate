@@ -7,6 +7,7 @@ import { useKeepAwake } from '../hooks/useKeepAwake';
 import { TimerDisplay } from './TimerDisplay';
 import { TimerControls } from './TimerControls';
 import { TimerAdjustControls } from './TimerAdjustControls';
+import { PomodoroAdjustControls } from './PomodoroAdjustControls';
 import { AudioControls } from './AudioControls';
 import { ProgressBar } from './ProgressBar';
 import { SessionIndicators } from './SessionIndicators';
@@ -47,6 +48,8 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     skip,
     addTime,
     subtractTime,
+    addPomodoros,
+    removePomodoros,
     setSessionCompleteCallback,
     setAllSessionsCompleteCallback,
   } = useTimerContext();
@@ -239,6 +242,24 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     setShowSettings(!showSettings);
   };
 
+  const handleAddPomodoro = async () => {
+    await hapticService.light();
+    addPomodoros(1);
+  };
+
+  const handleRemovePomodoro = async () => {
+    await hapticService.light();
+    removePomodoros(1);
+  };
+
+  // Check if this is a pomodoro-style timer (has 25-min focus sessions with 5-min breaks)
+  const isPomodoroStyle = sessions.some(
+    (session) => session.type === 'focus' && session.durationMinutes === 25
+  );
+
+  // Check if we can remove pomodoros (need at least currentSessionIndex + 1 sessions)
+  const canRemovePomodoro = sessions.length > currentSessionIndex + 2;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -276,6 +297,15 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
             onSubtractTime={handleSubtractTime}
             disabled={status === 'completed'}
           />
+
+          {isPomodoroStyle && (
+            <PomodoroAdjustControls
+              onAddPomodoro={handleAddPomodoro}
+              onRemovePomodoro={handleRemovePomodoro}
+              disabled={status === 'completed'}
+              canRemove={canRemovePomodoro}
+            />
+          )}
         </View>
 
         <View style={styles.controlsContainer}>

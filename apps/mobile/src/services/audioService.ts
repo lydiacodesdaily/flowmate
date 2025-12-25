@@ -9,7 +9,6 @@ import type { AudioSettingsStorage } from '../utils/storage';
 class AudioService {
   private tickSound: AudioPlayer | null = null;
   private alternateTickSound: AudioPlayer | null = null;
-  private beepSound: AudioPlayer | null = null;
   private dingSound: AudioPlayer | null = null;
   private transitionSounds: Map<string, AudioPlayer> = new Map();
   private minuteAnnouncements: Map<number, AudioPlayer> = new Map();
@@ -19,7 +18,7 @@ class AudioService {
   private settings: AudioSettings = {
     tickVolume: 0.5,
     announcementVolume: 0.7,
-    tickSound: 'single',
+    tickSound: 'classic',
     muteAll: false,
     muteDuringBreaks: false,
     announcementInterval: 1,
@@ -72,8 +71,8 @@ class AudioService {
     try {
       // Load sounds based on tick sound setting
       if (this.settings.tickSound === 'single') {
-        // Single mode: use tick.m4a
-        const tick = createAudioPlayer(require('../../assets/audio/effects/tick.m4a'), {
+        // Single mode: use single_tick.wav
+        const tick = createAudioPlayer(require('../../assets/audio/effects/single_tick.wav'), {
           keepAudioSessionActive: true,
         });
         tick.volume = this.settings.tickVolume;
@@ -91,13 +90,33 @@ class AudioService {
         });
         tick2.volume = this.settings.tickVolume;
         this.alternateTickSound = tick2;
-      } else if (this.settings.tickSound === 'beep') {
-        // Beep mode: use beep2.mp3
-        const beep = createAudioPlayer(require('../../assets/audio/effects/beep2.mp3'), {
+      } else if (this.settings.tickSound === 'alternating2') {
+        // Alternating 2 mode: use tick2.wav and tok2.wav
+        const tick1 = createAudioPlayer(require('../../assets/audio/effects/tick2.wav'), {
           keepAudioSessionActive: true,
         });
-        beep.volume = this.settings.tickVolume;
-        this.beepSound = beep;
+        tick1.volume = this.settings.tickVolume;
+        this.tickSound = tick1;
+
+        const tick2 = createAudioPlayer(require('../../assets/audio/effects/tok2.wav'), {
+          keepAudioSessionActive: true,
+        });
+        tick2.volume = this.settings.tickVolume;
+        this.alternateTickSound = tick2;
+      } else if (this.settings.tickSound === 'classic') {
+        // Classic mode: use tick.m4a
+        const tick = createAudioPlayer(require('../../assets/audio/effects/tick.m4a'), {
+          keepAudioSessionActive: true,
+        });
+        tick.volume = this.settings.tickVolume;
+        this.tickSound = tick;
+      } else if (this.settings.tickSound === 'beep') {
+        // Beep mode: use beep.wav
+        const tick = createAudioPlayer(require('../../assets/audio/effects/beep.wav'), {
+          keepAudioSessionActive: true,
+        });
+        tick.volume = this.settings.tickVolume;
+        this.tickSound = tick;
       }
 
       // Load ding sound for session completion
@@ -221,16 +240,16 @@ class AudioService {
     if (this.settings.muteDuringBreaks && sessionType === 'break') return;
 
     try {
-      if (this.settings.tickSound === 'alternating' && this.alternateTickSound && this.tickSound) {
+      // Handle alternating sounds (alternating and alternating2)
+      if ((this.settings.tickSound === 'alternating' || this.settings.tickSound === 'alternating2')
+          && this.alternateTickSound && this.tickSound) {
         const soundToPlay = this.isAlternate ? this.alternateTickSound : this.tickSound;
         this.isAlternate = !this.isAlternate;
 
         await soundToPlay.seekTo(0);
         soundToPlay.play();
-      } else if (this.settings.tickSound === 'beep' && this.beepSound) {
-        await this.beepSound.seekTo(0);
-        this.beepSound.play();
-      } else if (this.settings.tickSound === 'single' && this.tickSound) {
+      } else if (this.tickSound) {
+        // Handle single sounds (single, classic, beep)
         await this.tickSound.seekTo(0);
         this.tickSound.play();
       }
@@ -347,10 +366,6 @@ class AudioService {
         this.alternateTickSound.remove();
         this.alternateTickSound = null;
       }
-      if (this.beepSound) {
-        this.beepSound.remove();
-        this.beepSound = null;
-      }
 
       // Reload with new tick sound type
       this.loadTickSounds();
@@ -361,9 +376,6 @@ class AudioService {
       }
       if (this.alternateTickSound) {
         this.alternateTickSound.volume = this.settings.tickVolume;
-      }
-      if (this.beepSound) {
-        this.beepSound.volume = this.settings.tickVolume;
       }
     }
 
@@ -403,10 +415,6 @@ class AudioService {
     if (this.alternateTickSound) {
       this.alternateTickSound.remove();
       this.alternateTickSound = null;
-    }
-    if (this.beepSound) {
-      this.beepSound.remove();
-      this.beepSound = null;
     }
     if (this.dingSound) {
       this.dingSound.remove();

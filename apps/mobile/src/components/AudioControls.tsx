@@ -30,7 +30,7 @@ const PRESETS: AudioPreset[] = [
     description: 'No sounds',
     settings: {
       muteAll: true,
-      tickSound: 'single',
+      tickSound: 'classic',
       tickVolume: 0,
       announcementVolume: 0,
       announcementInterval: 1,
@@ -43,9 +43,9 @@ const PRESETS: AudioPreset[] = [
     description: 'Announcements only',
     settings: {
       muteAll: false,
-      tickSound: 'single',
+      tickSound: 'classic',
       tickVolume: 0,
-      announcementVolume: 0.7,
+      announcementVolume: 0.2,
       announcementInterval: 1,
       muteDuringBreaks: true,
     },
@@ -57,23 +57,23 @@ const PRESETS: AudioPreset[] = [
     description: 'Gentle ticks + announcements',
     settings: {
       muteAll: false,
-      tickSound: 'single',
-      tickVolume: 0.3,
-      announcementVolume: 0.7,
-      announcementInterval: 3,
+      tickSound: 'classic',
+      tickVolume: 0.1,
+      announcementVolume: 0.2,
+      announcementInterval: 1,
       muteDuringBreaks: false,
     },
   },
   {
     id: 'detailed',
-    label: 'Detailed',
+    label: 'Full',
     icon: '📢',
-    description: 'Full audio experience',
+    description: 'Full volume ticks + announcements',
     settings: {
       muteAll: false,
       tickSound: 'alternating',
-      tickVolume: 0.5,
-      announcementVolume: 0.8,
+      tickVolume: 1,
+      announcementVolume: 1,
       announcementInterval: 1,
       muteDuringBreaks: false,
     },
@@ -176,8 +176,10 @@ export function AudioControls({
         {/* Tick Sound */}
         <View style={styles.customSection}>
           <Text style={[styles.customLabel, { color: theme.colors.text }]}>Tick Sound</Text>
+
+          {/* First row - 3 buttons */}
           <View style={styles.segmentRow}>
-            {(['single', 'alternating', 'beep'] as const).map((option) => (
+            {(['single', 'alternating', 'alternating2'] as const).map((option) => (
               <TouchableOpacity
                 key={option}
                 style={[
@@ -197,7 +199,35 @@ export function AudioControls({
                     currentSettings.tickSound === option && styles.segmentTextActive,
                   ]}
                 >
-                  {option === 'single' ? 'Single' : option === 'alternating' ? 'Alt' : 'Beep'}
+                  {option === 'single' ? 'Single' : option === 'alternating' ? 'Alt 1' : 'Alt 2'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Second row - 2 buttons */}
+          <View style={[styles.segmentRow, { marginTop: 8 }]}>
+            {(['classic', 'beep'] as const).map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={[
+                  styles.segmentButton,
+                  { borderColor: theme.colors.border },
+                  currentSettings.tickSound === option && {
+                    backgroundColor: theme.colors.primary,
+                    borderColor: theme.colors.primary,
+                  },
+                ]}
+                onPress={() => updateCustomSetting('tickSound', option)}
+              >
+                <Text
+                  style={[
+                    styles.segmentText,
+                    { color: theme.colors.text },
+                    currentSettings.tickSound === option && styles.segmentTextActive,
+                  ]}
+                >
+                  {option === 'classic' ? 'Classic' : 'Beep'}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -499,7 +529,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   customContainer: {
-    maxHeight: 480,
+    maxHeight: 600,
   },
   customHeader: {
     flexDirection: 'row',

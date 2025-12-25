@@ -77,7 +77,7 @@ export const saveNotificationSettings = async (settings: NotificationSettings): 
 export interface AudioSettingsStorage {
   tickVolume: number;
   announcementVolume: number;
-  tickSound: 'single' | 'alternating' | 'beep';
+  tickSound: 'single' | 'alternating' | 'alternating2' | 'classic' | 'beep';
   muteAll: boolean;
   muteDuringBreaks: boolean;
   announcementInterval: 1 | 2 | 3 | 5 | 10;
@@ -89,7 +89,7 @@ const AUDIO_SETTINGS_KEY = '@flowmate:audio-settings';
 export const getDefaultAudioSettings = (): AudioSettingsStorage => ({
   tickVolume: 0.5,
   announcementVolume: 0.7,
-  tickSound: 'single',
+  tickSound: 'classic',
   muteAll: false,
   muteDuringBreaks: false,
   announcementInterval: 1,

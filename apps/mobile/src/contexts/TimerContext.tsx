@@ -23,6 +23,8 @@ interface TimerContextValue {
   reset: () => void;
   addTime: (seconds: number) => void;
   subtractTime: (seconds: number) => void;
+  addPomodoros: (numPomodoros?: number) => void;
+  removePomodoros: (numPomodoros?: number) => void;
 
   // Computed Properties
   isActive: boolean; // true when status is 'running' or 'paused'
@@ -216,6 +218,35 @@ export function TimerProvider({ children }: TimerProviderProps) {
     });
   }, [status]);
 
+  const addPomodoros = useCallback((numPomodoros: number = 1) => {
+    const newSessions: Session[] = [];
+    for (let i = 0; i < numPomodoros; i++) {
+      newSessions.push({ type: 'break', durationMinutes: 5 });
+      newSessions.push({ type: 'focus', durationMinutes: 25 });
+    }
+    setSessions((prev) => [...prev, ...newSessions]);
+  }, []);
+
+  const removePomodoros = useCallback((numPomodoros: number = 1) => {
+    setSessions((prev) => {
+      // Each pomodoro cycle is 2 sessions: break + focus
+      const sessionsToRemove = numPomodoros * 2;
+
+      // Don't remove if it would affect current or past sessions
+      // Keep at least currentSessionIndex + 1 sessions
+      const minSessionsToKeep = currentSessionIndex + 1;
+      const canRemove = prev.length - sessionsToRemove >= minSessionsToKeep;
+
+      if (canRemove) {
+        // Remove from the end
+        return prev.slice(0, -sessionsToRemove);
+      }
+
+      // If we can't remove the full cycle, don't remove anything
+      return prev;
+    });
+  }, [currentSessionIndex]);
+
   const setSessionCompleteCallback = useCallback((callback: (session: Session, sessionIndex: number) => void) => {
     onSessionCompleteRef.current = callback;
   }, []);
@@ -239,6 +270,8 @@ export function TimerProvider({ children }: TimerProviderProps) {
     reset,
     addTime,
     subtractTime,
+    addPomodoros,
+    removePomodoros,
     isActive,
     formattedTime,
     currentPhase,
@@ -261,6 +294,8 @@ export function TimerProvider({ children }: TimerProviderProps) {
     reset,
     addTime,
     subtractTime,
+    addPomodoros,
+    removePomodoros,
     isActive,
     formattedTime,
     currentPhase,
