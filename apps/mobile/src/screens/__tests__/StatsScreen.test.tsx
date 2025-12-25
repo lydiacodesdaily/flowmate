@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { StatsScreen } from '../StatsScreen';
 import { statsService } from '../../services/statsService';
 import type { UserStats } from '@flowmate/shared';
@@ -143,8 +143,9 @@ describe('StatsScreen', () => {
       expect(getByText('your progress')).toBeTruthy();
     });
 
-    const backButton = getByText('← back');
-    backButton.props.onPress();
+    const backButtonText = getByText('← back');
+    // Fire the press event on the parent TouchableOpacity
+    fireEvent.press(backButtonText);
 
     expect(mockNavigation.goBack).toHaveBeenCalledTimes(1);
   });
@@ -168,10 +169,12 @@ describe('StatsScreen', () => {
       { date: '2025-12-25', focusTimeMinutes: 125, sessionsCompleted: 5 },
     ]);
 
-    const { getByText } = render(<StatsScreen navigation={mockNavigation} route={{} as any} />);
+    const { getAllByText } = render(<StatsScreen navigation={mockNavigation} route={{} as any} />);
 
     await waitFor(() => {
-      expect(getByText('2h 5m')).toBeTruthy(); // 125 minutes = 2h 5m
+      // 125 minutes = 2h 5m - appears in both today and all time sections
+      const focusTimes = getAllByText('2h 5m');
+      expect(focusTimes.length).toBeGreaterThan(0);
     });
   });
 

@@ -29,7 +29,8 @@ class StatsService {
       console.error('Failed to load stats:', error);
     }
 
-    return defaultStats;
+    // Return a deep copy of defaultStats to avoid mutations
+    return JSON.parse(JSON.stringify(defaultStats));
   }
 
   async saveStats(stats: UserStats): Promise<void> {

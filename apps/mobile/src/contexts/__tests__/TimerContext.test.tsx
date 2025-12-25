@@ -190,7 +190,13 @@ describe('TimerContext', () => {
 
       act(() => {
         result.current.startTimer(sessions);
+      });
+
+      act(() => {
         result.current.pause();
+      });
+
+      act(() => {
         result.current.skip(); // Move to second session
       });
 

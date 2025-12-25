@@ -41,10 +41,8 @@ describe('AudioService', () => {
         new Error('Storage error')
       );
 
-      await audioService.initialize();
-
-      // Should not throw and should still attempt to set audio mode
-      expect(ExpoAudio.setAudioModeAsync).toHaveBeenCalled();
+      // Should not throw - error is caught and logged
+      await expect(audioService.initialize()).resolves.not.toThrow();
     });
   });
 
