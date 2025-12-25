@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Platform,
   GestureResponderEvent,
 } from 'react-native';
-import { useNavigation, useNavigationState } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NavigationProp } from '@react-navigation/native';
 import { useTimerContext } from '../contexts/TimerContext';
@@ -23,22 +23,50 @@ export function FloatingTimerMini() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(100)).current; // Start below screen
+  const [isOnActiveTimerScreen, setIsOnActiveTimerScreen] = useState(false);
 
-  // Check if we're currently on the ActiveTimer screen
-  const isOnActiveTimerScreen = useNavigationState((state) => {
-    if (!state) return false;
+  // Check if we're currently on the ActiveTimer screen by listening to navigation state changes
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('state' as any, () => {
+      try {
+        const state = navigation.getState();
 
-    // Navigate through the state tree to find the current route
-    const tabState = state.routes[state.index];
-    if (tabState?.name === 'FocusTab' && tabState.state) {
-      const focusStackState = tabState.state;
-      if (focusStackState.index !== undefined) {
-        const currentRoute = focusStackState.routes[focusStackState.index];
-        return currentRoute?.name === 'ActiveTimer';
+        // Navigate through the state tree to find the current route
+        const currentRoute = state.routes[state.index];
+
+        // Check if we're in the FocusTab
+        if (currentRoute?.name === 'FocusTab') {
+          // Access the nested state of FocusTab
+          const focusTabState = (currentRoute as any).state;
+          if (focusTabState && focusTabState.index !== undefined) {
+            const focusRoute = focusTabState.routes[focusTabState.index];
+            setIsOnActiveTimerScreen(focusRoute?.name === 'ActiveTimer');
+            return;
+          }
+        }
+        setIsOnActiveTimerScreen(false);
+      } catch (error) {
+        setIsOnActiveTimerScreen(false);
       }
+    });
+
+    // Initial check
+    try {
+      const state = navigation.getState();
+      const currentRoute = state.routes[state.index];
+      if (currentRoute?.name === 'FocusTab') {
+        const focusTabState = (currentRoute as any).state;
+        if (focusTabState && focusTabState.index !== undefined) {
+          const focusRoute = focusTabState.routes[focusTabState.index];
+          setIsOnActiveTimerScreen(focusRoute?.name === 'ActiveTimer');
+        }
+      }
+    } catch (error) {
+      setIsOnActiveTimerScreen(false);
     }
-    return false;
-  });
+
+    return unsubscribe;
+  }, [navigation]);
 
   // Determine if floating timer should be visible
   const shouldShow = isActive && !isOnActiveTimerScreen;

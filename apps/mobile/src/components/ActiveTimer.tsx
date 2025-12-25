@@ -6,8 +6,7 @@ import { useTimerContext } from '../contexts/TimerContext';
 import { useKeepAwake } from '../hooks/useKeepAwake';
 import { TimerDisplay } from './TimerDisplay';
 import { TimerControls } from './TimerControls';
-import { TimerAdjustControls } from './TimerAdjustControls';
-import { PomodoroAdjustControls } from './PomodoroAdjustControls';
+import { TimerAdjustments } from './TimerAdjustments';
 import { AudioControls } from './AudioControls';
 import { ProgressBar } from './ProgressBar';
 import { SessionIndicators } from './SessionIndicators';
@@ -252,9 +251,12 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     removePomodoros(1);
   };
 
-  // Check if this is a pomodoro-style timer (has 25-min focus sessions with 5-min breaks)
+  // Check if this is a standard pomodoro-style timer (has 25-min focus sessions with 5-min breaks)
+  // Excludes guided pomodoro which has settle/wrap phases
   const isPomodoroStyle = sessions.some(
     (session) => session.type === 'focus' && session.durationMinutes === 25
+  ) && !sessions.some(
+    (session) => session.type === 'settle' || session.type === 'wrap'
   );
 
   // Check if we can remove pomodoros (need at least currentSessionIndex + 1 sessions)
@@ -292,20 +294,15 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
             <ProgressBar progress={progress} />
           </View>
 
-          <TimerAdjustControls
+          <TimerAdjustments
             onAddTime={handleAddTime}
             onSubtractTime={handleSubtractTime}
+            onAddPomodoro={handleAddPomodoro}
+            onRemovePomodoro={handleRemovePomodoro}
             disabled={status === 'completed'}
+            canRemovePomodoro={canRemovePomodoro}
+            showPomodoroControls={isPomodoroStyle}
           />
-
-          {isPomodoroStyle && (
-            <PomodoroAdjustControls
-              onAddPomodoro={handleAddPomodoro}
-              onRemovePomodoro={handleRemovePomodoro}
-              disabled={status === 'completed'}
-              canRemove={canRemovePomodoro}
-            />
-          )}
         </View>
 
         <View style={styles.controlsContainer}>

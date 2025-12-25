@@ -7,6 +7,15 @@ import { ThemeProvider, useTheme } from './src/theme';
 import { TimerProvider } from './src/contexts/TimerContext';
 import { FloatingTimerMini } from './src/components/FloatingTimerMini';
 
+function NavigationContent() {
+  return (
+    <>
+      <RootNavigator />
+      <FloatingTimerMini />
+    </>
+  );
+}
+
 function AppContent() {
   const { theme, isDark } = useTheme();
 
@@ -14,8 +23,7 @@ function AppContent() {
     <NavigationContainer>
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        <RootNavigator />
-        <FloatingTimerMini />
+        <NavigationContent />
       </View>
     </NavigationContainer>
   );
