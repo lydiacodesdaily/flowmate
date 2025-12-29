@@ -55,6 +55,17 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
     }
   };
 
+  const handleStart = () => {
+    // If there's text in the new step input, add it before starting
+    if (newStepText.trim() && steps.length < MAX_STEPS) {
+      const newStep = createPrepStep(newStepText);
+      const updatedSteps = [...steps, newStep];
+      // Save the draft with the final step included
+      saveDraft({ intent, steps: updatedSteps });
+    }
+    onStart();
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
@@ -155,7 +166,7 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
             Skip setup
           </button>
           <button
-            onClick={onStart}
+            onClick={handleStart}
             className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
           >
             Start session
