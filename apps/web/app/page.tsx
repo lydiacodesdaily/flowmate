@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
-import { SessionDuration, TimerMode, PomodoroSession, FOCUS_DURATION, BREAK_DURATION, UserStats } from "./types";
+import { SessionDuration, TimerMode, TimerBlock, FOCUS_DURATION, BREAK_DURATION, UserStats } from "./types";
 import { SettingsModal } from "./components/SettingsModal";
 import { StatsModal } from "./components/StatsModal";
 import { TimerSelection } from "./components/TimerSelection";
@@ -16,7 +16,7 @@ export default function Home() {
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
   const [guidedStyle, setGuidedStyle] = useState<"pomodoro" | "deep-focus">("pomodoro");
   const [selectedDuration, setSelectedDuration] = useState<SessionDuration | null>(null);
-  const [sessions, setSessions] = useState<PomodoroSession[]>([]);
+  const [sessions, setSessions] = useState<TimerBlock[]>([]);
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -54,7 +54,7 @@ export default function Home() {
   const isPausedRef = useRef<boolean>(false);
   const timeRemainingRef = useRef<number>(0);
   const currentSessionIndexRef = useRef<number>(0);
-  const sessionsRef = useRef<PomodoroSession[]>([]);
+  const sessionsRef = useRef<TimerBlock[]>([]);
   const endTimeRef = useRef<number>(0);
   const sessionStartTimeRef = useRef<number>(0);
   const totalPausedTimeRef = useRef<number>(0);
@@ -266,8 +266,8 @@ export default function Home() {
   }, []);
 
   // Generate sessions based on selected duration and mode
-  const generateSessions = (totalMinutes: SessionDuration | number): PomodoroSession[] => {
-    const sessionsList: PomodoroSession[] = [];
+  const generateSessions = (totalMinutes: SessionDuration | number): TimerBlock[] => {
+    const sessionsList: TimerBlock[] = [];
 
     if (timerMode === "custom") {
       // Custom mode - single focus session with no breaks
@@ -464,7 +464,7 @@ export default function Home() {
 
   // Add more Pomodoro cycles (5 min break + 25 min focus)
   const addMoreCycles = (numCycles: number = 1) => {
-    const newSessions: PomodoroSession[] = [];
+    const newSessions: TimerBlock[] = [];
     for (let i = 0; i < numCycles; i++) {
       newSessions.push({ type: "break", duration: BREAK_DURATION });
       newSessions.push({ type: "focus", duration: FOCUS_DURATION });

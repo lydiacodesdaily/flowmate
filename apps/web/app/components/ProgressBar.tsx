@@ -1,7 +1,7 @@
-import { PomodoroSession } from "../types";
+import { TimerBlock } from "../types";
 
 interface ProgressBarProps {
-  sessions: PomodoroSession[];
+  sessions: TimerBlock[];
   currentSessionIndex: number;
   timeRemaining: number;
 }

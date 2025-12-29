@@ -11,8 +11,6 @@ export const getTodayDate = (): string => {
 // Initialize empty stats
 export const getEmptyStats = (): UserStats => ({
   dailyStats: [],
-  currentStreak: 0,
-  longestStreak: 0,
   totalFocusTime: 0,
   totalSessions: 0,
 });
@@ -25,9 +23,7 @@ export const loadStats = (): UserStats => {
     const stored = localStorage.getItem(STATS_STORAGE_KEY);
     if (!stored) return getEmptyStats();
 
-    const stats = JSON.parse(stored) as UserStats;
-    // Recalculate streak on load in case days were missed
-    return recalculateStreak(stats);
+    return JSON.parse(stored) as UserStats;
   } catch (error) {
     console.error("Failed to load stats:", error);
     return getEmptyStats();
@@ -58,7 +54,7 @@ export const getTodayStats = (stats: UserStats): DailyStats => {
   return {
     date: today,
     focusTimeMinutes: 0,
-    sessionsCompleted: 0,
+    sessionsSaved: 0,
   };
 };
 
@@ -79,14 +75,14 @@ export const addFocusSession = (
       ...updatedDailyStats[todayIndex],
       focusTimeMinutes:
         updatedDailyStats[todayIndex].focusTimeMinutes + focusTimeMinutes,
-      sessionsCompleted: updatedDailyStats[todayIndex].sessionsCompleted + 1,
+      sessionsSaved: updatedDailyStats[todayIndex].sessionsSaved + 1,
     };
   } else {
     // Create new entry
     updatedDailyStats.push({
       date: today,
       focusTimeMinutes,
-      sessionsCompleted: 1,
+      sessionsSaved: 1,
     });
   }
 
@@ -95,65 +91,13 @@ export const addFocusSession = (
 
   const updatedStats: UserStats = {
     dailyStats: updatedDailyStats,
-    currentStreak: 0, // Will be calculated next
-    longestStreak: stats.longestStreak,
     totalFocusTime: stats.totalFocusTime + focusTimeMinutes,
     totalSessions: stats.totalSessions + 1,
   };
 
-  return recalculateStreak(updatedStats);
+  return updatedStats;
 };
 
-// Calculate current streak
-export const recalculateStreak = (stats: UserStats): UserStats => {
-  if (stats.dailyStats.length === 0) {
-    return { ...stats, currentStreak: 0 };
-  }
-
-  // Sort by date descending (newest first)
-  const sortedStats = [...stats.dailyStats].sort((a, b) =>
-    b.date.localeCompare(a.date)
-  );
-
-  const today = getTodayDate();
-  let currentStreak = 0;
-  let checkDate = new Date(today);
-
-  // Check if user has a session today or yesterday (to allow for streak continuation)
-  const latestSessionDate = sortedStats[0].date;
-  const latestDate = new Date(latestSessionDate);
-  const todayDate = new Date(today);
-  const diffDays = Math.floor(
-    (todayDate.getTime() - latestDate.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  // If more than 1 day gap, streak is broken
-  if (diffDays > 1) {
-    return { ...stats, currentStreak: 0 };
-  }
-
-  // Count consecutive days backwards from today
-  for (let i = 0; i < sortedStats.length; i++) {
-    const dateStr = checkDate.toISOString().split("T")[0];
-    const hasStatsForDate = sortedStats.find((s) => s.date === dateStr);
-
-    if (hasStatsForDate && hasStatsForDate.sessionsCompleted > 0) {
-      currentStreak++;
-      // Move to previous day
-      checkDate.setDate(checkDate.getDate() - 1);
-    } else {
-      break;
-    }
-  }
-
-  const longestStreak = Math.max(stats.longestStreak, currentStreak);
-
-  return {
-    ...stats,
-    currentStreak,
-    longestStreak,
-  };
-};
 
 // Format minutes to hours and minutes
 export const formatFocusTime = (minutes: number): string => {

@@ -1,11 +1,11 @@
 "use client";
 
-import { PomodoroSession, TimerMode } from "../types";
+import { TimerBlock, TimerMode } from "../types";
 import { ProgressBar } from "./ProgressBar";
 import { TomatoIcon } from "./TomatoIcon";
 
 interface TimerDisplayProps {
-  sessions: PomodoroSession[];
+  sessions: TimerBlock[];
   currentSessionIndex: number;
   timerMode: TimerMode;
   timeRemaining: number;
