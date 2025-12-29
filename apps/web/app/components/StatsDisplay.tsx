@@ -23,7 +23,7 @@ export const StatsDisplay = ({ stats }: StatsDisplayProps) => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-4">
         {/* Today's Focus Time */}
         <div className="bg-white/60 dark:bg-slate-700/40 backdrop-blur-sm rounded-xl p-4 border border-blue-200/50 dark:border-cyan-600/30">
           <div className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
@@ -33,30 +33,14 @@ export const StatsDisplay = ({ stats }: StatsDisplayProps) => {
             {formatFocusTime(todayStats.focusTimeMinutes)}
           </div>
           <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {todayStats.sessionsCompleted} {todayStats.sessionsCompleted === 1 ? 'session' : 'sessions'}
-          </div>
-        </div>
-
-        {/* Current Streak */}
-        <div className="bg-white/60 dark:bg-slate-700/40 backdrop-blur-sm rounded-xl p-4 border border-orange-200/50 dark:border-orange-600/30">
-          <div className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
-            Streak
-          </div>
-          <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-            {stats.currentStreak}
-            {stats.currentStreak > 0 && (
-              <span className="text-lg ml-1">🔥</span>
-            )}
-          </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {stats.currentStreak === 1 ? 'day' : 'days'}
+            {todayStats.sessionsSaved} {todayStats.sessionsSaved === 1 ? 'session' : 'sessions'}
           </div>
         </div>
 
         {/* Total Focus Time */}
         <div className="bg-white/60 dark:bg-slate-700/40 backdrop-blur-sm rounded-xl p-4 border border-purple-200/50 dark:border-purple-600/30">
           <div className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
-            Total Time
+            Total Focus
           </div>
           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
             {formatFocusTime(stats.totalFocusTime)}
@@ -66,41 +50,16 @@ export const StatsDisplay = ({ stats }: StatsDisplayProps) => {
           </div>
         </div>
 
-        {/* Best Streak */}
-        <div className="bg-white/60 dark:bg-slate-700/40 backdrop-blur-sm rounded-xl p-4 border border-green-200/50 dark:border-green-600/30">
-          <div className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
-            Best Streak
+        {/* Sessions Saved */}
+        <div className="col-span-2 bg-white/60 dark:bg-slate-700/40 backdrop-blur-sm rounded-xl p-4 border border-green-200/50 dark:border-green-600/30">
+          <div className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide text-center">
+            Sessions Saved
           </div>
-          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {stats.longestStreak}
-            {stats.longestStreak > 0 && (
-              <span className="text-lg ml-1">🏆</span>
-            )}
-          </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {stats.longestStreak === 1 ? 'day' : 'days'}
+          <div className="text-2xl font-bold text-green-600 dark:text-green-400 text-center">
+            {stats.totalSessions}
           </div>
         </div>
       </div>
-
-      {/* Encouragement Message */}
-      {stats.currentStreak === 0 && stats.totalSessions === 0 ? (
-        <div className="text-center text-sm text-slate-600 dark:text-slate-300 bg-white/40 dark:bg-slate-700/30 rounded-lg p-3">
-          Complete your first focus session to start tracking!
-        </div>
-      ) : stats.currentStreak === 0 ? (
-        <div className="text-center text-sm text-slate-600 dark:text-slate-300 bg-white/40 dark:bg-slate-700/30 rounded-lg p-3">
-          Start a new streak today! 💪
-        </div>
-      ) : stats.currentStreak >= 7 ? (
-        <div className="text-center text-sm text-slate-600 dark:text-slate-300 bg-white/40 dark:bg-slate-700/30 rounded-lg p-3">
-          Amazing! You're on a {stats.currentStreak}-day streak! 🎉
-        </div>
-      ) : (
-        <div className="text-center text-sm text-slate-600 dark:text-slate-300 bg-white/40 dark:bg-slate-700/30 rounded-lg p-3">
-          Keep going! {stats.currentStreak} {stats.currentStreak === 1 ? 'day' : 'days'} strong 🚀
-        </div>
-      )}
     </div>
   );
 };
