@@ -206,3 +206,32 @@ export function formatTime(timestamp: number): string {
   const displayMinutes = minutes.toString().padStart(2, '0');
   return `${displayHours}:${displayMinutes} ${ampm}`;
 }
+
+export function formatDate(timestamp: number): string {
+  const date = new Date(timestamp);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  // Reset time for comparison
+  const dateOnly = new Date(date);
+  dateOnly.setHours(0, 0, 0, 0);
+  const todayOnly = new Date(today);
+  todayOnly.setHours(0, 0, 0, 0);
+  const yesterdayOnly = new Date(yesterday);
+  yesterdayOnly.setHours(0, 0, 0, 0);
+
+  if (dateOnly.getTime() === todayOnly.getTime()) {
+    return `Today, ${formatTime(timestamp)}`;
+  } else if (dateOnly.getTime() === yesterdayOnly.getTime()) {
+    return `Yesterday, ${formatTime(timestamp)}`;
+  } else {
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const day = date.getDate();
+    return `${month} ${day}, ${formatTime(timestamp)}`;
+  }
+}
+
+export function getSessionHistory(): SessionRecord[] {
+  return getHistory();
+}

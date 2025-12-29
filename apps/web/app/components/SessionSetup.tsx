@@ -73,54 +73,71 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
       <div
         className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-lg w-full mx-4 border border-slate-200 dark:border-slate-700 animate-scaleIn"
       >
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">
-          Session Setup
-        </h2>
-
-        {/* Intent Input */}
-        <div className="mb-6">
-          <label htmlFor="intent" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            What are you focusing on? <span className="text-slate-400">(optional)</span>
-          </label>
-          <input
-            id="intent"
-            type="text"
-            value={intent}
-            onChange={(e) => setIntent(e.target.value.slice(0, MAX_INTENT_LENGTH))}
-            placeholder="e.g., Write blog post about TypeScript"
-            maxLength={MAX_INTENT_LENGTH}
-            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-400 transition-all"
-          />
-          <div className="text-xs text-slate-400 mt-1 text-right">
-            {intent.length}/{MAX_INTENT_LENGTH}
-          </div>
+        {/* Header with gentle prompt */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">
+            Let's focus
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Taking a moment to set your intention helps anchor your focus
+          </p>
         </div>
 
-        {/* Prep Steps */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-            Prep steps <span className="text-slate-400">(optional, max {MAX_STEPS})</span>
+        {/* Intent Input - Emphasized as the main focus */}
+        <div className="mb-8">
+          <label htmlFor="intent" className="block text-base font-semibold text-slate-700 dark:text-slate-300 mb-3">
+            I'm focusing on...
           </label>
+          <textarea
+            id="intent"
+            value={intent}
+            onChange={(e) => setIntent(e.target.value.slice(0, MAX_INTENT_LENGTH))}
+            placeholder="What matters most right now?"
+            maxLength={MAX_INTENT_LENGTH}
+            rows={2}
+            className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 dark:focus:border-cyan-500 focus:bg-white dark:focus:bg-slate-700 transition-all resize-none text-base"
+          />
+          {intent.length > 60 && (
+            <div className="text-xs text-slate-400 mt-1.5 text-right">
+              {MAX_INTENT_LENGTH - intent.length} characters remaining
+            </div>
+          )}
+        </div>
 
-          {/* Existing Steps */}
+        {/* Focus Steps - Simplified, checkbox-style */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+              Steps to work through
+            </label>
+            {steps.length > 0 && (
+              <span className="text-xs text-slate-400">
+                {steps.length} of {MAX_STEPS}
+              </span>
+            )}
+          </div>
+
+          {/* Existing Steps - Minimal, calm design */}
           {steps.length > 0 && (
             <div className="space-y-2 mb-3">
-              {steps.map((step, index) => (
+              {steps.map((step) => (
                 <div
                   key={step.id}
-                  className="flex items-center gap-2 group"
+                  className="flex items-start gap-3 group bg-slate-50 dark:bg-slate-700/30 rounded-lg px-3 py-2.5 transition-all hover:bg-slate-100 dark:hover:bg-slate-700/50"
                 >
-                  <span className="text-xs text-slate-400 w-5">{index + 1}.</span>
+                  <div className="flex-shrink-0 w-5 h-5 rounded border-2 border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-700 mt-0.5"></div>
                   <input
                     type="text"
                     value={step.text}
                     onChange={(e) => handleEditStep(step.id, e.target.value.slice(0, MAX_STEP_LENGTH))}
                     maxLength={MAX_STEP_LENGTH}
-                    className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-400 transition-all"
+                    className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400"
+                    placeholder="Step description..."
                   />
                   <button
                     onClick={() => handleRemoveStep(step.id)}
-                    className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
+                    className="flex-shrink-0 p-1 rounded text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 transition-all opacity-0 group-hover:opacity-100"
+                    aria-label="Remove step"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -131,45 +148,49 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
             </div>
           )}
 
-          {/* Add New Step */}
+          {/* Add New Step - Simplified */}
           {steps.length < MAX_STEPS && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 w-5">{steps.length + 1}.</span>
+            <div
+              onClick={() => {
+                // Focus the input when clicking the wrapper
+                document.getElementById('new-step-input')?.focus();
+              }}
+              className="w-full flex items-start gap-3 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg px-3 py-2.5 transition-all border-2 border-dashed border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 group cursor-text"
+            >
+              <div className="flex-shrink-0 w-5 h-5 rounded border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 mt-0.5 group-hover:border-cyan-400 dark:group-hover:border-cyan-500 transition-colors"></div>
               <input
+                id="new-step-input"
                 type="text"
                 value={newStepText}
                 onChange={(e) => setNewStepText(e.target.value.slice(0, MAX_STEP_LENGTH))}
                 onKeyDown={handleKeyDown}
-                placeholder="Add a prep step..."
+                placeholder={steps.length === 0 ? "Add a step to work on (optional)..." : "Add another step..."}
                 maxLength={MAX_STEP_LENGTH}
-                className="flex-1 px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-400 transition-all"
+                className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400 text-left"
               />
-              <button
-                onClick={handleAddStep}
-                disabled={!newStepText.trim()}
-                className="p-2 rounded-lg bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-              </button>
             </div>
+          )}
+
+          {steps.length === 0 && (
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 px-3">
+              Small steps help reduce overwhelm
+            </p>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 mt-8">
+        <div className="flex gap-3 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
           <button
             onClick={onSkipSetup}
-            className="flex-1 px-6 py-3 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 font-medium"
+            className="px-6 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all duration-200 font-medium"
           >
-            Skip setup
+            Skip for now
           </button>
           <button
             onClick={handleStart}
-            className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+            className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
           >
-            Start session
+            {intent ? "Start focused session" : "Start session"}
           </button>
         </div>
       </div>

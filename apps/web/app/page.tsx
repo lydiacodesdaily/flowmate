@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { SessionDuration, TimerMode, TimerBlock, FOCUS_DURATION, BREAK_DURATION, UserStats, SessionDraft, SessionStatus, PrepStep } from "./types";
 import { SettingsModal } from "./components/SettingsModal";
-import { StatsModal } from "./components/StatsModal";
 import { TimerSelection } from "./components/TimerSelection";
 import { TimerDisplay } from "./components/TimerDisplay";
 import { CompletionScreen } from "./components/CompletionScreen";
@@ -13,7 +12,7 @@ import { MobileLandingPage } from "./components/MobileLandingPage";
 import { SessionSetup } from "./components/SessionSetup";
 import { SessionComplete } from "./components/SessionComplete";
 import { EarlyStopModal } from "./components/EarlyStopModal";
-import { DailySummary } from "./components/DailySummary";
+import { ProgressModal } from "./components/ProgressModal";
 import { loadStats, saveStats, addFocusSession } from "./utils/statsUtils";
 import { getDraft, saveDraft, clearDraft, createSessionRecord, appendHistory } from "./utils/sessionUtils";
 
@@ -42,7 +41,6 @@ export default function Home() {
   const [enableFinalCountdown, setEnableFinalCountdown] = useState(true);
   const [enableDingCheckpoints, setEnableDingCheckpoints] = useState(true);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [showStats, setShowStats] = useState(false);
   const [completedFocusMinutes, setCompletedFocusMinutes] = useState<number>(0);
   const [showCallout, setShowCallout] = useState(false);
 
@@ -50,7 +48,7 @@ export default function Home() {
   const [showSessionSetup, setShowSessionSetup] = useState(false);
   const [showSessionComplete, setShowSessionComplete] = useState(false);
   const [showEarlyStop, setShowEarlyStop] = useState(false);
-  const [showDailySummary, setShowDailySummary] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
   const [sessionDraft, setSessionDraft] = useState<SessionDraft>({ intent: '', steps: [] });
   const [sessionStartTime, setSessionStartTime] = useState<number>(0);
   const [sessionEndTime, setSessionEndTime] = useState<number>(0);
@@ -1180,22 +1178,11 @@ export default function Home() {
 
       {/* Top right buttons */}
       <div className={`fixed right-2 sm:right-4 flex gap-2 sm:gap-3 z-40 ${isMobile ? 'top-12' : 'top-2 sm:top-4'}`}>
-        {/* Daily Summary button */}
+        {/* Progress button - combines Daily Summary and Stats */}
         <button
-          onClick={() => setShowDailySummary(!showDailySummary)}
+          onClick={() => setShowProgress(!showProgress)}
           className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
-          title="Daily Summary"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
-          </svg>
-        </button>
-
-        {/* Stats button */}
-        <button
-          onClick={() => setShowStats(!showStats)}
-          className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
-          title="Your Stats"
+          title="Your Progress"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
@@ -1261,27 +1248,16 @@ export default function Home() {
         isMobile={isMobile}
       />
 
-      {/* Stats Modal */}
-      <StatsModal
-        showStats={showStats}
-        setShowStats={setShowStats}
-        userStats={userStats}
-      />
+      {/* Progress Modal - combines Daily Summary and Stats */}
+      {showProgress && (
+        <ProgressModal onClose={() => setShowProgress(false)} />
+      )}
 
       {/* Session Layer Modals */}
       {showSessionSetup && (
         <SessionSetup
           onStart={handleStartTimer}
           onSkipSetup={handleSkipSetup}
-        />
-      )}
-
-      {showSessionComplete && (
-        <SessionComplete
-          completedMinutes={completedFocusMinutes}
-          onSave={handleSessionSave}
-          onDiscard={handleSessionDiscard}
-          sessionDraft={sessionDraft}
         />
       )}
 
@@ -1292,10 +1268,6 @@ export default function Home() {
           onResume={handleEarlyStopResume}
           onDiscard={handleEarlyStopDiscard}
         />
-      )}
-
-      {showDailySummary && (
-        <DailySummary onClose={() => setShowDailySummary(false)} />
       )}
 
       <div className="w-full max-w-2xl px-2 sm:px-0">
@@ -1316,6 +1288,13 @@ export default function Home() {
             setCustomMinutes={setCustomMinutes}
             startSession={startSession}
             startCustomSession={startCustomSession}
+          />
+        ) : showSessionComplete ? (
+          <SessionComplete
+            completedMinutes={completedFocusMinutes}
+            onSave={handleSessionSave}
+            onDiscard={handleSessionDiscard}
+            sessionDraft={sessionDraft}
           />
         ) : isCompleted ? (
           <CompletionScreen

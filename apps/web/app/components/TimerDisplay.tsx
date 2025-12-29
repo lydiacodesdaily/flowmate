@@ -93,11 +93,12 @@ export const TimerDisplay = ({
         )}
       </div>
 
-      {/* Session Intent - Only show during focus sessions */}
-      {currentSessionType === "focus" && sessionDraft && (
-        <div className="mb-6">
+      {/* Session Intent & Steps - Only show during focus sessions */}
+      {currentSessionType === "focus" && sessionDraft && (sessionDraft.intent || (sessionDraft.steps && sessionDraft.steps.length > 0)) && (
+        <div className="mb-8 bg-gradient-to-br from-cyan-50/50 to-blue-50/50 dark:from-slate-700/20 dark:to-cyan-900/10 rounded-2xl p-5 border-2 border-cyan-200/50 dark:border-cyan-500/20">
+          {/* Intent Section */}
           {isEditingIntent ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-4">
               <input
                 type="text"
                 value={editedIntent}
@@ -112,6 +113,7 @@ export const TimerDisplay = ({
               <button
                 onClick={handleSaveIntent}
                 className="p-2 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white transition-all"
+                aria-label="Save"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -120,71 +122,76 @@ export const TimerDisplay = ({
               <button
                 onClick={handleCancelEdit}
                 className="p-2 rounded-lg bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500 text-slate-700 dark:text-white transition-all"
+                aria-label="Cancel"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-          ) : (
-            <div className="flex items-center justify-center gap-2 group">
-              {sessionDraft.intent ? (
-                <>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 italic">
-                    {sessionDraft.intent}
-                  </p>
-                  <button
-                    onClick={handleStartEditIntent}
-                    className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all opacity-0 group-hover:opacity-100"
-                    title="Edit intention"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                    </svg>
-                  </button>
-                </>
-              ) : (
+          ) : sessionDraft.intent ? (
+            <div className="mb-4 group cursor-pointer" onClick={handleStartEditIntent}>
+              <div className="flex items-start gap-2">
+                <span className="text-cyan-600 dark:text-cyan-400 text-sm mt-0.5">→</span>
+                <p className="flex-1 text-base font-medium text-slate-700 dark:text-slate-200 leading-relaxed">
+                  {sessionDraft.intent}
+                </p>
                 <button
-                  onClick={handleStartEditIntent}
-                  className="text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 italic transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStartEditIntent();
+                  }}
+                  className="p-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-slate-700/50 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all opacity-0 group-hover:opacity-100"
+                  aria-label="Edit focus"
                 >
-                  Add intention
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                  </svg>
                 </button>
-              )}
+              </div>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Prep Steps Preview - Only show during focus if there are steps */}
-      {currentSessionType === "focus" && sessionDraft?.steps && sessionDraft.steps.length > 0 && (
-        <div className="mb-6">
-          <button
-            onClick={() => setStepsExpanded(!stepsExpanded)}
-            className="w-full flex items-center justify-between px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-          >
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-              {sessionDraft.steps.length} prep {sessionDraft.steps.length === 1 ? 'step' : 'steps'}
-            </span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-              className={`w-4 h-4 text-slate-500 transition-transform ${stepsExpanded ? 'rotate-180' : ''}`}
+          ) : (
+            <button
+              onClick={handleStartEditIntent}
+              className="mb-4 w-full text-left px-3 py-2 rounded-lg hover:bg-white/30 dark:hover:bg-slate-700/30 transition-all group"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
-          </button>
-          {stepsExpanded && (
-            <div className="mt-2 px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-700/30 space-y-1.5">
-              {sessionDraft.steps.map((step, index) => (
-                <div key={step.id} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="text-slate-400 mt-0.5">{index + 1}.</span>
-                  <span className="flex-1">{step.text}</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">
+                + Add what you're focusing on
+              </span>
+            </button>
+          )}
+
+          {/* Steps Section */}
+          {sessionDraft.steps && sessionDraft.steps.length > 0 && (
+            <div>
+              <button
+                onClick={() => setStepsExpanded(!stepsExpanded)}
+                className="w-full flex items-center justify-between mb-2 px-2 py-1 rounded-lg hover:bg-white/30 dark:hover:bg-slate-700/30 transition-all"
+              >
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                  {sessionDraft.steps.length} {sessionDraft.steps.length === 1 ? 'step' : 'steps'} to work through
+                </span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  className={`w-4 h-4 text-slate-500 transition-transform ${stepsExpanded ? 'rotate-180' : ''}`}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+              {stepsExpanded && (
+                <div className="space-y-2 pt-2">
+                  {sessionDraft.steps.map((step) => (
+                    <div key={step.id} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-300 bg-white/40 dark:bg-slate-700/30 rounded-lg px-3 py-2">
+                      <div className="flex-shrink-0 w-4 h-4 rounded border-2 border-slate-400 dark:border-slate-500 bg-white/50 dark:bg-slate-700/50 mt-0.5"></div>
+                      <span className="flex-1">{step.text}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
