@@ -27,7 +27,7 @@ export default function Home() {
   const [isPaused, setIsPaused] = useState(false);
   const [muteBreak, setMuteBreak] = useState(false);
   const [muteAll, setMuteAll] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const [tickSound, setTickSound] = useState<string>('tick-tok-alternate.mp3');
   const [tickVolume, setTickVolume] = useState<number>(0);
   const [announcementVolume, setAnnouncementVolume] = useState<number>(0.5);
@@ -780,14 +780,30 @@ export default function Home() {
     setUserStats(stats);
   }, []);
 
-  // Initialize dark mode and audio settings from localStorage
+  // Initialize theme and audio settings from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-      setIsDarkMode(savedDarkMode);
-      if (savedDarkMode) {
-        document.documentElement.classList.add('dark');
-      }
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
+      const themeToUse = savedTheme || 'system';
+      setTheme(themeToUse);
+
+      // Apply theme based on preference
+      const applyTheme = (theme: 'light' | 'dark' | 'system') => {
+        if (theme === 'system') {
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (prefersDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } else if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      };
+
+      applyTheme(themeToUse);
 
       // Detect mobile devices first
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -853,18 +869,23 @@ export default function Home() {
     }
   }, []);
 
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    setIsDarkMode((prev) => {
-      const newValue = !prev;
-      if (newValue) {
+  // Handle theme change
+  const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+
+    if (newTheme === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
         document.documentElement.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
       }
-      localStorage.setItem('darkMode', String(newValue));
-      return newValue;
-    });
+    } else if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   };
 
   // Initialize Audio Context once
@@ -1203,23 +1224,6 @@ export default function Home() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </button>
-
-        {/* Dark mode toggle */}
-        <button
-          onClick={toggleDarkMode}
-          className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
-          title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {isDarkMode ? (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-            </svg>
-          )}
-        </button>
       </div>
 
       {/* Settings Modal */}
@@ -1242,6 +1246,8 @@ export default function Home() {
         setEnableFinalCountdown={setEnableFinalCountdown}
         enableDingCheckpoints={enableDingCheckpoints}
         setEnableDingCheckpoints={setEnableDingCheckpoints}
+        theme={theme}
+        setTheme={handleThemeChange}
         isMobile={isMobile}
       />
 

@@ -19,6 +19,8 @@ interface SettingsModalProps {
   setEnableFinalCountdown: (enable: boolean) => void;
   enableDingCheckpoints: boolean;
   setEnableDingCheckpoints: (enable: boolean) => void;
+  theme: 'light' | 'dark' | 'system';
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
   isMobile: boolean;
 }
 
@@ -41,6 +43,8 @@ export const SettingsModal = ({
   setEnableFinalCountdown,
   enableDingCheckpoints,
   setEnableDingCheckpoints,
+  theme,
+  setTheme,
   isMobile,
 }: SettingsModalProps) => {
   if (!showSettings) return null;
@@ -353,8 +357,56 @@ export const SettingsModal = ({
           <div>
             <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-400 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">Visual</h3>
 
+            {/* Theme Selection */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                Theme
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => setTheme('light')}
+                  className={`px-3 py-2 text-sm rounded-lg border-2 transition-all duration-200 ${
+                    theme === 'light'
+                      ? 'border-blue-600 dark:border-cyan-500 bg-blue-50 dark:bg-cyan-950 text-blue-700 dark:text-cyan-300 font-semibold'
+                      : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-blue-400 dark:hover:border-cyan-600'
+                  }`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mx-auto mb-1">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                  </svg>
+                  Light
+                </button>
+                <button
+                  onClick={() => setTheme('dark')}
+                  className={`px-3 py-2 text-sm rounded-lg border-2 transition-all duration-200 ${
+                    theme === 'dark'
+                      ? 'border-blue-600 dark:border-cyan-500 bg-blue-50 dark:bg-cyan-950 text-blue-700 dark:text-cyan-300 font-semibold'
+                      : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-blue-400 dark:hover:border-cyan-600'
+                  }`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mx-auto mb-1">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                  </svg>
+                  Dark
+                </button>
+                <button
+                  onClick={() => setTheme('system')}
+                  className={`px-3 py-2 text-sm rounded-lg border-2 transition-all duration-200 ${
+                    theme === 'system'
+                      ? 'border-blue-600 dark:border-cyan-500 bg-blue-50 dark:bg-cyan-950 text-blue-700 dark:text-cyan-300 font-semibold'
+                      : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-blue-400 dark:hover:border-cyan-600'
+                  }`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mx-auto mb-1">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" />
+                  </svg>
+                  System
+                </button>
+              </div>
+            </div>
+
             {/* Confetti Toggle */}
-            <div className="flex items-center justify-between py-2">
+            <div className="flex items-center justify-between py-2 border-t border-slate-200 dark:border-slate-700 pt-4">
               <label htmlFor="enable-confetti" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
                 Confetti celebration
               </label>
