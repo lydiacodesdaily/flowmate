@@ -12,7 +12,9 @@ export const getTodayDate = (): string => {
 export const getEmptyStats = (): UserStats => ({
   dailyStats: [],
   totalFocusTime: 0,
+  totalBreakTime: 0,
   totalSessions: 0,
+  totalBreaks: 0,
 });
 
 // Load stats from localStorage
@@ -54,7 +56,9 @@ export const getTodayStats = (stats: UserStats): DailyStats => {
   return {
     date: today,
     focusTimeMinutes: 0,
+    breakTimeMinutes: 0,
     sessionsSaved: 0,
+    breaksSaved: 0,
   };
 };
 
@@ -82,7 +86,9 @@ export const addFocusSession = (
     updatedDailyStats.push({
       date: today,
       focusTimeMinutes,
+      breakTimeMinutes: 0,
       sessionsSaved: 1,
+      breaksSaved: 0,
     });
   }
 
@@ -92,7 +98,9 @@ export const addFocusSession = (
   const updatedStats: UserStats = {
     dailyStats: updatedDailyStats,
     totalFocusTime: stats.totalFocusTime + focusTimeMinutes,
+    totalBreakTime: stats.totalBreakTime || 0,
     totalSessions: stats.totalSessions + 1,
+    totalBreaks: stats.totalBreaks || 0,
   };
 
   return updatedStats;

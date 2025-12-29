@@ -1,4 +1,4 @@
-import { SessionDraft, SessionRecord, PrepStep, TimerMode, SessionType, SessionStatus } from '../types';
+import { SessionDraft, SessionRecord, PrepStep, TimerMode, SessionType, TimerType, SessionStatus } from '../types';
 
 const STORAGE_KEYS = {
   DRAFT: 'flowmate:v1:sessionDraft',
@@ -46,7 +46,16 @@ export function getHistory(): SessionRecord[] {
     if (!stored) {
       return [];
     }
-    return JSON.parse(stored);
+    const history = JSON.parse(stored);
+
+    // Migrate old sessions without timerType field (backward compatibility)
+    return history.map((session: any) => {
+      if (!session.timerType) {
+        // Default old sessions to 'focus' type
+        return { ...session, timerType: 'focus' };
+      }
+      return session;
+    });
   } catch (error) {
     console.error('Error loading session history:', error);
     return [];
@@ -91,6 +100,7 @@ export function createSessionRecord(
   plannedSeconds: number,
   completedSeconds: number,
   mode: TimerMode,
+  timerType: TimerType,
   type: SessionType,
   status: SessionStatus,
   draft?: SessionDraft,
@@ -103,6 +113,7 @@ export function createSessionRecord(
     plannedSeconds,
     completedSeconds,
     mode,
+    timerType,
     type,
     status,
   };
@@ -143,26 +154,42 @@ export function getTodaysSessions(): SessionRecord[] {
 
 export function getTodayStats(): {
   totalMinutes: number;
+  breakMinutes: number;
   sessionCount: number;
+  breakCount: number;
   completedCount: number;
 } {
   const todaySessions = getTodaysSessions();
 
   const totalMinutes = todaySessions.reduce((sum, session) => {
-    // Only count completed seconds for completed and partial sessions (not skipped)
-    if (session.status === 'completed' || session.status === 'partial') {
+    // Only count completed seconds for completed and partial focus sessions (not skipped or breaks)
+    if ((session.status === 'completed' || session.status === 'partial') && session.timerType === 'focus') {
+      return sum + Math.floor(session.completedSeconds / 60);
+    }
+    return sum;
+  }, 0);
+
+  const breakMinutes = todaySessions.reduce((sum, session) => {
+    // Only count completed seconds for completed and partial break sessions (not skipped)
+    if ((session.status === 'completed' || session.status === 'partial') && session.timerType === 'break') {
       return sum + Math.floor(session.completedSeconds / 60);
     }
     return sum;
   }, 0);
 
   const completedCount = todaySessions.filter(
-    s => s.status === 'completed'
+    s => s.status === 'completed' && s.timerType === 'focus'
+  ).length;
+
+  const breakCount = todaySessions.filter(
+    s => (s.status === 'completed' || s.status === 'partial') && s.timerType === 'break'
   ).length;
 
   return {
     totalMinutes,
-    sessionCount: todaySessions.length,
+    breakMinutes,
+    sessionCount: todaySessions.filter(s => s.timerType === 'focus').length,
+    breakCount,
     completedCount,
   };
 }
@@ -170,7 +197,17 @@ export function getTodayStats(): {
 export function getAllTimeTotalMinutes(): number {
   const history = getHistory();
   return history.reduce((sum, session) => {
-    if (session.status === 'completed' || session.status === 'partial') {
+    if ((session.status === 'completed' || session.status === 'partial') && session.timerType === 'focus') {
+      return sum + Math.floor(session.completedSeconds / 60);
+    }
+    return sum;
+  }, 0);
+}
+
+export function getAllTimeBreakMinutes(): number {
+  const history = getHistory();
+  return history.reduce((sum, session) => {
+    if ((session.status === 'completed' || session.status === 'partial') && session.timerType === 'break') {
       return sum + Math.floor(session.completedSeconds / 60);
     }
     return sum;
@@ -180,7 +217,14 @@ export function getAllTimeTotalMinutes(): number {
 export function getAllTimeSavedSessions(): number {
   const history = getHistory();
   return history.filter(
-    s => s.status === 'completed' || s.status === 'partial'
+    s => (s.status === 'completed' || s.status === 'partial') && s.timerType === 'focus'
+  ).length;
+}
+
+export function getAllTimeSavedBreaks(): number {
+  const history = getHistory();
+  return history.filter(
+    s => (s.status === 'completed' || s.status === 'partial') && s.timerType === 'break'
   ).length;
 }
 
@@ -243,9 +287,11 @@ export interface DailySummary {
   displayDate: string; // Formatted display date like "Today", "Yesterday", or "Mar 15"
   sessions: SessionRecord[];
   totalMinutes: number;
+  breakMinutes: number;
   completedCount: number;
   partialCount: number;
   skippedCount: number;
+  breakCount: number;
 }
 
 export function groupSessionsByDay(): DailySummary[] {
@@ -277,15 +323,23 @@ export function groupSessionsByDay(): DailySummary[] {
 
     // Calculate stats
     const totalMinutes = sessions.reduce((sum, session) => {
-      if (session.status === 'completed' || session.status === 'partial') {
+      if ((session.status === 'completed' || session.status === 'partial') && session.timerType === 'focus') {
         return sum + Math.floor(session.completedSeconds / 60);
       }
       return sum;
     }, 0);
 
-    const completedCount = sessions.filter(s => s.status === 'completed').length;
-    const partialCount = sessions.filter(s => s.status === 'partial').length;
-    const skippedCount = sessions.filter(s => s.status === 'skipped').length;
+    const breakMinutes = sessions.reduce((sum, session) => {
+      if ((session.status === 'completed' || session.status === 'partial') && session.timerType === 'break') {
+        return sum + Math.floor(session.completedSeconds / 60);
+      }
+      return sum;
+    }, 0);
+
+    const completedCount = sessions.filter(s => s.status === 'completed' && s.timerType === 'focus').length;
+    const partialCount = sessions.filter(s => s.status === 'partial' && s.timerType === 'focus').length;
+    const skippedCount = sessions.filter(s => s.status === 'skipped' && s.timerType === 'focus').length;
+    const breakCount = sessions.filter(s => (s.status === 'completed' || s.status === 'partial') && s.timerType === 'break').length;
 
     // Format display date
     let displayDate: string;
@@ -310,9 +364,11 @@ export function groupSessionsByDay(): DailySummary[] {
       displayDate,
       sessions,
       totalMinutes,
+      breakMinutes,
       completedCount,
       partialCount,
       skippedCount,
+      breakCount,
     });
   });
 

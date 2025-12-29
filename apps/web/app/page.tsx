@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
-import { SessionDuration, TimerMode, TimerBlock, FOCUS_DURATION, BREAK_DURATION, UserStats, SessionDraft, SessionStatus, PrepStep } from "./types";
+import { SessionDuration, TimerMode, TimerType, TimerBlock, FOCUS_DURATION, BREAK_DURATION, UserStats, SessionDraft, SessionStatus, PrepStep } from "./types";
 import { SettingsModal } from "./components/SettingsModal";
 import { TimerSelection } from "./components/TimerSelection";
 import { TimerDisplay } from "./components/TimerDisplay";
@@ -18,6 +18,7 @@ import { getDraft, saveDraft, clearDraft, createSessionRecord, appendHistory } f
 
 export default function Home() {
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
+  const [timerType, setTimerType] = useState<TimerType>("focus");
   const [guidedStyle, setGuidedStyle] = useState<"pomodoro" | "deep-focus">("pomodoro");
   const [selectedDuration, setSelectedDuration] = useState<SessionDuration | null>(null);
   const [sessions, setSessions] = useState<TimerBlock[]>([]);
@@ -387,25 +388,59 @@ export default function Home() {
     return sessionsList;
   };
 
-  // Start a session - now shows setup modal first
+  // Start a session - shows setup modal for focus, skips for break
   const startSession = (duration: SessionDuration) => {
     setSelectedDuration(duration);
-    // Load existing draft
-    const draft = getDraft();
-    setSessionDraft(draft);
-    setShowSessionSetup(true);
+
+    if (timerType === "break") {
+      // Skip setup for break timers, start immediately
+      handleStartTimerDirectly(duration);
+    } else {
+      // Load existing draft for focus sessions
+      const draft = getDraft();
+      setSessionDraft(draft);
+      setShowSessionSetup(true);
+    }
   };
 
-  // Start a custom duration session - now shows setup modal first
+  // Start a custom duration session - shows setup modal for focus, skips for break
   const startCustomSession = (minutes: number) => {
     setSelectedDuration(minutes as SessionDuration);
-    // Load existing draft
-    const draft = getDraft();
-    setSessionDraft(draft);
-    setShowSessionSetup(true);
+
+    if (timerType === "break") {
+      // Skip setup for break timers, start immediately
+      handleStartTimerDirectly(minutes as SessionDuration);
+    } else {
+      // Load existing draft for focus sessions
+      const draft = getDraft();
+      setSessionDraft(draft);
+      setShowSessionSetup(true);
+    }
   };
 
-  // Actually start the timer after setup is complete
+  // Start timer directly without setup (for break timers)
+  const handleStartTimerDirectly = (duration: SessionDuration) => {
+    const sessionsList = generateSessions(duration);
+    setSessions(sessionsList);
+    setCurrentSessionIndex(0);
+    setTimeRemaining(sessionsList[0].duration);
+    setIsRunning(true);
+    setIsPaused(false);
+    lastMinuteAnnouncedRef.current = -1;
+    setSessionStartTime(Date.now());
+
+    // Initialize audio on user interaction (required for mobile browsers)
+    initializeAudio();
+
+    // Show callout on first timer start
+    const hasSeenCallout = localStorage.getItem('hasSeenCallout');
+    const hasOpenedSettings = localStorage.getItem('hasOpenedSettings');
+    if (!hasSeenCallout && !hasOpenedSettings) {
+      setShowCallout(true);
+    }
+  };
+
+  // Actually start the timer after setup is complete (for focus timers)
   const handleStartTimer = () => {
     if (!selectedDuration) return;
 
@@ -471,6 +506,13 @@ export default function Home() {
 
   // Handle session save from completion screen
   const handleSessionSave = (status: SessionStatus, updatedSteps?: PrepStep[], note?: string) => {
+    // Don't save break sessions to history - they're not productivity data
+    if (timerType === 'break') {
+      setShowSessionComplete(false);
+      reset();
+      return;
+    }
+
     const plannedSeconds = (selectedDuration || 0) * 60;
     const completedSeconds = completedFocusMinutes * 60;
 
@@ -480,13 +522,14 @@ export default function Home() {
       finalDraft = { ...finalDraft, steps: updatedSteps };
     }
 
-    // Create and save session record
+    // Create and save session record (only for focus sessions)
     const record = createSessionRecord(
       sessionStartTime,
       sessionEndTime || Date.now(),
       plannedSeconds,
       completedSeconds,
       timerMode,
+      timerType,
       'focus',
       status,
       finalDraft,
@@ -1287,11 +1330,14 @@ export default function Home() {
             onSave={handleSessionSave}
             onDiscard={handleSessionDiscard}
             sessionDraft={sessionDraft}
+            timerType={timerType}
           />
         ) : !selectedDuration ? (
           <TimerSelection
             timerMode={timerMode}
             setTimerMode={setTimerMode}
+            timerType={timerType}
+            setTimerType={setTimerType}
             guidedStyle={guidedStyle}
             setGuidedStyle={setGuidedStyle}
             customMinutes={customMinutes}

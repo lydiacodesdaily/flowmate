@@ -1,9 +1,11 @@
-import { TimerMode, SessionDuration } from "../types";
+import { TimerMode, SessionDuration, TimerType } from "../types";
 import { TomatoIcon } from "./TomatoIcon";
 
 interface TimerSelectionProps {
   timerMode: TimerMode;
   setTimerMode: (mode: TimerMode) => void;
+  timerType: TimerType;
+  setTimerType: (type: TimerType) => void;
   guidedStyle: "pomodoro" | "deep-focus";
   setGuidedStyle: (style: "pomodoro" | "deep-focus") => void;
   customMinutes: string;
@@ -15,6 +17,8 @@ interface TimerSelectionProps {
 export const TimerSelection = ({
   timerMode,
   setTimerMode,
+  timerType,
+  setTimerType,
   guidedStyle,
   setGuidedStyle,
   customMinutes,
@@ -64,6 +68,34 @@ export const TimerSelection = ({
         <h2 className="text-xl sm:text-2xl font-semibold text-center text-slate-800 dark:text-white">
           {timerMode === "custom" ? "Custom Timer" : "Select Session Duration"}
         </h2>
+
+        {/* Timer Type Toggle - Focus vs Break (Custom Mode Only) */}
+        {timerMode === "custom" && (
+          <div className="flex justify-center mt-3">
+            <div className="inline-flex gap-2">
+              <button
+                onClick={() => setTimerType("focus")}
+                className={`px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
+                  timerType === "focus"
+                    ? "bg-blue-500 dark:bg-cyan-500 text-white"
+                    : "bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                Focus
+              </button>
+              <button
+                onClick={() => setTimerType("break")}
+                className={`px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${
+                  timerType === "break"
+                    ? "bg-blue-500 dark:bg-cyan-500 text-white"
+                    : "bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                Break
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Guided Style Toggle - inline with subtle design */}
         {timerMode === "guided" && (

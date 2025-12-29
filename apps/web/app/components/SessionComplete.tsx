@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
-import { SessionDraft, SessionStatus, PrepStep } from "../types";
+import { SessionDraft, SessionStatus, PrepStep, TimerType } from "../types";
 
 interface SessionCompleteProps {
   completedMinutes: number;
   onSave: (status: SessionStatus, updatedSteps?: PrepStep[], note?: string) => void;
   onDiscard: () => void;
   sessionDraft?: SessionDraft;
+  timerType?: TimerType; // 'focus' or 'break'
 }
 
 const MAX_NOTE_LENGTH = 140;
@@ -18,12 +19,16 @@ export const SessionComplete = ({
   onSave,
   onDiscard,
   sessionDraft,
+  timerType = 'focus',
 }: SessionCompleteProps) => {
   const [selectedStatus, setSelectedStatus] = useState<SessionStatus | null>(null);
   const [steps, setSteps] = useState<PrepStep[]>([]);
   const [note, setNote] = useState("");
   const [confettiShown, setConfettiShown] = useState(false);
   const hasAutoSavedRef = useRef(false);
+
+  // For break sessions, we don't need status/steps tracking
+  const isBreakSession = timerType === 'break';
 
   // Load steps from draft
   useEffect(() => {
@@ -84,6 +89,42 @@ export const SessionComplete = ({
     return `${doneCount}/${steps.length}`;
   };
 
+  // Break session complete - simple UI
+  if (isBreakSession) {
+    return (
+      <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 md:p-10 border border-white/20 dark:border-cyan-500/20">
+        <div className="text-center mb-8">
+          <div className="text-7xl mb-6">☕</div>
+          <h2 className="text-4xl font-bold text-slate-800 dark:text-white mb-3">
+            Break Complete!
+          </h2>
+          <p className="text-xl text-slate-600 dark:text-slate-300 mb-2">
+            You rested for {completedMinutes} {completedMinutes === 1 ? 'minute' : 'minutes'}
+          </p>
+          <p className="text-lg text-slate-500 dark:text-slate-400">
+            Ready to dive back into flow?
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <button
+            onClick={() => onDiscard()}
+            className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+          >
+            ⚡ Ready to Focus
+          </button>
+          <button
+            onClick={() => onDiscard()}
+            className="w-full px-6 py-3 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 font-medium"
+          >
+            Take another break
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Focus session complete - full UI with tracking
   return (
     <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 md:p-10 border border-white/20 dark:border-cyan-500/20">
       <div className="text-center mb-8">

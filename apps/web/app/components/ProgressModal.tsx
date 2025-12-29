@@ -6,7 +6,9 @@ import {
   getTodaysSessions,
   getTodayStats,
   getAllTimeTotalMinutes,
+  getAllTimeBreakMinutes,
   getAllTimeSavedSessions,
+  getAllTimeSavedBreaks,
   formatDuration,
   formatTime,
   formatDate,
@@ -28,7 +30,9 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
   const todaySessions = getTodaysSessions();
   const todayStats = getTodayStats();
   const allTimeMinutes = getAllTimeTotalMinutes();
+  const allTimeBreakMinutes = getAllTimeBreakMinutes();
   const allTimeSessions = getAllTimeSavedSessions();
+  const allTimeBreaks = getAllTimeSavedBreaks();
   const dailySummaries = groupSessionsByDay();
 
   const getModeLabel = (mode: string) => {
@@ -58,37 +62,51 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
     }
   };
 
-  const renderSessionCard = (session: SessionRecord, showDate: boolean = false) => (
-    <div
-      key={session.id}
-      className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border border-slate-200 dark:border-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all"
-    >
-      {/* Header Row */}
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className={`text-lg font-semibold ${getStatusColor(session.status)}`}>
-            {getStatusIcon(session.status)}
-          </span>
-          <div>
-            <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              {showDate ? formatDate(session.startedAt) : formatTime(session.startedAt)}
-            </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">
-              {getModeLabel(session.mode)}
+  const renderSessionCard = (session: SessionRecord, showDate: boolean = false) => {
+    const isBreak = session.timerType === 'break';
+
+    return (
+      <div
+        key={session.id}
+        className={`rounded-xl p-4 border hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all ${
+          isBreak
+            ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-700/30'
+            : 'bg-slate-50 dark:bg-slate-700/30 border-slate-200 dark:border-slate-600/50'
+        }`}
+      >
+        {/* Header Row */}
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className={`text-lg font-semibold ${getStatusColor(session.status)}`}>
+              {getStatusIcon(session.status)}
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {showDate ? formatDate(session.startedAt) : formatTime(session.startedAt)}
+                </div>
+                {isBreak && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-300 font-medium">
+                    Break
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                {getModeLabel(session.mode)}
+              </div>
             </div>
           </div>
-        </div>
-        <div className="text-right">
-          <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-            {formatDuration(session.completedSeconds)}
-          </div>
-          {session.plannedSeconds !== session.completedSeconds && (
-            <div className="text-xs text-slate-400">
-              of {formatDuration(session.plannedSeconds)}
+          <div className="text-right">
+            <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              {formatDuration(session.completedSeconds)}
             </div>
-          )}
+            {session.plannedSeconds !== session.completedSeconds && (
+              <div className="text-xs text-slate-400">
+                of {formatDuration(session.plannedSeconds)}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
       {/* Intent */}
       {session.intent && (
@@ -125,7 +143,8 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
         </span>
       </div>
     </div>
-  );
+    );
+  };
 
   const renderDailySummaryCard = (summary: DailySummary) => {
     const isExpanded = expandedDay === summary.date;
@@ -159,8 +178,18 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
                   {formatFocusTime(summary.totalMinutes)}
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400">
-                  total focus
+                  focus
                 </div>
+                {summary.breakMinutes > 0 && (
+                  <>
+                    <div className="text-sm font-semibold text-green-600 dark:text-green-400 mt-1">
+                      {formatFocusTime(summary.breakMinutes)}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      breaks
+                    </div>
+                  </>
+                )}
               </div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -176,7 +205,7 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
           </div>
 
           {/* Session Status Summary */}
-          <div className="flex gap-3 text-xs">
+          <div className="flex gap-3 text-xs flex-wrap">
             {summary.completedCount > 0 && (
               <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
                 <span className="font-semibold">✓</span>
@@ -193,6 +222,12 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
               <div className="flex items-center gap-1 text-slate-400 dark:text-slate-500">
                 <span className="font-semibold">⊘</span>
                 <span>{summary.skippedCount} skipped</span>
+              </div>
+            )}
+            {summary.breakCount > 0 && (
+              <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <span className="font-semibold">☕</span>
+                <span>{summary.breakCount} break{summary.breakCount !== 1 ? 's' : ''}</span>
               </div>
             )}
           </div>
@@ -233,10 +268,10 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
 
         {/* Stats Summary - Always Visible */}
         <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 mb-3">
             <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-700/50 dark:to-cyan-900/20 rounded-xl p-4 border border-blue-200 dark:border-cyan-700/50 text-center">
               <div className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
-                Today
+                Today Focus
               </div>
               <div className="text-2xl font-bold text-blue-600 dark:text-cyan-400">
                 {formatFocusTime(todayStats.totalMinutes)}
@@ -246,27 +281,41 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
               </div>
             </div>
 
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-slate-700/50 dark:to-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-700/50 text-center">
+              <div className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
+                Today Breaks
+              </div>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {formatFocusTime(todayStats.breakMinutes)}
+              </div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {todayStats.breakCount} break{todayStats.breakCount !== 1 ? 's' : ''}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-slate-700/50 dark:to-purple-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-700/50 text-center">
               <div className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
-                All Time
+                All Time Focus
               </div>
               <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                 {formatFocusTime(allTimeMinutes)}
               </div>
               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                total focus
+                {allTimeSessions} session{allTimeSessions !== 1 ? 's' : ''}
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-slate-700/50 dark:to-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-700/50 text-center">
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-slate-700/50 dark:to-orange-900/20 rounded-xl p-4 border border-orange-200 dark:border-orange-700/50 text-center">
               <div className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 uppercase tracking-wide">
-                Sessions
+                All Time Breaks
               </div>
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {allTimeSessions}
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                {formatFocusTime(allTimeBreakMinutes)}
               </div>
               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                saved
+                {allTimeBreaks} break{allTimeBreaks !== 1 ? 's' : ''}
               </div>
             </div>
           </div>
