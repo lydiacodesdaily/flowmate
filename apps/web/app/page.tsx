@@ -542,6 +542,7 @@ export default function Home() {
     setCurrentSessionIndex(0);
     setTimeRemaining(0);
     setIsCompleted(false);
+    setShowSessionComplete(false);
     lastMinuteAnnouncedRef.current = -1;
     sessionStartTimeRef.current = 0;
     totalPausedTimeRef.current = 0;
@@ -1051,8 +1052,8 @@ export default function Home() {
       if (remaining <= 0) {
         const completedSession = sessions[currentSessionIndex];
 
-        // Track completed focus session in stats using actual elapsed time
-        if (completedSession?.type === "focus" && userStats && sessionStartTimeRef.current > 0) {
+        // Calculate completed focus time for display (don't save to stats yet)
+        if (completedSession?.type === "focus" && sessionStartTimeRef.current > 0) {
           // Calculate actual elapsed time (minus paused time)
           const totalElapsedMs = Date.now() - sessionStartTimeRef.current;
           const activeTimeMs = totalElapsedMs - totalPausedTimeRef.current;
@@ -1068,10 +1069,6 @@ export default function Home() {
 
           // Store the actual completed time for display
           setCompletedFocusMinutes(focusTimeMinutes);
-
-          const updatedStats = addFocusSession(userStats, focusTimeMinutes);
-          setUserStats(updatedStats);
-          saveStats(updatedStats);
         }
 
         // Reset session timing for next session
@@ -1278,7 +1275,14 @@ export default function Home() {
           Focus Timer with Audio Announcements
         </p>
 
-        {!selectedDuration ? (
+        {showSessionComplete ? (
+          <SessionComplete
+            completedMinutes={completedFocusMinutes}
+            onSave={handleSessionSave}
+            onDiscard={handleSessionDiscard}
+            sessionDraft={sessionDraft}
+          />
+        ) : !selectedDuration ? (
           <TimerSelection
             timerMode={timerMode}
             setTimerMode={setTimerMode}
@@ -1288,13 +1292,6 @@ export default function Home() {
             setCustomMinutes={setCustomMinutes}
             startSession={startSession}
             startCustomSession={startCustomSession}
-          />
-        ) : showSessionComplete ? (
-          <SessionComplete
-            completedMinutes={completedFocusMinutes}
-            onSave={handleSessionSave}
-            onDiscard={handleSessionDiscard}
-            sessionDraft={sessionDraft}
           />
         ) : isCompleted ? (
           <CompletionScreen

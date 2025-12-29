@@ -32,15 +32,18 @@ export const SessionComplete = ({
     }
   }, [sessionDraft]);
 
-  // Auto-save on unmount if user hasn't explicitly saved or discarded
+  // Auto-save after timeout if user hasn't interacted
   useEffect(() => {
-    return () => {
-      // Only auto-save if user hasn't explicitly saved/discarded
+    // Set a 5-minute timeout for auto-save
+    const timeoutId = setTimeout(() => {
       if (!hasAutoSavedRef.current) {
-        // Default to 'partial' status
+        // Auto-save as 'partial' if user hasn't explicitly saved
         onSave('partial', steps.length > 0 ? steps : undefined, note || undefined);
+        hasAutoSavedRef.current = true;
       }
-    };
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearTimeout(timeoutId);
   }, [steps, note, onSave]);
 
   const handleToggleStep = (id: string) => {
@@ -93,6 +96,14 @@ export const SessionComplete = ({
         <p className="text-xl text-slate-600 dark:text-slate-300">
           You focused for {completedMinutes} {completedMinutes === 1 ? 'minute' : 'minutes'}
         </p>
+        {sessionDraft?.intent && (
+          <div className="mt-4 p-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">You were focusing on:</p>
+            <p className="text-base text-slate-700 dark:text-slate-200 font-medium">
+              "{sessionDraft.intent}"
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Session Status Selection */}
@@ -208,7 +219,7 @@ export const SessionComplete = ({
           </button>
         </div>
         <p className="text-xs text-center text-slate-400 dark:text-slate-500">
-          Don't worry, your session will be auto-saved if you leave
+          Session will auto-save as partial after 5 minutes of inactivity
         </p>
       </div>
     </div>

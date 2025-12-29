@@ -235,3 +235,89 @@ export function formatDate(timestamp: number): string {
 export function getSessionHistory(): SessionRecord[] {
   return getHistory();
 }
+
+// ===== Daily Summary Helpers =====
+
+export interface DailySummary {
+  date: string; // Date string in format "YYYY-MM-DD"
+  displayDate: string; // Formatted display date like "Today", "Yesterday", or "Mar 15"
+  sessions: SessionRecord[];
+  totalMinutes: number;
+  completedCount: number;
+  partialCount: number;
+  skippedCount: number;
+}
+
+export function groupSessionsByDay(): DailySummary[] {
+  const history = getHistory();
+  const grouped = new Map<string, SessionRecord[]>();
+
+  // Group sessions by date
+  history.forEach(session => {
+    const date = new Date(session.startedAt);
+    date.setHours(0, 0, 0, 0);
+    const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    if (!grouped.has(dateKey)) {
+      grouped.set(dateKey, []);
+    }
+    grouped.get(dateKey)!.push(session);
+  });
+
+  // Convert to array of DailySummary objects
+  const summaries: DailySummary[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  grouped.forEach((sessions, dateKey) => {
+    const date = new Date(dateKey);
+    date.setHours(0, 0, 0, 0);
+
+    // Calculate stats
+    const totalMinutes = sessions.reduce((sum, session) => {
+      if (session.status === 'completed' || session.status === 'partial') {
+        return sum + Math.floor(session.completedSeconds / 60);
+      }
+      return sum;
+    }, 0);
+
+    const completedCount = sessions.filter(s => s.status === 'completed').length;
+    const partialCount = sessions.filter(s => s.status === 'partial').length;
+    const skippedCount = sessions.filter(s => s.status === 'skipped').length;
+
+    // Format display date
+    let displayDate: string;
+    if (date.getTime() === today.getTime()) {
+      displayDate = 'Today';
+    } else if (date.getTime() === yesterday.getTime()) {
+      displayDate = 'Yesterday';
+    } else {
+      const month = date.toLocaleDateString('en-US', { month: 'short' });
+      const day = date.getDate();
+      const year = date.getFullYear();
+      const currentYear = new Date().getFullYear();
+      if (year === currentYear) {
+        displayDate = `${month} ${day}`;
+      } else {
+        displayDate = `${month} ${day}, ${year}`;
+      }
+    }
+
+    summaries.push({
+      date: dateKey,
+      displayDate,
+      sessions,
+      totalMinutes,
+      completedCount,
+      partialCount,
+      skippedCount,
+    });
+  });
+
+  // Sort by date descending (most recent first)
+  summaries.sort((a, b) => b.date.localeCompare(a.date));
+
+  return summaries;
+}

@@ -7,10 +7,11 @@ import {
   getTodayStats,
   getAllTimeTotalMinutes,
   getAllTimeSavedSessions,
-  getSessionHistory,
   formatDuration,
   formatTime,
-  formatDate
+  formatDate,
+  groupSessionsByDay,
+  DailySummary
 } from "../utils/sessionUtils";
 import { formatFocusTime } from "../utils/statsUtils";
 
@@ -22,12 +23,13 @@ type ViewMode = "today" | "history";
 
 export const ProgressModal = ({ onClose }: ProgressModalProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("today");
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
 
   const todaySessions = getTodaysSessions();
   const todayStats = getTodayStats();
   const allTimeMinutes = getAllTimeTotalMinutes();
   const allTimeSessions = getAllTimeSavedSessions();
-  const sessionHistory = getSessionHistory();
+  const dailySummaries = groupSessionsByDay();
 
   const getModeLabel = (mode: string) => {
     switch (mode) {
@@ -125,6 +127,87 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
     </div>
   );
 
+  const renderDailySummaryCard = (summary: DailySummary) => {
+    const isExpanded = expandedDay === summary.date;
+    const totalSessions = summary.sessions.length;
+
+    return (
+      <div
+        key={summary.date}
+        className="bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-700/40 dark:to-slate-800/30 rounded-xl border border-slate-200 dark:border-slate-600/50 overflow-hidden transition-all"
+      >
+        {/* Summary Header - Always Visible */}
+        <button
+          onClick={() => setExpandedDay(isExpanded ? null : summary.date)}
+          className="w-full p-4 text-left hover:bg-slate-100/50 dark:hover:bg-slate-700/30 transition-all"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">📅</div>
+              <div>
+                <h3 className="text-base font-bold text-slate-800 dark:text-white">
+                  {summary.displayDate}
+                </h3>
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  {totalSessions} session{totalSessions !== 1 ? 's' : ''}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
+                  {formatFocusTime(summary.totalMinutes)}
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  total focus
+                </div>
+              </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className={`w-5 h-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Session Status Summary */}
+          <div className="flex gap-3 text-xs">
+            {summary.completedCount > 0 && (
+              <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                <span className="font-semibold">✓</span>
+                <span>{summary.completedCount} completed</span>
+              </div>
+            )}
+            {summary.partialCount > 0 && (
+              <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
+                <span className="font-semibold">◐</span>
+                <span>{summary.partialCount} partial</span>
+              </div>
+            )}
+            {summary.skippedCount > 0 && (
+              <div className="flex items-center gap-1 text-slate-400 dark:text-slate-500">
+                <span className="font-semibold">⊘</span>
+                <span>{summary.skippedCount} skipped</span>
+              </div>
+            )}
+          </div>
+        </button>
+
+        {/* Expanded Session Details */}
+        {isExpanded && (
+          <div className="px-4 pb-4 space-y-2 border-t border-slate-200 dark:border-slate-600/30 pt-3">
+            {summary.sessions.map((session) => renderSessionCard(session, false))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
@@ -209,7 +292,7 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/30"
             }`}
           >
-            History ({sessionHistory.length})
+            History ({dailySummaries.length} days)
           </button>
         </div>
 
@@ -231,7 +314,7 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
               </div>
             )
           ) : (
-            sessionHistory.length === 0 ? (
+            dailySummaries.length === 0 ? (
               <div className="text-center py-12 text-slate-500 dark:text-slate-400">
                 <div className="text-5xl mb-3">📚</div>
                 <p className="text-sm font-medium">No session history yet</p>
@@ -239,10 +322,15 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
               </div>
             ) : (
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3 uppercase tracking-wide">
-                  Recent Sessions (Last 30)
-                </h3>
-                {sessionHistory.map((session) => renderSessionCard(session, true))}
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                    Daily Summary
+                  </h3>
+                  <div className="text-xs text-slate-400 dark:text-slate-500">
+                    Last 30 sessions · Stored locally
+                  </div>
+                </div>
+                {dailySummaries.map((summary) => renderDailySummaryCard(summary))}
               </div>
             )
           )}
