@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
-import { SessionDuration, TimerMode, TimerBlock, FOCUS_DURATION, BREAK_DURATION, UserStats } from "./types";
+import { SessionDuration, TimerMode, TimerBlock, FOCUS_DURATION, BREAK_DURATION, UserStats, SessionDraft, SessionStatus, PrepStep } from "./types";
 import { SettingsModal } from "./components/SettingsModal";
 import { StatsModal } from "./components/StatsModal";
 import { TimerSelection } from "./components/TimerSelection";
@@ -10,7 +10,12 @@ import { TimerDisplay } from "./components/TimerDisplay";
 import { CompletionScreen } from "./components/CompletionScreen";
 import { FirstSessionCallout } from "./components/FirstSessionCallout";
 import { MobileLandingPage } from "./components/MobileLandingPage";
+import { SessionSetup } from "./components/SessionSetup";
+import { SessionComplete } from "./components/SessionComplete";
+import { EarlyStopModal } from "./components/EarlyStopModal";
+import { DailySummary } from "./components/DailySummary";
 import { loadStats, saveStats, addFocusSession } from "./utils/statsUtils";
+import { getDraft, saveDraft, clearDraft, createSessionRecord, appendHistory } from "./utils/sessionUtils";
 
 export default function Home() {
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
@@ -40,6 +45,15 @@ export default function Home() {
   const [showStats, setShowStats] = useState(false);
   const [completedFocusMinutes, setCompletedFocusMinutes] = useState<number>(0);
   const [showCallout, setShowCallout] = useState(false);
+
+  // Session Layer v1 state
+  const [showSessionSetup, setShowSessionSetup] = useState(false);
+  const [showSessionComplete, setShowSessionComplete] = useState(false);
+  const [showEarlyStop, setShowEarlyStop] = useState(false);
+  const [showDailySummary, setShowDailySummary] = useState(false);
+  const [sessionDraft, setSessionDraft] = useState<SessionDraft>({ intent: '', steps: [] });
+  const [sessionStartTime, setSessionStartTime] = useState<number>(0);
+  const [sessionEndTime, setSessionEndTime] = useState<number>(0);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -375,16 +389,41 @@ export default function Home() {
     return sessionsList;
   };
 
-  // Start a session
+  // Start a session - now shows setup modal first
   const startSession = (duration: SessionDuration) => {
-    const sessionsList = generateSessions(duration);
+    setSelectedDuration(duration);
+    // Load existing draft
+    const draft = getDraft();
+    setSessionDraft(draft);
+    setShowSessionSetup(true);
+  };
+
+  // Start a custom duration session - now shows setup modal first
+  const startCustomSession = (minutes: number) => {
+    setSelectedDuration(minutes as SessionDuration);
+    // Load existing draft
+    const draft = getDraft();
+    setSessionDraft(draft);
+    setShowSessionSetup(true);
+  };
+
+  // Actually start the timer after setup is complete
+  const handleStartTimer = () => {
+    if (!selectedDuration) return;
+
+    // Load the latest draft from localStorage (SessionSetup has been saving to it)
+    const latestDraft = getDraft();
+    setSessionDraft(latestDraft);
+
+    const sessionsList = generateSessions(selectedDuration);
     setSessions(sessionsList);
     setCurrentSessionIndex(0);
     setTimeRemaining(sessionsList[0].duration);
-    setSelectedDuration(duration);
     setIsRunning(true);
     setIsPaused(false);
     lastMinuteAnnouncedRef.current = -1;
+    setShowSessionSetup(false);
+    setSessionStartTime(Date.now());
 
     // Initialize audio on user interaction (required for mobile browsers)
     initializeAudio();
@@ -397,26 +436,103 @@ export default function Home() {
     }
   };
 
-  // Start a custom duration session
-  const startCustomSession = (minutes: number) => {
-    const sessionsList = generateSessions(minutes);
-    setSessions(sessionsList);
-    setCurrentSessionIndex(0);
-    setTimeRemaining(sessionsList[0].duration);
-    setSelectedDuration(minutes as SessionDuration);
-    setIsRunning(true);
-    setIsPaused(false);
-    lastMinuteAnnouncedRef.current = -1;
+  // Skip setup and start directly
+  const handleSkipSetup = () => {
+    clearDraft();
+    setSessionDraft({ intent: '', steps: [] });
+    handleStartTimer();
+  };
 
-    // Initialize audio on user interaction (required for mobile browsers)
-    initializeAudio();
+  // Update intent during timer
+  const handleUpdateIntent = (newIntent: string) => {
+    const updatedDraft = { ...sessionDraft, intent: newIntent };
+    setSessionDraft(updatedDraft);
+    saveDraft(updatedDraft);
+  };
 
-    // Show callout on first timer start
-    const hasSeenCallout = localStorage.getItem('hasSeenCallout');
-    const hasOpenedSettings = localStorage.getItem('hasOpenedSettings');
-    if (!hasSeenCallout && !hasOpenedSettings) {
-      setShowCallout(true);
+  // Handle early stop (user clicks pause/stop before timer completes)
+  const handlePauseClick = () => {
+    if (isRunning && !isPaused) {
+      // If timer is running and not paused, show early stop modal
+      const elapsedSeconds = (selectedDuration || 0) * 60 - timeRemaining;
+      const elapsedMinutes = Math.round(elapsedSeconds / 60);
+
+      if (elapsedMinutes > 0) {
+        setIsPaused(true);
+        setCompletedFocusMinutes(elapsedMinutes);
+        setShowEarlyStop(true);
+      } else {
+        // If less than 1 minute, just pause normally
+        togglePause();
+      }
+    } else {
+      // Resume from pause
+      togglePause();
     }
+  };
+
+  // Handle session save from completion screen
+  const handleSessionSave = (status: SessionStatus, updatedSteps?: PrepStep[], note?: string) => {
+    const plannedSeconds = (selectedDuration || 0) * 60;
+    const completedSeconds = completedFocusMinutes * 60;
+
+    // Update steps in draft if provided
+    let finalDraft = { ...sessionDraft };
+    if (updatedSteps) {
+      finalDraft = { ...finalDraft, steps: updatedSteps };
+    }
+
+    // Create and save session record
+    const record = createSessionRecord(
+      sessionStartTime,
+      sessionEndTime || Date.now(),
+      plannedSeconds,
+      completedSeconds,
+      timerMode,
+      'focus',
+      status,
+      finalDraft,
+      note
+    );
+    appendHistory(record);
+
+    // Update old stats system for backward compatibility
+    if (userStats && completedFocusMinutes > 0 && (status === 'completed' || status === 'partial')) {
+      const updatedStats = addFocusSession(userStats, completedFocusMinutes);
+      setUserStats(updatedStats);
+      saveStats(updatedStats);
+    }
+
+    // Clear draft and reset
+    clearDraft();
+    setShowSessionComplete(false);
+    reset();
+  };
+
+  // Handle session discard
+  const handleSessionDiscard = () => {
+    setShowSessionComplete(false);
+    reset();
+  };
+
+  // Handle early stop - save partial
+  const handleEarlyStopSave = () => {
+    setShowEarlyStop(false);
+    setIsRunning(false);
+    setSessionEndTime(Date.now());
+    setShowSessionComplete(true);
+  };
+
+  // Handle early stop - resume
+  const handleEarlyStopResume = () => {
+    setShowEarlyStop(false);
+    setIsPaused(false);
+  };
+
+  // Handle early stop - discard
+  const handleEarlyStopDiscard = () => {
+    setShowEarlyStop(false);
+    reset();
   };
 
   // Reset everything
@@ -536,48 +652,48 @@ export default function Home() {
 
   // Skip to next session or complete if on last session
   const skipToNext = () => {
-    // Track stats for the current session before skipping (if it's a focus session)
     const currentSession = sessions[currentSessionIndex];
-    if (currentSession?.type === "focus" && userStats && sessionStartTimeRef.current > 0) {
-      // Calculate actual elapsed time (minus paused time)
-      const totalElapsedMs = Date.now() - sessionStartTimeRef.current;
-      const activeTimeMs = totalElapsedMs - totalPausedTimeRef.current;
-      const focusTimeMinutes = Math.round(activeTimeMs / 1000 / 60);
-
-      console.log('Skip - Stats calculation:', {
-        totalElapsedMs,
-        activeTimeMs,
-        focusTimeMinutes,
-        sessionStartTime: sessionStartTimeRef.current,
-        totalPausedTime: totalPausedTimeRef.current
-      });
-
-      // Store the actual completed time for display
-      setCompletedFocusMinutes(focusTimeMinutes);
-
-      const updatedStats = addFocusSession(userStats, focusTimeMinutes);
-      setUserStats(updatedStats);
-      saveStats(updatedStats);
-    }
-
-    // Reset session timing
-    sessionStartTimeRef.current = 0;
-    totalPausedTimeRef.current = 0;
-    pauseStartTimeRef.current = 0;
-
     const nextIndex = currentSessionIndex + 1;
+
     if (nextIndex < sessions.length) {
+      // Only track focus session skips (don't save to history yet)
+      if (currentSession?.type === "focus" && userStats && sessionStartTimeRef.current > 0) {
+        const totalElapsedMs = Date.now() - sessionStartTimeRef.current;
+        const activeTimeMs = totalElapsedMs - totalPausedTimeRef.current;
+        const focusTimeMinutes = Math.round(activeTimeMs / 1000 / 60);
+        setCompletedFocusMinutes(focusTimeMinutes);
+
+        // Update old stats system for backward compatibility
+        const updatedStats = addFocusSession(userStats, focusTimeMinutes);
+        setUserStats(updatedStats);
+        saveStats(updatedStats);
+      }
+
+      // Reset session timing
+      sessionStartTimeRef.current = 0;
+      totalPausedTimeRef.current = 0;
+      pauseStartTimeRef.current = 0;
+
       // Move to next session
       setCurrentSessionIndex(nextIndex);
       setTimeRemaining(sessions[nextIndex].duration);
       lastMinuteAnnouncedRef.current = -1;
       endTimeRef.current = Date.now() + sessions[nextIndex].duration * 1000;
     } else {
-      // Complete the timer on last session
+      // Complete the timer on last session - show SessionComplete modal
       speak("Done.");
       setIsRunning(false);
-      setIsCompleted(true);
-      triggerConfetti();
+      setSessionEndTime(Date.now());
+
+      // Calculate completed time for display
+      if (currentSession?.type === "focus" && sessionStartTimeRef.current > 0) {
+        const totalElapsedMs = Date.now() - sessionStartTimeRef.current;
+        const activeTimeMs = totalElapsedMs - totalPausedTimeRef.current;
+        const focusTimeMinutes = Math.round(activeTimeMs / 1000 / 60);
+        setCompletedFocusMinutes(focusTimeMinutes);
+      }
+
+      setShowSessionComplete(true);
     }
   };
 
@@ -984,11 +1100,21 @@ export default function Home() {
           lastMinuteAnnouncedRef.current = startingMinutes;
           endTimeRef.current = Date.now() + sessions[nextIndex].duration * 1000;
         } else {
-          // All sessions complete
+          // All sessions complete - show SessionComplete modal
           speak("Done.");
           setIsRunning(false);
-          setIsCompleted(true);
-          triggerConfetti();
+          setSessionEndTime(Date.now());
+
+          // Calculate completed time for display
+          const currentSession = sessions[currentSessionIndex];
+          if (currentSession?.type === "focus" && sessionStartTimeRef.current > 0) {
+            const totalElapsedMs = Date.now() - sessionStartTimeRef.current;
+            const activeTimeMs = totalElapsedMs - totalPausedTimeRef.current;
+            const focusTimeMinutes = Math.round(activeTimeMs / 1000 / 60);
+            setCompletedFocusMinutes(focusTimeMinutes);
+          }
+
+          setShowSessionComplete(true);
         }
       }
     }, 100); // Check every 100ms for accuracy
@@ -1054,6 +1180,17 @@ export default function Home() {
 
       {/* Top right buttons */}
       <div className={`fixed right-2 sm:right-4 flex gap-2 sm:gap-3 z-40 ${isMobile ? 'top-12' : 'top-2 sm:top-4'}`}>
+        {/* Daily Summary button */}
+        <button
+          onClick={() => setShowDailySummary(!showDailySummary)}
+          className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 text-slate-700 dark:text-cyan-400 border border-white/20 dark:border-cyan-500/30"
+          title="Daily Summary"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
+          </svg>
+        </button>
+
         {/* Stats button */}
         <button
           onClick={() => setShowStats(!showStats)}
@@ -1131,6 +1268,36 @@ export default function Home() {
         userStats={userStats}
       />
 
+      {/* Session Layer Modals */}
+      {showSessionSetup && (
+        <SessionSetup
+          onStart={handleStartTimer}
+          onSkipSetup={handleSkipSetup}
+        />
+      )}
+
+      {showSessionComplete && (
+        <SessionComplete
+          completedMinutes={completedFocusMinutes}
+          onSave={handleSessionSave}
+          onDiscard={handleSessionDiscard}
+          sessionDraft={sessionDraft}
+        />
+      )}
+
+      {showEarlyStop && (
+        <EarlyStopModal
+          elapsedMinutes={completedFocusMinutes}
+          onSave={handleEarlyStopSave}
+          onResume={handleEarlyStopResume}
+          onDiscard={handleEarlyStopDiscard}
+        />
+      )}
+
+      {showDailySummary && (
+        <DailySummary onClose={() => setShowDailySummary(false)} />
+      )}
+
       <div className="w-full max-w-2xl px-2 sm:px-0">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2 text-slate-800 dark:text-white drop-shadow-lg dark:drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] transition-all duration-500">
           Flowmate
@@ -1177,6 +1344,8 @@ export default function Home() {
             setMuteBreak={setMuteBreak}
             isPiPSupported={isPiPSupported}
             openPiP={openPiP}
+            sessionDraft={sessionDraft}
+            onUpdateIntent={handleUpdateIntent}
           />
         )}
       </div>
