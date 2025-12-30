@@ -90,8 +90,8 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 
       console.log('Inferred mode:', inferredMode, 'timerType:', timerType, 'status:', status);
 
-      // Check if this is a focus session that needs setup (custom or pomodoro)
-      const shouldShowSetup = (inferredMode === 'custom' || inferredMode === 'pomodoro') && timerType === 'focus';
+      // Check if this is a focus session that needs setup (custom, pomodoro, or guided)
+      const shouldShowSetup = (inferredMode === 'custom' || inferredMode === 'pomodoro' || inferredMode === 'guided') && timerType === 'focus';
 
       console.log('shouldShowSetup:', shouldShowSetup);
 
@@ -100,7 +100,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         console.log('Setting showSetupModal to true');
         setShowSetupModal(true);
       } else if (status === 'idle') {
-        // For break sessions or guided sessions, start immediately
+        // For break sessions, start immediately
         console.log('Starting timer immediately with sessionDraft:', sessionDraft);
         startTimer(routeSessions, inferredMode, timerType, sessionDraft);
       }

@@ -88,7 +88,6 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
       animationType="slide"
       transparent={true}
       onRequestClose={handleSkip}
-      presentationStyle="pageSheet"
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

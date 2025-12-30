@@ -152,7 +152,6 @@ export function SessionComplete({
       animationType="slide"
       transparent={true}
       onRequestClose={() => handleSave()}
-      presentationStyle="pageSheet"
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
