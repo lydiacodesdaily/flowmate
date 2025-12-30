@@ -17,10 +17,58 @@ export type GuidedType =
 
 export type SessionType = 'settle' | 'focus' | 'break' | 'wrap';
 
+export type TimerType = 'focus' | 'break'; // Overall session type (work vs rest)
+
+export type SessionStatus = 'completed' | 'partial' | 'skipped';
+
 export interface Session {
   type: SessionType;
   durationMinutes: number;
   label?: string;
+}
+
+// Session Intent Types
+export interface PrepStep {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export interface SessionDraft {
+  intent: string;
+  steps: PrepStep[];
+}
+
+// Session Recording Types
+export interface SessionRecord {
+  id: string;
+  startedAt: number; // Unix timestamp
+  endedAt: number; // Unix timestamp
+  plannedSeconds: number;
+  completedSeconds: number;
+  mode: TimerMode;
+  timerType: TimerType; // Focus vs break classification
+  type: SessionType; // Block type within session
+  status: SessionStatus;
+  intent?: string;
+  steps?: {
+    total: number;
+    done: number;
+  };
+  note?: string;
+}
+
+// Daily Summary Types
+export interface DailySummary {
+  date: string; // YYYY-MM-DD
+  displayDate: string; // 'Today', 'Yesterday', 'Mar 15'
+  sessions: SessionRecord[];
+  totalMinutes: number;
+  breakMinutes: number;
+  completedCount: number;
+  partialCount: number;
+  skippedCount: number;
+  breakCount: number;
 }
 
 // Settings Types

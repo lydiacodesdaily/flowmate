@@ -67,7 +67,7 @@ describe('TimerContext', () => {
       ];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
       });
 
       expect(result.current.sessions).toEqual(sessions);
@@ -76,13 +76,15 @@ describe('TimerContext', () => {
       expect(result.current.timeRemaining).toBe(25 * 60);
       expect(result.current.status).toBe('running');
       expect(result.current.isActive).toBe(true);
+      expect(result.current.timerMode).toBe('pomodoro');
+      expect(result.current.timerType).toBe('focus');
     });
 
     it('should not start timer with empty sessions array', () => {
       const { result } = renderHook(() => useTimerContext(), { wrapper });
 
       act(() => {
-        result.current.startTimer([]);
+        result.current.startTimer([], 'pomodoro', 'focus');
       });
 
       expect(result.current.status).toBe('idle');
@@ -95,7 +97,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 25 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
       });
 
       expect(result.current.formattedTime).toBe('25:00');
@@ -110,10 +112,30 @@ describe('TimerContext', () => {
       ];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'guided', 'focus');
       });
 
       expect(result.current.currentPhase).toBe('settle');
+    });
+
+    it('should accept optional session draft parameter', () => {
+      const { result } = renderHook(() => useTimerContext(), { wrapper });
+
+      const sessions: Session[] = [{ type: 'focus', durationMinutes: 25 }];
+      const draft = {
+        intent: 'Write tests',
+        steps: [
+          { id: '1', text: 'Step 1', done: false },
+          { id: '2', text: 'Step 2', done: false }
+        ]
+      };
+
+      act(() => {
+        result.current.startTimer(sessions, 'custom', 'focus', draft);
+      });
+
+      expect(result.current.sessionDraft).toEqual(draft);
+      expect(result.current.timerMode).toBe('custom');
     });
   });
 
@@ -124,7 +146,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 25 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
       });
 
       expect(result.current.status).toBe('running');
@@ -143,7 +165,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 25 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
         result.current.pause();
       });
 
@@ -162,7 +184,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 25 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
         result.current.pause();
       });
 
@@ -189,7 +211,7 @@ describe('TimerContext', () => {
       ];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
       });
 
       act(() => {
@@ -222,7 +244,7 @@ describe('TimerContext', () => {
       ];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
       });
 
       expect(result.current.currentSessionIndex).toBe(0);
@@ -243,7 +265,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 25 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
       });
 
       act(() => {
@@ -261,7 +283,7 @@ describe('TimerContext', () => {
 
       act(() => {
         result.current.setAllSessionsCompleteCallback(mockCallback);
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
         result.current.skip();
       });
 
@@ -276,7 +298,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 25 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
         result.current.pause();
       });
 
@@ -295,7 +317,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 25 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
         result.current.pause();
       });
 
@@ -314,7 +336,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 1 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
         result.current.pause();
       });
 
@@ -333,7 +355,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 25 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
       });
 
       act(() => {
@@ -353,7 +375,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 25 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
       });
 
       act(() => {
@@ -373,7 +395,7 @@ describe('TimerContext', () => {
       ];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
       });
 
       act(() => {
@@ -392,7 +414,7 @@ describe('TimerContext', () => {
       ];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
       });
 
       act(() => {
@@ -411,7 +433,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 10 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
         result.current.pause();
       });
 
@@ -438,7 +460,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 25 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
       });
 
       expect(result.current.formattedTime).toBe('25:00');
@@ -450,7 +472,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 90 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'guided', 'focus');
       });
 
       expect(result.current.formattedTime).toBe('1:30:00');
@@ -462,7 +484,7 @@ describe('TimerContext', () => {
       const sessions: Session[] = [{ type: 'focus', durationMinutes: 1 }];
 
       act(() => {
-        result.current.startTimer(sessions);
+        result.current.startTimer(sessions, 'pomodoro', 'focus');
         result.current.pause();
         result.current.subtractTime(55); // Leave 5 seconds
       });
@@ -502,7 +524,7 @@ describe('TimerContext', () => {
       const { result } = renderHook(() => useTimerContext(), { wrapper });
 
       act(() => {
-        result.current.startTimer([{ type: 'focus', durationMinutes: 25 }]);
+        result.current.startTimer([{ type: 'focus', durationMinutes: 25 }], 'pomodoro', 'focus');
       });
 
       expect(result.current.currentPhase).toBe('focus');
@@ -512,7 +534,7 @@ describe('TimerContext', () => {
       const { result } = renderHook(() => useTimerContext(), { wrapper });
 
       act(() => {
-        result.current.startTimer([{ type: 'break', durationMinutes: 5 }]);
+        result.current.startTimer([{ type: 'break', durationMinutes: 5 }], 'pomodoro', 'break');
       });
 
       expect(result.current.currentPhase).toBe('break');
@@ -522,7 +544,7 @@ describe('TimerContext', () => {
       const { result } = renderHook(() => useTimerContext(), { wrapper });
 
       act(() => {
-        result.current.startTimer([{ type: 'settle', durationMinutes: 3 }]);
+        result.current.startTimer([{ type: 'settle', durationMinutes: 3 }], 'guided', 'focus');
       });
 
       expect(result.current.currentPhase).toBe('settle');
@@ -532,7 +554,7 @@ describe('TimerContext', () => {
       const { result } = renderHook(() => useTimerContext(), { wrapper });
 
       act(() => {
-        result.current.startTimer([{ type: 'wrap', durationMinutes: 3 }]);
+        result.current.startTimer([{ type: 'wrap', durationMinutes: 3 }], 'guided', 'focus');
       });
 
       expect(result.current.currentPhase).toBe('wrap');
@@ -550,7 +572,7 @@ describe('TimerContext', () => {
       const { result } = renderHook(() => useTimerContext(), { wrapper });
 
       act(() => {
-        result.current.startTimer([{ type: 'focus', durationMinutes: 25 }]);
+        result.current.startTimer([{ type: 'focus', durationMinutes: 25 }], 'pomodoro', 'focus');
       });
 
       expect(result.current.isActive).toBe(true);
@@ -560,7 +582,7 @@ describe('TimerContext', () => {
       const { result } = renderHook(() => useTimerContext(), { wrapper });
 
       act(() => {
-        result.current.startTimer([{ type: 'focus', durationMinutes: 25 }]);
+        result.current.startTimer([{ type: 'focus', durationMinutes: 25 }], 'pomodoro', 'focus');
         result.current.pause();
       });
 
@@ -577,7 +599,7 @@ describe('TimerContext', () => {
       const { result } = renderHook(() => useTimerContext(), { wrapper });
 
       act(() => {
-        result.current.startTimer([{ type: 'focus', durationMinutes: 25 }]);
+        result.current.startTimer([{ type: 'focus', durationMinutes: 25 }], 'pomodoro', 'focus');
         result.current.skip();
       });
 

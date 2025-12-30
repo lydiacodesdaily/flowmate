@@ -10,12 +10,16 @@ import { TimerAdjustments } from './TimerAdjustments';
 import { AudioControls } from './AudioControls';
 import { ProgressBar } from './ProgressBar';
 import { SessionIndicators } from './SessionIndicators';
+import { SessionSetup } from './SessionSetup';
+import { SessionComplete } from './SessionComplete';
 import { audioService } from '../services/audioService';
 import { statsService } from '../services/statsService';
+import { createSessionRecord, appendHistory } from '../services/sessionService';
 import { hapticService } from '../services/hapticService';
 import { notificationService } from '../services/notificationService';
 import { useTheme } from '../theme';
 import type { ActiveTimerScreenProps } from '../navigation/types';
+import type { SessionStatus, TimerMode } from '@flowmate/shared';
 
 export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const { sessions: routeSessions } = route.params;
@@ -32,6 +36,11 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const [muteDuringBreaks, setMuteDuringBreaks] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  // Session management state
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [setupInitialized, setSetupInitialized] = useState(false);
+
   const {
     sessions,
     currentSessionIndex,
@@ -40,6 +49,11 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     totalTime,
     status,
     progress,
+    timerMode,
+    timerType,
+    sessionDraft,
+    sessionStartTime,
+    sessionEndTime,
     startTimer,
     pause,
     resume,
@@ -51,23 +65,41 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     removePomodoros,
     setSessionCompleteCallback,
     setAllSessionsCompleteCallback,
+    setSessionDraft,
+    updateSessionDraft,
   } = useTimerContext();
 
   // Initialize timer with route sessions on mount (only if not already started)
   useEffect(() => {
-    if (!timerInitializedRef.current && routeSessions && routeSessions.length > 0) {
-      // Only start timer if it's not already active
-      if (status === 'idle') {
-        startTimer(routeSessions);
+    if (!setupInitialized && routeSessions && routeSessions.length > 0) {
+      // Infer mode from session structure
+      const hasSettleWrap = routeSessions.some(s => s.type === 'settle' || s.type === 'wrap');
+
+      let inferredMode: TimerMode = 'custom';
+      if (hasSettleWrap) {
+        inferredMode = 'guided';
+      } else if (routeSessions.length > 1 && routeSessions.some(s => s.durationMinutes === 25)) {
+        inferredMode = 'pomodoro';
       }
-      timerInitializedRef.current = true;
+
+      // Check if this is a custom focus session that needs setup
+      const shouldShowSetup = inferredMode === 'custom' && timerType === 'focus';
+
+      if (shouldShowSetup && status === 'idle') {
+        // Show setup modal for custom focus sessions
+        setShowSetupModal(true);
+      } else if (status === 'idle') {
+        // For break sessions, guided sessions, or pomodoro, start immediately
+        startTimer(routeSessions, inferredMode, timerType, sessionDraft);
+      }
+      setSetupInitialized(true);
     }
-  }, [routeSessions, startTimer, status]);
+  }, [routeSessions, timerType, status, setupInitialized, startTimer, sessionDraft]);
 
   // Set up callbacks for session completion
   useEffect(() => {
     setSessionCompleteCallback(async (session, sessionIndex) => {
-      // Record session stats
+      // Record session stats (legacy)
       await statsService.recordSession(session);
 
       // Haptic feedback
@@ -97,8 +129,13 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       lastMinuteRef.current = -1;
       lastAnnouncementMinuteRef.current = -1;
       lastAnnouncementSecondRef.current = -1;
+
+      // Show complete modal for custom focus sessions
+      if (timerMode === 'custom' && timerType === 'focus') {
+        setShowCompleteModal(true);
+      }
     });
-  }, [sessions, setSessionCompleteCallback, setAllSessionsCompleteCallback]);
+  }, [sessions, timerMode, timerType, setSessionCompleteCallback, setAllSessionsCompleteCallback]);
 
   // Keep screen awake when timer is running
   useKeepAwake(status === 'running');
@@ -253,6 +290,60 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     removePomodoros(1);
   };
 
+  // Session Setup handlers
+  const handleSetupStart = (draft: any) => {
+    setSessionDraft(draft);
+    setShowSetupModal(false);
+
+    // Start the timer with the draft
+    const mode = timerMode || 'custom';
+    const type = timerType || 'focus';
+    startTimer(routeSessions, mode, type, draft);
+  };
+
+  const handleSetupSkip = () => {
+    setShowSetupModal(false);
+
+    // Start without a draft
+    const mode = timerMode || 'custom';
+    const type = timerType || 'focus';
+    startTimer(routeSessions, mode, type, { intent: '', steps: [] });
+  };
+
+  // Session Complete handlers
+  const handleSessionSave = (sessionStatus: SessionStatus, updatedSteps?: any, notes?: string) => {
+    // Create session record
+    if (sessionStartTime && sessionEndTime && timerMode && timerType) {
+      const plannedSeconds = totalTime;
+      const completedSeconds = totalTime - timeRemaining;
+      const sessionType = currentSession?.type || 'focus';
+
+      const record = createSessionRecord(
+        sessionStartTime,
+        sessionEndTime,
+        plannedSeconds,
+        completedSeconds,
+        timerMode,
+        timerType,
+        sessionType,
+        sessionStatus,
+        sessionDraft,
+        notes
+      );
+
+      // Save to history
+      appendHistory(record);
+    }
+
+    setShowCompleteModal(false);
+    navigation.navigate('ModeSelection');
+  };
+
+  const handleSessionDiscard = () => {
+    setShowCompleteModal(false);
+    navigation.navigate('ModeSelection');
+  };
+
   // Check if this is a standard pomodoro-style timer (has 25-min focus sessions with 5-min breaks)
   // Excludes guided pomodoro which has settle/wrap phases
   const isPomodoroStyle = sessions.some(
@@ -291,6 +382,15 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
             sessionLabel={currentSession?.label || currentSession?.type}
             sessionType={currentSession?.type}
           />
+
+          {/* Display session intent if present */}
+          {sessionDraft?.intent && (
+            <View style={styles.intentContainer}>
+              <Text style={[styles.intentText, { color: theme.colors.textSecondary }]}>
+                {sessionDraft.intent}
+              </Text>
+            </View>
+          )}
 
           <View style={styles.progressContainer}>
             <ProgressBar progress={progress} />
@@ -350,6 +450,25 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Session Setup Modal */}
+      <SessionSetup
+        visible={showSetupModal}
+        onStart={handleSetupStart}
+        onSkip={handleSetupSkip}
+        initialDraft={sessionDraft}
+      />
+
+      {/* Session Complete Modal */}
+      <SessionComplete
+        visible={showCompleteModal}
+        timerType={timerType || 'focus'}
+        completedSeconds={totalTime - timeRemaining}
+        plannedSeconds={totalTime}
+        draft={sessionDraft}
+        onSave={handleSessionSave}
+        onDiscard={handleSessionDiscard}
+      />
     </View>
   );
 }
@@ -385,6 +504,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
     minHeight: 0,
+  },
+  intentContainer: {
+    marginTop: 24,
+    paddingHorizontal: 16,
+    maxWidth: '100%',
+  },
+  intentText: {
+    fontSize: 16,
+    fontWeight: '300',
+    textAlign: 'center',
+    lineHeight: 22,
+    letterSpacing: 0.3,
   },
   progressContainer: {
     width: '100%',

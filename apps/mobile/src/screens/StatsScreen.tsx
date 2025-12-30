@@ -3,20 +3,32 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { statsService } from '../services/statsService';
 import { formatFocusTime } from '@flowmate/shared';
-import type { UserStats, DailyStat } from '@flowmate/shared';
+import type { UserStats, DailyStat, DailySummary } from '@flowmate/shared';
 import { WeeklyChart } from '../components/WeeklyChart';
+import { SessionHistory } from '../components/SessionHistory';
 import type { StatsScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
+import { getTodayStats, getAllTimeTotalMinutes, getAllTimeSavedSessions, groupSessionsByDay } from '../services/sessionService';
+
+type TabView = 'stats' | 'history';
 
 export function StatsScreen({ navigation }: StatsScreenProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const [activeTab, setActiveTab] = useState<TabView>('stats');
   const [stats, setStats] = useState<UserStats | null>(null);
   const [todayStats, setTodayStats] = useState<DailyStat | null>(null);
   const [weekStats, setWeekStats] = useState<DailyStat[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
+  // New session-based stats
+  const [todaySessionStats, setTodaySessionStats] = useState<any>(null);
+  const [allTimeMinutes, setAllTimeMinutes] = useState(0);
+  const [allTimeSessions, setAllTimeSessions] = useState(0);
+  const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
+
   const loadStats = useCallback(async () => {
+    // Load old stats for backwards compatibility
     const allStats = await statsService.getStats();
     const today = await statsService.getTodayStats();
     const week = await statsService.getWeekStats();
@@ -24,6 +36,17 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
     setStats(allStats);
     setTodayStats(today);
     setWeekStats(week);
+
+    // Load new session-based stats
+    const todaySession = await getTodayStats();
+    const allMinutes = await getAllTimeTotalMinutes();
+    const allSessions = await getAllTimeSavedSessions();
+    const summaries = await groupSessionsByDay();
+
+    setTodaySessionStats(todaySession);
+    setAllTimeMinutes(allMinutes);
+    setAllTimeSessions(allSessions);
+    setDailySummaries(summaries);
   }, []);
 
   const onRefresh = useCallback(async () => {
@@ -45,23 +68,63 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      contentContainerStyle={[
-        styles.contentContainer,
-        { paddingTop: insets.top + 20 }
-      ]}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={[styles.backButtonText, { color: theme.colors.textSecondary }]}>← back</Text>
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.colors.text }]}>your progress</Text>
+
+        {/* Tab Switcher */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              activeTab === 'stats' && styles.tabActive,
+              { backgroundColor: activeTab === 'stats' ? theme.colors.primary : 'transparent' },
+              { borderColor: theme.colors.border },
+            ]}
+            onPress={() => setActiveTab('stats')}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                { color: activeTab === 'stats' ? '#ffffff' : theme.colors.text },
+              ]}
+            >
+              Stats
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              activeTab === 'history' && styles.tabActive,
+              { backgroundColor: activeTab === 'history' ? theme.colors.primary : 'transparent' },
+              { borderColor: theme.colors.border },
+            ]}
+            onPress={() => setActiveTab('history')}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                { color: activeTab === 'history' ? '#ffffff' : theme.colors.text },
+              ]}
+            >
+              History
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {activeTab === 'stats' ? (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.contentContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
 
       {/* Today's Stats */}
       <View style={styles.section}>
@@ -125,7 +188,13 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
           </View>
         </View>
       </View>
-    </ScrollView>
+        </ScrollView>
+      ) : (
+        <View style={styles.scrollView}>
+          <SessionHistory dailySummaries={dailySummaries} />
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -144,7 +213,8 @@ const styles = StyleSheet.create({
     marginTop: 100,
   },
   header: {
-    marginBottom: 32,
+    paddingHorizontal: 24,
+    paddingBottom: 16,
   },
   backButton: {
     marginBottom: 16,
@@ -159,6 +229,31 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '300',
     letterSpacing: 0.5,
+    marginBottom: 16,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  tabActive: {
+    // Active state handled via backgroundColor prop
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '500',
+    letterSpacing: 0.3,
+  },
+  scrollView: {
+    flex: 1,
   },
   section: {
     marginBottom: 32,

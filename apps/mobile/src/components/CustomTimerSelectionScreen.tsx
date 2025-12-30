@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Keyboard, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { Session } from '@flowmate/shared';
+import type { Session, TimerType } from '@flowmate/shared';
 import type { CustomSelectionScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
 import { useTimerContext } from '../contexts/TimerContext';
@@ -14,7 +14,7 @@ const QUICK_PRESETS = [
 
 export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreenProps) {
   const { theme } = useTheme();
-  const { isActive, reset } = useTimerContext();
+  const { isActive, reset, timerType, setTimerType } = useTimerContext();
   const insets = useSafeAreaInsets();
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
@@ -24,6 +24,7 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
   };
 
   const startSession = (sessions: Session[]) => {
+    // Mode and type will be set by ActiveTimer when it initializes
     if (isActive) {
       // Show alert if there's an active timer
       Alert.alert(
@@ -98,6 +99,48 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
       >
         <Text style={[styles.title, { color: theme.colors.text }]}>your own pace</Text>
         <Text style={[styles.subtitle, { color: theme.colors.textTertiary }]}>set any duration you need</Text>
+
+        {/* Timer Type Toggle */}
+        <View style={styles.timerTypeSection}>
+          <TouchableOpacity
+            style={[
+              styles.timerTypeButton,
+              timerType === 'focus' && styles.timerTypeButtonActive,
+              { backgroundColor: timerType === 'focus' ? theme.colors.primary : theme.colors.surface },
+              { borderColor: theme.colors.border },
+            ]}
+            onPress={() => setTimerType('focus')}
+            activeOpacity={0.85}
+          >
+            <Text
+              style={[
+                styles.timerTypeText,
+                { color: timerType === 'focus' ? '#ffffff' : theme.colors.text },
+              ]}
+            >
+              Focus
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.timerTypeButton,
+              timerType === 'break' && styles.timerTypeButtonActive,
+              { backgroundColor: timerType === 'break' ? theme.colors.primary : theme.colors.surface },
+              { borderColor: theme.colors.border },
+            ]}
+            onPress={() => setTimerType('break')}
+            activeOpacity={0.85}
+          >
+            <Text
+              style={[
+                styles.timerTypeText,
+                { color: timerType === 'break' ? '#ffffff' : theme.colors.text },
+              ]}
+            >
+              Break
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.inputSection}>
           <TextInput
@@ -187,9 +230,29 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     fontWeight: '300',
-    marginBottom: 48,
+    marginBottom: 24,
     textAlign: 'center',
     letterSpacing: 0.8,
+  },
+  timerTypeSection: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 32,
+    justifyContent: 'center',
+  },
+  timerTypeButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  timerTypeButtonActive: {
+    // Active state handled via backgroundColor prop
+  },
+  timerTypeText: {
+    fontSize: 14,
+    fontWeight: '500',
+    letterSpacing: 0.3,
   },
   inputSection: {
     marginBottom: 32,

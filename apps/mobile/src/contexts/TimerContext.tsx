@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode, useMemo } from 'react';
-import type { Session } from '@flowmate/shared';
+import type { Session, SessionDraft, TimerType, TimerMode } from '@flowmate/shared';
 
 export type TimerStatus = 'idle' | 'running' | 'paused' | 'completed';
 
@@ -9,6 +9,13 @@ interface TimerContextValue {
   currentSessionIndex: number;
   currentSession: Session | null;
 
+  // Session Recording
+  timerType: TimerType;
+  timerMode: TimerMode | null;
+  sessionDraft: SessionDraft;
+  sessionStartTime: number;
+  sessionEndTime: number;
+
   // Timer State
   timeRemaining: number;
   totalTime: number;
@@ -16,7 +23,7 @@ interface TimerContextValue {
   progress: number;
 
   // Actions
-  startTimer: (sessions: Session[]) => void;
+  startTimer: (sessions: Session[], mode: TimerMode, type: TimerType, draft?: SessionDraft) => void;
   pause: () => void;
   resume: () => void;
   skip: () => void;
@@ -25,6 +32,9 @@ interface TimerContextValue {
   subtractTime: (seconds: number) => void;
   addPomodoros: (numPomodoros?: number) => void;
   removePomodoros: (numPomodoros?: number) => void;
+  setTimerType: (type: TimerType) => void;
+  setSessionDraft: (draft: SessionDraft) => void;
+  updateSessionDraft: (draft: SessionDraft) => void;
 
   // Computed Properties
   isActive: boolean; // true when status is 'running' or 'paused'
@@ -51,6 +61,13 @@ export function TimerProvider({ children }: TimerProviderProps) {
   const [status, setStatus] = useState<TimerStatus>('idle');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const endTimeRef = useRef<number | null>(null);
+
+  // Session recording state
+  const [timerType, setTimerType] = useState<TimerType>('focus');
+  const [timerMode, setTimerMode] = useState<TimerMode | null>(null);
+  const [sessionDraft, setSessionDraft] = useState<SessionDraft>({ intent: '', steps: [] });
+  const [sessionStartTime, setSessionStartTime] = useState(0);
+  const [sessionEndTime, setSessionEndTime] = useState(0);
 
   // Callbacks stored in refs to avoid re-renders
   const onSessionCompleteRef = useRef<((session: Session, sessionIndex: number) => void) | undefined>(undefined);
@@ -109,6 +126,9 @@ export function TimerProvider({ children }: TimerProviderProps) {
             }
             endTimeRef.current = null;
 
+            // Capture end time for session recording
+            setSessionEndTime(Date.now());
+
             // Call session complete callback
             if (onSessionCompleteRef.current && currentSession) {
               onSessionCompleteRef.current(currentSession, currentSessionIndex);
@@ -138,12 +158,18 @@ export function TimerProvider({ children }: TimerProviderProps) {
     }
   }, [status, currentSessionIndex, sessions, currentSession]);
 
-  const startTimer = useCallback((newSessions: Session[]) => {
+  const startTimer = useCallback((newSessions: Session[], mode: TimerMode, type: TimerType, draft?: SessionDraft) => {
     if (newSessions.length === 0) return;
 
     setSessions(newSessions);
     setCurrentSessionIndex(0);
     setTimeRemaining(newSessions[0].durationMinutes * 60);
+    setTimerMode(mode);
+    setTimerType(type);
+    if (draft) {
+      setSessionDraft(draft);
+    }
+    setSessionStartTime(Date.now());
     endTimeRef.current = Date.now() + newSessions[0].durationMinutes * 60 * 1000;
     setStatus('running');
   }, []);
@@ -170,6 +196,9 @@ export function TimerProvider({ children }: TimerProviderProps) {
       intervalRef.current = null;
     }
     endTimeRef.current = null;
+
+    // Capture end time for session recording
+    setSessionEndTime(Date.now());
 
     // Reset to the first session without clearing the sessions array
     // This keeps the session data intact for display purposes
@@ -257,10 +286,19 @@ export function TimerProvider({ children }: TimerProviderProps) {
     onAllSessionsCompleteRef.current = callback;
   }, []);
 
+  const updateSessionDraft = useCallback((draft: SessionDraft) => {
+    setSessionDraft(draft);
+  }, []);
+
   const value = useMemo<TimerContextValue>(() => ({
     sessions,
     currentSessionIndex,
     currentSession,
+    timerType,
+    timerMode,
+    sessionDraft,
+    sessionStartTime,
+    sessionEndTime,
     timeRemaining,
     totalTime,
     status,
@@ -274,6 +312,9 @@ export function TimerProvider({ children }: TimerProviderProps) {
     subtractTime,
     addPomodoros,
     removePomodoros,
+    setTimerType,
+    setSessionDraft,
+    updateSessionDraft,
     isActive,
     formattedTime,
     currentPhase,
@@ -285,6 +326,11 @@ export function TimerProvider({ children }: TimerProviderProps) {
     sessions,
     currentSessionIndex,
     currentSession,
+    timerType,
+    timerMode,
+    sessionDraft,
+    sessionStartTime,
+    sessionEndTime,
     timeRemaining,
     totalTime,
     status,
@@ -303,6 +349,7 @@ export function TimerProvider({ children }: TimerProviderProps) {
     currentPhase,
     setSessionCompleteCallback,
     setAllSessionsCompleteCallback,
+    updateSessionDraft,
   ]);
 
   return (
