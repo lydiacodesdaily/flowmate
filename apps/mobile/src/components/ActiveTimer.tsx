@@ -69,8 +69,14 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     updateSessionDraft,
   } = useTimerContext();
 
+  // Reset setup state when route params change (new session started)
+  useEffect(() => {
+    setSetupInitialized(false);
+  }, [routeSessions]);
+
   // Initialize timer with route sessions on mount (only if not already started)
   useEffect(() => {
+    console.log('Init effect - setupInitialized:', setupInitialized, 'status:', status, 'timerType:', timerType);
     if (!setupInitialized && routeSessions && routeSessions.length > 0) {
       // Infer mode from session structure
       const hasSettleWrap = routeSessions.some(s => s.type === 'settle' || s.type === 'wrap');
@@ -82,14 +88,20 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         inferredMode = 'pomodoro';
       }
 
-      // Check if this is a custom focus session that needs setup
-      const shouldShowSetup = inferredMode === 'custom' && timerType === 'focus';
+      console.log('Inferred mode:', inferredMode, 'timerType:', timerType, 'status:', status);
+
+      // Check if this is a focus session that needs setup (custom or pomodoro)
+      const shouldShowSetup = (inferredMode === 'custom' || inferredMode === 'pomodoro') && timerType === 'focus';
+
+      console.log('shouldShowSetup:', shouldShowSetup);
 
       if (shouldShowSetup && status === 'idle') {
-        // Show setup modal for custom focus sessions
+        // Show setup modal for custom and pomodoro focus sessions
+        console.log('Setting showSetupModal to true');
         setShowSetupModal(true);
       } else if (status === 'idle') {
-        // For break sessions, guided sessions, or pomodoro, start immediately
+        // For break sessions or guided sessions, start immediately
+        console.log('Starting timer immediately with sessionDraft:', sessionDraft);
         startTimer(routeSessions, inferredMode, timerType, sessionDraft);
       }
       setSetupInitialized(true);
@@ -335,11 +347,19 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       appendHistory(record);
     }
 
+    // Clear session draft for next session
+    console.log('handleSessionSave: Clearing sessionDraft and resetting timer');
+    setSessionDraft({ intent: '', steps: [] });
+    reset(); // Reset timer status to idle
     setShowCompleteModal(false);
     navigation.navigate('ModeSelection');
   };
 
   const handleSessionDiscard = () => {
+    // Clear session draft for next session
+    console.log('handleSessionDiscard: Clearing sessionDraft and resetting timer');
+    setSessionDraft({ intent: '', steps: [] });
+    reset(); // Reset timer status to idle
     setShowCompleteModal(false);
     navigation.navigate('ModeSelection');
   };
