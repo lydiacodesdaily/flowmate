@@ -399,8 +399,6 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         <View style={styles.timerContainer}>
           <TimerDisplay
             timeRemaining={timeRemaining}
-            sessionLabel={currentSession?.label || currentSession?.type}
-            sessionType={currentSession?.type}
           />
 
           {/* Display session intent if present */}
@@ -526,16 +524,16 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   intentContainer: {
-    marginTop: 24,
-    paddingHorizontal: 16,
+    marginTop: 32,
+    paddingHorizontal: 24,
     maxWidth: '100%',
   },
   intentText: {
-    fontSize: 16,
-    fontWeight: '300',
+    fontSize: 18,
+    fontWeight: '400',
     textAlign: 'center',
-    lineHeight: 22,
-    letterSpacing: 0.3,
+    lineHeight: 26,
+    letterSpacing: 0.2,
   },
   progressContainer: {
     width: '100%',

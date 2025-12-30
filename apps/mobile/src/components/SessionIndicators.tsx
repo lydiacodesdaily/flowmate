@@ -37,14 +37,14 @@ export function SessionIndicators({
   return (
     <View style={styles.container}>
       <View style={styles.sessionInfo}>
-        <Text style={[styles.sessionLabel, { color: theme.colors.primary }]}>
+        <Text style={[styles.sessionLabel, { color: theme.colors.textTertiary }]}>
           {currentLabel} {currentSession?.durationMinutes}m
+          {nextLabel && (
+            <Text style={styles.nextSession}>
+              {' · '}Up next: {nextLabel} {nextSession?.durationMinutes}m
+            </Text>
+          )}
         </Text>
-        {nextLabel && (
-          <Text style={[styles.nextSession, { color: theme.colors.textTertiary }]}>
-            Up next: {nextLabel} {nextSession?.durationMinutes}m
-          </Text>
-        )}
       </View>
 
       {/* Progress dots */}
@@ -72,24 +72,22 @@ export function SessionIndicators({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 8,
-    marginBottom: 40,
+    paddingVertical: 4,
+    marginBottom: 24,
     alignItems: 'center',
   },
   sessionInfo: {
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   sessionLabel: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '400',
     letterSpacing: 0.3,
-    marginBottom: 4,
   },
   nextSession: {
-    fontSize: 12,
     fontWeight: '300',
-    letterSpacing: 0.2,
+    opacity: 0.7,
   },
   progressDots: {
     flexDirection: 'row',

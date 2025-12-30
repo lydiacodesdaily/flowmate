@@ -10,7 +10,6 @@ interface TimerDisplayProps {
 
 export function TimerDisplay({
   timeRemaining,
-  sessionLabel,
 }: TimerDisplayProps) {
   const { theme } = useTheme();
 
@@ -27,9 +26,6 @@ export function TimerDisplay({
 
   return (
     <View style={styles.container}>
-      {sessionLabel && (
-        <Text style={[styles.label, { color: theme.colors.textTertiary }]}>{sessionLabel}</Text>
-      )}
       <Text style={[styles.time, { color: theme.colors.text }]}>{formatTime(timeRemaining)}</Text>
     </View>
   );
@@ -40,13 +36,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '300',
-    textTransform: 'lowercase',
-    letterSpacing: 1,
-    marginBottom: 28,
   },
   time: {
     fontSize: 72,
