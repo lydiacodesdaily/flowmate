@@ -81,6 +81,7 @@ export interface AudioSettingsStorage {
   muteAll: boolean;
   muteDuringBreaks: boolean;
   announcementInterval: 1 | 2 | 3 | 5 | 10;
+  secondsCountdown: boolean;
   selectedProfile: 'silent' | 'minimal' | 'balanced' | 'detailed' | 'custom';
 }
 
@@ -93,6 +94,7 @@ export const getDefaultAudioSettings = (): AudioSettingsStorage => ({
   muteAll: false,
   muteDuringBreaks: false,
   announcementInterval: 1,
+  secondsCountdown: true,
   selectedProfile: 'balanced',
 });
 

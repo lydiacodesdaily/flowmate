@@ -183,11 +183,18 @@ export const SettingsModal = ({
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 cursor-help">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                     </svg>
-                    <div className="absolute left-0 top-full mt-1 w-56 p-2.5 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none leading-relaxed">
-                      <div className="font-semibold mb-1">Voice announcements play:</div>
-                      <div>• Every 5 min for sessions ≥25 min</div>
-                      <div>• Every 1 min in the final stretch</div>
-                      <div>• Countdown: 50, 40, 30, 20, 10, 9...1 sec</div>
+                    <div className="absolute left-0 top-full mt-1 w-64 p-2.5 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none leading-relaxed">
+                      <div className="font-semibold mb-1.5">Audio adapts by session length:</div>
+                      <div className="mb-1.5">
+                        <div className="font-medium text-cyan-300">Short (≤25 min):</div>
+                        <div className="text-slate-300 ml-2">• Minute announcements</div>
+                        <div className="text-slate-300 ml-2">• Final countdown</div>
+                      </div>
+                      <div>
+                        <div className="font-medium text-cyan-300">Long (&gt;25 min):</div>
+                        <div className="text-slate-300 ml-2">• Checkpoint dings only</div>
+                        <div className="text-slate-300 ml-2">• No verbal countdown</div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -350,6 +357,13 @@ export const SettingsModal = ({
                   }`}
                 />
               </button>
+            </div>
+
+            {/* Audio Behavior Notice */}
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-slate-900/50 border border-blue-200 dark:border-cyan-900/30 rounded-lg">
+              <div className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                <span className="font-medium text-slate-700 dark:text-cyan-300">Audio adapts by design:</span> Longer sessions use fewer audio prompts to support deep focus, while shorter sessions provide more frequent time awareness cues.
+              </div>
             </div>
           </div>
 

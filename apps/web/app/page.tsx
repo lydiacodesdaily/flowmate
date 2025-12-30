@@ -1073,42 +1073,51 @@ export default function Home() {
         const minutesRemaining = Math.floor(remaining / 60);
         const secondsRemaining = remaining % 60;
 
+        // Get current session to check focus duration
+        const currentSession = sessions[currentSessionIndex];
+        const focusDurationMinutes = currentSession ? Math.floor(currentSession.duration / 60) : 0;
+
+        // Determine audio mode based on session duration
+        // Awareness: ≤25 minutes - supports time awareness with announcements
+        // Deep Focus: >25 minutes - minimal interruption, no verbal announcements
+        const audioMode = focusDurationMinutes <= 25 ? 'awareness' : 'deep-focus';
+
         if (minutesRemaining >= 1) {
           // Greater than 1 minute
           if (secondsRemaining === 0 && lastMinuteAnnouncedRef.current !== minutesRemaining) {
-            // Get current session to check focus duration
-            const currentSession = sessions[currentSessionIndex];
-            const focusDurationMinutes = currentSession ? Math.floor(currentSession.duration / 60) : 0;
-
-            // For focus sessions > 25 minutes: only play ding at 5-minute intervals
-            if (currentSession?.type === "focus" && focusDurationMinutes > 25) {
-              if (enableDingCheckpoints && minutesRemaining % 5 === 0) {
+            if (audioMode === 'deep-focus') {
+              // Deep Focus Audio: Only play ding at 5-minute intervals, no voice announcements
+              if (currentSession?.type === "focus" && enableDingCheckpoints && minutesRemaining % 5 === 0) {
                 speak('ding');
               }
-            }
-            // For all other cases (focus <= 25 min, breaks, custom): announce minutes 1-25
-            // Don't announce at the very start (when minutesRemaining === focusDurationMinutes)
-            else if (minutesRemaining <= 25 && minutesRemaining < focusDurationMinutes && minutesRemaining % minuteAnnouncementIntervalRef.current === 0) {
-              console.log(`Announcing: ${minutesRemaining} minutes (interval: ${minuteAnnouncementIntervalRef.current})`);
-              speak(`${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`);
+            } else {
+              // Awareness Audio: Announce minutes 1-25 at user-selected intervals
+              // Don't announce at the very start (when minutesRemaining === focusDurationMinutes)
+              if (minutesRemaining <= 25 && minutesRemaining < focusDurationMinutes && minutesRemaining % minuteAnnouncementIntervalRef.current === 0) {
+                console.log(`Announcing: ${minutesRemaining} minutes (interval: ${minuteAnnouncementIntervalRef.current})`);
+                speak(`${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`);
+              }
             }
             lastMinuteAnnouncedRef.current = minutesRemaining;
           }
         } else {
-          // Less than 1 minute
-          if (remaining >= 10) {
-            // Between 10-59 seconds: announce every 10 seconds (50, 40, 30, 20, 10)
-            if (enableFinalCountdown && remaining % 10 === 0 && lastMinuteAnnouncedRef.current !== remaining) {
-              speak(`${remaining} seconds`);
-              lastMinuteAnnouncedRef.current = remaining;
-            }
-          } else {
-            // Less than 10 seconds: countdown 9, 8, 7, 6, 5, 4, 3, 2, 1
-            if (enableFinalCountdown && lastMinuteAnnouncedRef.current !== remaining) {
-              speak(`${remaining}`);
-              lastMinuteAnnouncedRef.current = remaining;
+          // Less than 1 minute - only in Awareness Audio mode
+          if (audioMode === 'awareness') {
+            if (remaining >= 10) {
+              // Between 10-59 seconds: announce every 10 seconds (50, 40, 30, 20, 10)
+              if (enableFinalCountdown && remaining % 10 === 0 && lastMinuteAnnouncedRef.current !== remaining) {
+                speak(`${remaining} seconds`);
+                lastMinuteAnnouncedRef.current = remaining;
+              }
+            } else {
+              // Less than 10 seconds: countdown 9, 8, 7, 6, 5, 4, 3, 2, 1
+              if (enableFinalCountdown && lastMinuteAnnouncedRef.current !== remaining) {
+                speak(`${remaining}`);
+                lastMinuteAnnouncedRef.current = remaining;
+              }
             }
           }
+          // Deep Focus mode: No verbal countdown, stay silent as time passes
         }
       }
 

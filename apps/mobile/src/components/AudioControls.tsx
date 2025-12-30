@@ -34,6 +34,7 @@ const PRESETS: AudioPreset[] = [
       tickVolume: 0,
       announcementVolume: 0,
       announcementInterval: 1,
+      secondsCountdown: false,
     },
   },
   {
@@ -48,6 +49,7 @@ const PRESETS: AudioPreset[] = [
       announcementVolume: 0.2,
       announcementInterval: 1,
       muteDuringBreaks: true,
+      secondsCountdown: false,
     },
   },
   {
@@ -62,6 +64,7 @@ const PRESETS: AudioPreset[] = [
       announcementVolume: 0.2,
       announcementInterval: 1,
       muteDuringBreaks: false,
+      secondsCountdown: true,
     },
   },
   {
@@ -76,6 +79,7 @@ const PRESETS: AudioPreset[] = [
       announcementVolume: 1,
       announcementInterval: 1,
       muteDuringBreaks: false,
+      secondsCountdown: true,
     },
   },
 ];
@@ -381,6 +385,26 @@ export function AudioControls({
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+
+        {/* Seconds Countdown */}
+        <View style={styles.customSection}>
+          <TouchableOpacity
+            style={[
+              styles.toggleRow,
+              { borderColor: theme.colors.border },
+              currentSettings.secondsCountdown && {
+                backgroundColor: theme.colors.primaryLight,
+                borderColor: theme.colors.primary,
+              },
+            ]}
+            onPress={() => updateCustomSetting('secondsCountdown', !currentSettings.secondsCountdown)}
+          >
+            <Text style={[styles.toggleLabel, { color: theme.colors.text }]}>
+              Seconds Countdown
+            </Text>
+            <Text style={styles.toggleIcon}>{currentSettings.secondsCountdown ? '🔢' : '⏱️'}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Mute During Breaks */}

@@ -188,32 +188,47 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         audioService.playTick(currentSession.type);
       }
 
-      // Time announcements
+      // Time announcements with audio mode logic
       const settings = audioService.getSettings();
+      const sessionDurationMinutes = totalTime / 60;
 
-      // Minute announcements (always check first)
+      // Determine audio mode based on session duration
+      // Awareness mode (≤25 min): supports time awareness with full announcements
+      // Deep Focus mode (>25 min): minimal interruptions, no voice escalation
+      const isAwarenessMode = sessionDurationMinutes <= 25;
+
+      // Minute announcements
       if (currentMinute !== lastAnnouncementMinuteRef.current && currentMinute > 0) {
-        // For sessions <= 25 minutes: voice announcement at configured interval (we have m01-m24.mp3)
-        // For sessions > 25 minutes: ding.mp3 every 5 minutes (no voice announcements available)
-        if (totalTime / 60 <= 25) {
-          // 25 minutes or less: announce at configured interval with voice
+        if (isAwarenessMode) {
+          // AWARENESS MODE (≤25 minutes)
+          // Voice announcements at configured interval
           if (currentMinute % settings.announcementInterval === 0) {
             audioService.announceTimeRemaining(currentMinute);
             lastAnnouncementMinuteRef.current = currentMinute;
           }
-        } else if (currentMinute % 5 === 0) {
-          // More than 25 minutes: ding every 5 minutes (fixed interval, no voice files)
-          audioService.announceSessionComplete(); // Play ding.mp3
+        } else {
+          // DEEP FOCUS MODE (>25 minutes)
+          // No minute-by-minute voice announcements
+          // No ding sounds at intervals
+          // Silent by design to preserve immersion
           lastAnnouncementMinuteRef.current = currentMinute;
         }
       }
 
-      // Handle seconds countdown for last minute (<60 seconds, not at exactly 60)
+      // Seconds countdown for final minute
       if (currentSecond < 60 && currentSecond > 0) {
         const secondsToAnnounce = [50, 40, 30, 20, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+
         if (secondsToAnnounce.includes(currentSecond) && currentSecond !== lastAnnouncementSecondRef.current) {
-          audioService.announceSecondsRemaining(currentSecond);
-          lastAnnouncementSecondRef.current = currentSecond;
+          if (isAwarenessMode && settings.secondsCountdown) {
+            // AWARENESS MODE: Allow seconds countdown if enabled
+            audioService.announceSecondsRemaining(currentSecond);
+            lastAnnouncementSecondRef.current = currentSecond;
+          } else {
+            // DEEP FOCUS MODE: No verbal countdown
+            // OR user has disabled seconds countdown
+            lastAnnouncementSecondRef.current = currentSecond;
+          }
         }
       }
 

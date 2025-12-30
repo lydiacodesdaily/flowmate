@@ -22,6 +22,7 @@ class AudioService {
     muteAll: false,
     muteDuringBreaks: false,
     announcementInterval: 1,
+    secondsCountdown: true,
   };
 
   async initialize() {
@@ -35,6 +36,7 @@ class AudioService {
         muteAll: savedSettings.muteAll,
         muteDuringBreaks: savedSettings.muteDuringBreaks,
         announcementInterval: savedSettings.announcementInterval,
+        secondsCountdown: savedSettings.secondsCountdown ?? true,
       };
 
       // Set audio mode for background playback and mixing with other apps
@@ -350,6 +352,7 @@ class AudioService {
         muteAll: this.settings.muteAll,
         muteDuringBreaks: this.settings.muteDuringBreaks,
         announcementInterval: this.settings.announcementInterval,
+        secondsCountdown: this.settings.secondsCountdown,
       });
     } catch (error) {
       console.error('Failed to save audio settings:', error);

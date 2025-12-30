@@ -79,6 +79,7 @@ export interface AudioSettings {
   muteAll: boolean;
   muteDuringBreaks: boolean;
   announcementInterval: 1 | 2 | 3 | 5 | 10;
+  secondsCountdown: boolean;
 }
 
 export interface UISettings {
