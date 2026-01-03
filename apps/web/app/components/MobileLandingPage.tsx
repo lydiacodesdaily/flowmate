@@ -75,7 +75,7 @@ export const MobileLandingPage = () => {
               </a>
               <span className="text-slate-400">·</span>
               <a
-                href="https://forms.gle/TnjJTJqjMrAg45Jr9"
+                href="https://tally.so/r/Y50Qb5"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 dark:text-cyan-400 hover:underline"
