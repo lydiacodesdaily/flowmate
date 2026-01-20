@@ -1395,7 +1395,7 @@ export default function Home() {
           {' · '}
           🍵 <a href="https://buymeacoffee.com/lydiastudio" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Buy me a matcha latte</a>
           {' · '}
-          🎧 <a href="https://chromewebstore.google.com/detail/flow-club-companion-focus/ncjcggjgiajhmeifohinbeeeegdiaehc" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Flow Club Companion</a>
+          🎧 <a href="https://www.lydiastud.io/flow-club-companion" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Flow Club Companion</a>
         </div>
       </footer>
     </main>
