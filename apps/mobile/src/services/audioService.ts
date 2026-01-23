@@ -242,6 +242,12 @@ class AudioService {
     if (this.settings.muteDuringBreaks && sessionType === 'break') return;
 
     try {
+      // Use mixWithOthers for ticks - no ducking, just overlay on music
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        interruptionMode: 'mixWithOthers',
+      });
       // Handle alternating sounds (alternating and alternating2)
       if ((this.settings.tickSound === 'alternating' || this.settings.tickSound === 'alternating2')
           && this.alternateTickSound && this.tickSound) {
@@ -269,6 +275,12 @@ class AudioService {
     const announcement = this.minuteAnnouncements.get(minutes);
     if (announcement) {
       try {
+        // Use duckOthers for voice announcements - briefly lower music volume
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          interruptionMode: 'duckOthers',
+        });
         await announcement.seekTo(0);
         announcement.play();
       } catch (error) {
@@ -286,6 +298,12 @@ class AudioService {
     const announcement = this.secondAnnouncements.get(seconds);
     if (announcement) {
       try {
+        // Use duckOthers for voice announcements - briefly lower music volume
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          interruptionMode: 'duckOthers',
+        });
         await announcement.seekTo(0);
         announcement.play();
       } catch (error) {
@@ -302,6 +320,12 @@ class AudioService {
 
     if (sound) {
       try {
+        // Use duckOthers for transition announcements
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          interruptionMode: 'duckOthers',
+        });
         await sound.seekTo(0);
         sound.play();
       } catch (error) {
@@ -315,6 +339,12 @@ class AudioService {
 
     if (this.dingSound) {
       try {
+        // Use duckOthers for completion sounds
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          interruptionMode: 'duckOthers',
+        });
         await this.dingSound.seekTo(0);
         this.dingSound.play();
       } catch (error) {
@@ -329,6 +359,12 @@ class AudioService {
     const sound = this.transitionSounds.get('done');
     if (sound) {
       try {
+        // Use duckOthers for completion sounds
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          interruptionMode: 'duckOthers',
+        });
         await sound.seekTo(0);
         sound.play();
       } catch (error) {
