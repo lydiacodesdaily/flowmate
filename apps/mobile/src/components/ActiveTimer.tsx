@@ -12,6 +12,7 @@ import { ProgressBar } from './ProgressBar';
 import { SessionIndicators } from './SessionIndicators';
 import { SessionSetup } from './SessionSetup';
 import { SessionComplete } from './SessionComplete';
+import { EarlyStopModal } from './EarlyStopModal';
 import { audioService } from '../services/audioService';
 import { statsService } from '../services/statsService';
 import { createSessionRecord, appendHistory } from '../services/sessionService';
@@ -25,9 +26,6 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const { sessions: routeSessions } = route.params;
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
-  const lastMinuteRef = useRef<number>(-1);
-  const lastAnnouncementMinuteRef = useRef<number>(-1);
-  const lastAnnouncementSecondRef = useRef<number>(-1);
   const audioInitializedRef = useRef(false);
   const timerInitializedRef = useRef(false);
 
@@ -39,6 +37,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   // Session management state
   const [showSetupModal, setShowSetupModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showEarlyStopModal, setShowEarlyStopModal] = useState(false);
   const [setupInitialized, setSetupInitialized] = useState(false);
 
   const {
@@ -138,9 +137,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     setAllSessionsCompleteCallback(async () => {
       await hapticService.heavy();
       await audioService.announceAllComplete();
-      lastMinuteRef.current = -1;
-      lastAnnouncementMinuteRef.current = -1;
-      lastAnnouncementSecondRef.current = -1;
+      audioService.resetAnnouncementTracking();
 
       // Show complete modal for custom focus sessions
       if (timerMode === 'custom' && timerType === 'focus') {
@@ -177,68 +174,9 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     };
   }, []);
 
-  // Handle tick sounds and announcements
-  useEffect(() => {
-    if (status === 'running' && currentSession) {
-      const currentMinute = Math.ceil(timeRemaining / 60);
-      const currentSecond = Math.floor(timeRemaining);
-
-      // Play tick sound every second
-      if (timeRemaining % 1 === 0 && timeRemaining > 0) {
-        audioService.playTick(currentSession.type);
-      }
-
-      // Time announcements with audio mode logic
-      const settings = audioService.getSettings();
-      const sessionDurationMinutes = totalTime / 60;
-
-      // Determine audio mode based on session duration
-      // Awareness mode (≤25 min): supports time awareness with full announcements
-      // Deep Focus mode (>25 min): minimal interruptions, no voice escalation
-      const isAwarenessMode = sessionDurationMinutes <= 25;
-
-      // Minute announcements
-      if (currentMinute !== lastAnnouncementMinuteRef.current && currentMinute > 0) {
-        if (isAwarenessMode) {
-          // AWARENESS MODE (≤25 minutes)
-          // Voice announcements at configured interval
-          if (currentMinute % settings.announcementInterval === 0) {
-            audioService.announceTimeRemaining(currentMinute);
-            lastAnnouncementMinuteRef.current = currentMinute;
-          }
-        } else {
-          // DEEP FOCUS MODE (>25 minutes)
-          // No minute-by-minute voice announcements
-          // No ding sounds at intervals
-          // Silent by design to preserve immersion
-          lastAnnouncementMinuteRef.current = currentMinute;
-        }
-      }
-
-      // Seconds countdown for final minute
-      if (currentSecond < 60 && currentSecond > 0) {
-        const secondsToAnnounce = [50, 40, 30, 20, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-
-        if (secondsToAnnounce.includes(currentSecond) && currentSecond !== lastAnnouncementSecondRef.current) {
-          if (isAwarenessMode && settings.secondsCountdown) {
-            // AWARENESS MODE: Allow seconds countdown if enabled
-            audioService.announceSecondsRemaining(currentSecond);
-            lastAnnouncementSecondRef.current = currentSecond;
-          } else {
-            // DEEP FOCUS MODE: No verbal countdown
-            // OR user has disabled seconds countdown
-            lastAnnouncementSecondRef.current = currentSecond;
-          }
-        }
-      }
-
-      // Minute change haptic
-      if (currentMinute !== lastMinuteRef.current) {
-        hapticService.light();
-        lastMinuteRef.current = currentMinute;
-      }
-    }
-  }, [status, timeRemaining, currentSession, totalTime]);
+  // NOTE: Tick sounds, announcements, and minute haptics are now handled by
+  // audioService.startTickLoop() which is managed by TimerContext.
+  // This decouples audio timing from React render cycles.
 
   const handleStart = async () => {
     if (currentSession) {
@@ -260,11 +198,9 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   };
 
   const handleReset = async () => {
-    await hapticService.medium();
-    lastMinuteRef.current = -1;
-    lastAnnouncementMinuteRef.current = -1;
-    lastAnnouncementSecondRef.current = -1;
-    reset();
+    // Show confirmation modal instead of immediately resetting
+    await hapticService.light();
+    setShowEarlyStopModal(true);
   };
 
   const handleSkip = async () => {
@@ -273,7 +209,27 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   };
 
   const handleBack = async () => {
+    // If timer is running or paused, show confirmation modal
+    if (status === 'running' || status === 'paused') {
+      await hapticService.light();
+      setShowEarlyStopModal(true);
+      return;
+    }
     await hapticService.selection();
+    await notificationService.cancelAllNotifications();
+    navigation.navigate('ModeSelection');
+  };
+
+  const handleEarlyStopContinue = async () => {
+    await hapticService.selection();
+    setShowEarlyStopModal(false);
+  };
+
+  const handleEarlyStopConfirm = async () => {
+    await hapticService.medium();
+    audioService.resetAnnouncementTracking();
+    setShowEarlyStopModal(false);
+    reset();
     await notificationService.cancelAllNotifications();
     navigation.navigate('ModeSelection');
   };
@@ -501,6 +457,13 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         draft={sessionDraft}
         onSave={handleSessionSave}
         onDiscard={handleSessionDiscard}
+      />
+
+      {/* Early Stop Confirmation Modal */}
+      <EarlyStopModal
+        visible={showEarlyStopModal}
+        onContinue={handleEarlyStopContinue}
+        onStop={handleEarlyStopConfirm}
       />
     </View>
   );

@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode, useMemo } from 'react';
 import type { Session, SessionDraft, TimerType, TimerMode } from '@flowmate/shared';
+import { audioService } from '../services/audioService';
+import { hapticService } from '../services/hapticService';
 
 export type TimerStatus = 'idle' | 'running' | 'paused' | 'completed';
 
@@ -109,17 +111,31 @@ export function TimerProvider({ children }: TimerProviderProps) {
     };
   }, []);
 
-  // Timer tick logic
+  // ─────────────────────────────────────────────────────────────────────────────
+  // UI UPDATE LOOP - 1Hz, only updates React state when displayed second changes
+  // Source of truth: Date.now() compared against endTimeRef (no drift)
+  // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (status === 'running') {
-      intervalRef.current = setInterval(() => {
-        const now = Date.now();
-        if (endTimeRef.current) {
-          const remaining = Math.max(0, Math.ceil((endTimeRef.current - now) / 1000));
+      // Helper to compute remaining seconds from Date.now (drift-free)
+      const computeRemaining = (): number => {
+        if (!endTimeRef.current) return 0;
+        return Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      };
+
+      // Track last emitted value to avoid redundant state updates
+      let lastEmitted = computeRemaining();
+
+      const tick = () => {
+        const remaining = computeRemaining();
+
+        // Only update React state when the displayed second changes
+        if (remaining !== lastEmitted) {
+          lastEmitted = remaining;
           setTimeRemaining(remaining);
 
           if (remaining === 0) {
-            // Session completed
+            // Session completed - cleanup interval
             if (intervalRef.current) {
               clearInterval(intervalRef.current);
               intervalRef.current = null;
@@ -148,15 +164,49 @@ export function TimerProvider({ children }: TimerProviderProps) {
             }
           }
         }
-      }, 100); // Update every 100ms for accuracy
+      };
+
+      // Run immediately, then every 1000ms (1Hz UI updates)
+      tick();
+      intervalRef.current = setInterval(tick, 1000);
 
       return () => {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
+          intervalRef.current = null;
         }
       };
     }
   }, [status, currentSessionIndex, sessions, currentSession]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // AUDIO TICK LOOP - Managed by audioService, independent of React renders
+  // Uses callbacks to read current time (derived from Date.now, not React state)
+  // ─────────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (status === 'running' && currentSession) {
+      audioService.startTickLoop({
+        // Compute time remaining from Date.now - no dependency on React state
+        getTimeRemaining: () => {
+          if (!endTimeRef.current) return 0;
+          return Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+        },
+        getTotalTime: () => currentSession.durationMinutes * 60,
+        getSessionType: () => currentSession.type,
+        // Explicit haptic callback - not in effect dependency chain
+        onHapticLight: () => {
+          hapticService.light();
+        },
+      });
+
+      return () => {
+        audioService.stopTickLoop();
+      };
+    } else {
+      // Ensure tick loop is stopped when not running
+      audioService.stopTickLoop();
+    }
+  }, [status, currentSession]);
 
   const startTimer = useCallback((newSessions: Session[], mode: TimerMode, type: TimerType, draft?: SessionDraft) => {
     if (newSessions.length === 0) return;
@@ -197,6 +247,9 @@ export function TimerProvider({ children }: TimerProviderProps) {
     }
     endTimeRef.current = null;
 
+    // Reset audio announcement tracking for fresh start
+    audioService.resetAnnouncementTracking();
+
     // Capture end time for session recording
     setSessionEndTime(Date.now());
 
@@ -213,6 +266,9 @@ export function TimerProvider({ children }: TimerProviderProps) {
       intervalRef.current = null;
     }
     endTimeRef.current = null;
+
+    // Reset audio announcement tracking for fresh session
+    audioService.resetAnnouncementTracking();
 
     if (currentSessionIndex < sessions.length - 1) {
       const nextIndex = currentSessionIndex + 1;

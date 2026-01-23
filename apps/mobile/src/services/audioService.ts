@@ -6,6 +6,20 @@ import type { AppStateStatus } from 'react-native';
 import { loadAudioSettings, saveAudioSettings } from '../utils/storage';
 import type { AudioSettingsStorage } from '../utils/storage';
 
+/**
+ * Callbacks for tick loop - uses getters to read current values without React dependencies
+ */
+export interface TickLoopCallbacks {
+  /** Returns current time remaining in seconds (derived from Date.now and endTime) */
+  getTimeRemaining: () => number;
+  /** Returns total session duration in seconds */
+  getTotalTime: () => number;
+  /** Returns current session type for mute-during-breaks logic */
+  getSessionType: () => SessionType | null;
+  /** Called on minute boundary crossings */
+  onHapticLight: () => void;
+}
+
 class AudioService {
   private tickSound: AudioPlayer | null = null;
   private alternateTickSound: AudioPlayer | null = null;
@@ -15,6 +29,14 @@ class AudioService {
   private secondAnnouncements: Map<number, AudioPlayer> = new Map();
   private isAlternate = false;
   private appStateSubscription: any = null;
+
+  // Tick loop state - audioService owns timing, independent of React
+  private tickLoopInterval: NodeJS.Timeout | null = null;
+  private tickLoopCallbacks: TickLoopCallbacks | null = null;
+  private lastTickedSecond: number = -1;
+  private lastAnnouncedMinute: number = -1;
+  private lastAnnouncedSecond: number = -1;
+
   private settings: AudioSettings = {
     tickVolume: 0.5,
     announcementVolume: 0.7,
@@ -249,6 +271,7 @@ class AudioService {
         interruptionMode: 'mixWithOthers',
       });
       // Handle alternating sounds (alternating and alternating2)
+      // Reuses the same player instances - no new allocations per tick
       if ((this.settings.tickSound === 'alternating' || this.settings.tickSound === 'alternating2')
           && this.alternateTickSound && this.tickSound) {
         const soundToPlay = this.isAlternate ? this.alternateTickSound : this.tickSound;
@@ -263,6 +286,122 @@ class AudioService {
       }
     } catch (error) {
       console.error('Failed to play tick:', error);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // TICK LOOP - Independent 1s interval owned by audioService
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Start the tick loop. Guarantees:
+   * - Only one interval runs at a time (calls stopTickLoop first)
+   * - Uses Date.now via callbacks for drift-free timing
+   * - Reuses existing player instances (no allocations per tick)
+   */
+  startTickLoop(callbacks: TickLoopCallbacks): void {
+    // Cleanup any existing loop first - guarantees no duplicate intervals
+    this.stopTickLoop();
+
+    this.tickLoopCallbacks = callbacks;
+    this.lastTickedSecond = -1;
+    this.lastAnnouncedMinute = -1;
+    this.lastAnnouncedSecond = -1;
+
+    // Execute immediately for the first tick, then every 1000ms
+    this.executeTickLoopCycle();
+    this.tickLoopInterval = setInterval(() => {
+      this.executeTickLoopCycle();
+    }, 1000);
+  }
+
+  /**
+   * Stop the tick loop and reset all tracking state.
+   * Safe to call multiple times.
+   */
+  stopTickLoop(): void {
+    if (this.tickLoopInterval !== null) {
+      clearInterval(this.tickLoopInterval);
+      this.tickLoopInterval = null;
+    }
+    this.tickLoopCallbacks = null;
+    this.lastTickedSecond = -1;
+    this.lastAnnouncedMinute = -1;
+    this.lastAnnouncedSecond = -1;
+  }
+
+  /**
+   * Reset announcement tracking without stopping the loop.
+   * Call this when the timer resets or skips to a new session.
+   */
+  resetAnnouncementTracking(): void {
+    this.lastAnnouncedMinute = -1;
+    this.lastAnnouncedSecond = -1;
+  }
+
+  /**
+   * Single tick cycle - called every 1s by the interval.
+   * All timing derived from Date.now via callbacks (no drift).
+   */
+  private executeTickLoopCycle(): void {
+    if (!this.tickLoopCallbacks) return;
+
+    const timeRemaining = this.tickLoopCallbacks.getTimeRemaining();
+    const totalTime = this.tickLoopCallbacks.getTotalTime();
+    const sessionType = this.tickLoopCallbacks.getSessionType();
+
+    // Guard: skip if timer has ended
+    if (timeRemaining <= 0) return;
+
+    const currentSecond = Math.floor(timeRemaining);
+    const currentMinute = Math.ceil(timeRemaining / 60);
+
+    // ─── TICK SOUND ───
+    // Only play once per second (guard against interval drift calling twice)
+    if (currentSecond !== this.lastTickedSecond) {
+      this.lastTickedSecond = currentSecond;
+
+      if (sessionType) {
+        this.playTick(sessionType);
+      }
+    }
+
+    // ─── MINUTE BOUNDARY DETECTION ───
+    // Detect minute boundary crossing: when currentMinute differs from lastAnnouncedMinute
+    // This handles both normal countdown and any lag/skip scenarios
+    if (currentMinute !== this.lastAnnouncedMinute && currentMinute > 0) {
+      const previousMinute = this.lastAnnouncedMinute;
+      this.lastAnnouncedMinute = currentMinute;
+
+      // Haptic feedback on minute change (via explicit callback, not effect)
+      this.tickLoopCallbacks.onHapticLight();
+
+      // Voice announcements only in Awareness Mode (≤25 min sessions)
+      const sessionDurationMinutes = totalTime / 60;
+      const isAwarenessMode = sessionDurationMinutes <= 25;
+
+      if (isAwarenessMode && previousMinute !== -1) {
+        // Announce at configured interval (e.g., every 5 minutes)
+        if (currentMinute % this.settings.announcementInterval === 0) {
+          this.announceTimeRemaining(currentMinute);
+        }
+      }
+    }
+
+    // ─── SECONDS COUNTDOWN (Final minute) ───
+    if (currentSecond < 60 && currentSecond > 0) {
+      const secondsToAnnounce = [50, 40, 30, 20, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+
+      if (secondsToAnnounce.includes(currentSecond) && currentSecond !== this.lastAnnouncedSecond) {
+        this.lastAnnouncedSecond = currentSecond;
+
+        const sessionDurationMinutes = totalTime / 60;
+        const isAwarenessMode = sessionDurationMinutes <= 25;
+
+        if (isAwarenessMode && this.settings.secondsCountdown) {
+          this.announceSecondsRemaining(currentSecond);
+        }
+      }
     }
   }
 
@@ -441,6 +580,9 @@ class AudioService {
   }
 
   async cleanup() {
+    // Stop tick loop first - guarantees no callbacks fire after cleanup
+    this.stopTickLoop();
+
     // Remove app state listener
     if (this.appStateSubscription) {
       this.appStateSubscription.remove();
