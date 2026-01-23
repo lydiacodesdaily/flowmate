@@ -142,3 +142,38 @@ export const markWelcomeSeen = async (): Promise<void> => {
     console.error('Failed to mark welcome as seen:', error);
   }
 };
+
+/**
+ * Celebration settings storage
+ */
+
+export interface CelebrationSettings {
+  confettiEnabled: boolean;
+}
+
+const CELEBRATION_SETTINGS_KEY = '@flowmate:celebration-settings';
+
+export const getDefaultCelebrationSettings = (): CelebrationSettings => ({
+  confettiEnabled: true,
+});
+
+export const loadCelebrationSettings = async (): Promise<CelebrationSettings> => {
+  try {
+    const stored = await AsyncStorage.getItem(CELEBRATION_SETTINGS_KEY);
+    if (!stored) return getDefaultCelebrationSettings();
+
+    const settings = JSON.parse(stored) as CelebrationSettings;
+    return settings;
+  } catch (error) {
+    console.error('Failed to load celebration settings:', error);
+    return getDefaultCelebrationSettings();
+  }
+};
+
+export const saveCelebrationSettings = async (settings: CelebrationSettings): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(CELEBRATION_SETTINGS_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save celebration settings:', error);
+  }
+};

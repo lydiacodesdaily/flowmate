@@ -13,6 +13,7 @@ import type { ThemeMode } from '../theme';
 import type { SettingsScreenProps } from '../navigation/types';
 import { notificationService } from '../services/notificationService';
 import type { NotificationSettings } from '../utils/storage';
+import { useCelebrationSettings } from '../components/ConfettiCelebration';
 
 export function SettingsScreen({ navigation }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
@@ -24,6 +25,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
     timeRemaining: false,
     sound: true,
   });
+  const { settings: celebrationSettings, updateSettings: updateCelebrationSettings } = useCelebrationSettings();
 
   useEffect(() => {
     loadNotificationSettings();
@@ -209,6 +211,25 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
             value={notificationSettings.sound}
             onValueChange={(value) => updateNotificationSetting('sound', value)}
             disabled={!notificationSettings.enabled}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#FFFFFF"
+          />
+        </View>
+      </View>
+
+      <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Celebration</Text>
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingLabelContainer}>
+            <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Confetti</Text>
+            <Text style={[styles.settingDescription, { color: theme.colors.textTertiary }]}>
+              Show confetti when you complete a focus session
+            </Text>
+          </View>
+          <Switch
+            value={celebrationSettings.confettiEnabled}
+            onValueChange={(value) => updateCelebrationSettings({ confettiEnabled: value })}
             trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
             thumbColor="#FFFFFF"
           />

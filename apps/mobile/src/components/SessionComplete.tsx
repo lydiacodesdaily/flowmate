@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SessionDraft, PrepStep, SessionStatus, TimerType } from '@flowmate/shared/types';
 import { useTheme } from '../theme/ThemeContext';
+import { ConfettiCelebration } from './ConfettiCelebration';
 
 interface SessionCompleteProps {
   visible: boolean;
@@ -153,6 +154,7 @@ export function SessionComplete({
       transparent={true}
       onRequestClose={() => handleSave()}
     >
+      <ConfettiCelebration trigger={visible} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
