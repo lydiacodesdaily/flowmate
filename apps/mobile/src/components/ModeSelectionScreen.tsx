@@ -1,13 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ModeCard } from './ModeCard';
+import { WelcomeModal } from './WelcomeModal';
 import { useTheme } from '../theme';
+import { hasSeenWelcome, markWelcomeSeen } from '../utils/storage';
 import type { ModeSelectionScreenProps } from '../navigation/types';
 
 export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    const checkWelcome = async () => {
+      const seen = await hasSeenWelcome();
+      if (!seen) {
+        setShowWelcome(true);
+      }
+    };
+    checkWelcome();
+  }, []);
+
+  const handleDismissWelcome = async () => {
+    setShowWelcome(false);
+    await markWelcomeSeen();
+  };
 
   return (
     <ScrollView
@@ -45,6 +63,8 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
           onPress={() => navigation.navigate('CustomSelection')}
         />
       </View>
+
+      <WelcomeModal visible={showWelcome} onDismiss={handleDismissWelcome} />
     </ScrollView>
   );
 }

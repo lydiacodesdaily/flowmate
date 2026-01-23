@@ -118,3 +118,27 @@ export const saveAudioSettings = async (settings: AudioSettingsStorage): Promise
     console.error('Failed to save audio settings:', error);
   }
 };
+
+/**
+ * Welcome modal storage (first-time user onboarding)
+ */
+
+const WELCOME_SEEN_KEY = '@flowmate:welcome-seen';
+
+export const hasSeenWelcome = async (): Promise<boolean> => {
+  try {
+    const seen = await AsyncStorage.getItem(WELCOME_SEEN_KEY);
+    return seen === 'true';
+  } catch (error) {
+    console.error('Failed to check welcome status:', error);
+    return true; // Default to true (don't show) if storage fails
+  }
+};
+
+export const markWelcomeSeen = async (): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(WELCOME_SEEN_KEY, 'true');
+  } catch (error) {
+    console.error('Failed to mark welcome as seen:', error);
+  }
+};
