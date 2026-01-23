@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Modal } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Modal, Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimerContext } from '../contexts/TimerContext';
@@ -350,14 +350,21 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
-      {/* Minimal header with back and settings */}
+      {/* Minimal header with back, mute toggle, and settings */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
           <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>←</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleToggleSettings} style={styles.headerButton}>
-          <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>⋯</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={handleToggleMuteAll} style={styles.headerButton}>
+            <Text style={[styles.headerButtonText, { color: muteAll ? theme.colors.textTertiary : theme.colors.text }]}>
+              {muteAll ? '🔇' : '🔊'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleToggleSettings} style={styles.headerButton}>
+            <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>⋯</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Main content - centered and spacious */}
@@ -420,7 +427,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
           activeOpacity={1}
           onPress={handleToggleSettings}
         >
-          <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
+          <Pressable style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
             <Text style={[styles.modalTitle, { color: theme.colors.textTertiary }]}>Audio Settings</Text>
 
             <AudioControls
@@ -436,7 +443,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
             >
               <Text style={[styles.modalCloseButtonText, { color: theme.colors.textTertiary }]}>Done</Text>
             </TouchableOpacity>
-          </View>
+          </Pressable>
         </TouchableOpacity>
       </Modal>
 
@@ -479,6 +486,10 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     paddingHorizontal: 20,
     backgroundColor: 'transparent',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   headerButton: {
     padding: 12,

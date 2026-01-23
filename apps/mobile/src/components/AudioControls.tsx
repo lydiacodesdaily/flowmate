@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import type { AudioSettings } from '@flowmate/shared';
 import { audioService } from '../services/audioService';
 import { useTheme } from '../theme';
-import { loadAudioSettings, saveAudioSettings } from '../utils/storage';
 
 interface AudioControlsProps {
   muteAll: boolean;
@@ -12,646 +11,280 @@ interface AudioControlsProps {
   onToggleMuteDuringBreaks: () => void;
 }
 
-type PresetProfile = 'silent' | 'minimal' | 'balanced' | 'detailed' | 'custom';
+// Volume presets with intuitive labels
+const VOLUME_PRESETS = [
+  { label: 'Off', value: 0 },
+  { label: 'Low', value: 0.25 },
+  { label: 'Med', value: 0.5 },
+  { label: 'High', value: 0.75 },
+  { label: 'Full', value: 1 },
+] as const;
 
-interface AudioPreset {
-  id: PresetProfile;
-  label: string;
-  icon: string;
-  description: string;
-  settings: Partial<AudioSettings>;
-}
+// Find the closest preset for a given volume value
+const getClosestPreset = (volume: number): number => {
+  let closest: number = VOLUME_PRESETS[0].value;
+  let minDiff = Math.abs(volume - closest);
 
-const PRESETS: AudioPreset[] = [
-  {
-    id: 'silent',
-    label: 'Silent',
-    icon: '🔇',
-    description: 'No sounds',
-    settings: {
-      muteAll: true,
-      tickSound: 'classic',
-      tickVolume: 0,
-      announcementVolume: 0,
-      announcementInterval: 1,
-      secondsCountdown: false,
-    },
-  },
-  {
-    id: 'minimal',
-    label: 'Minimal',
-    icon: '🔉',
-    description: 'Announcements only',
-    settings: {
-      muteAll: false,
-      tickSound: 'classic',
-      tickVolume: 0,
-      announcementVolume: 0.2,
-      announcementInterval: 1,
-      muteDuringBreaks: true,
-      secondsCountdown: false,
-    },
-  },
-  {
-    id: 'balanced',
-    label: 'Balanced',
-    icon: '🔊',
-    description: 'Gentle ticks + announcements',
-    settings: {
-      muteAll: false,
-      tickSound: 'classic',
-      tickVolume: 0.1,
-      announcementVolume: 0.2,
-      announcementInterval: 1,
-      muteDuringBreaks: false,
-      secondsCountdown: true,
-    },
-  },
-  {
-    id: 'detailed',
-    label: 'Full',
-    icon: '📢',
-    description: 'Full volume ticks + announcements',
-    settings: {
-      muteAll: false,
-      tickSound: 'alternating',
-      tickVolume: 1,
-      announcementVolume: 1,
-      announcementInterval: 1,
-      muteDuringBreaks: false,
-      secondsCountdown: true,
-    },
-  },
-];
+  for (const preset of VOLUME_PRESETS) {
+    const diff = Math.abs(volume - preset.value);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = preset.value;
+    }
+  }
+  return closest;
+};
 
 export function AudioControls({
-  muteAll,
   muteDuringBreaks,
-  onToggleMuteAll,
   onToggleMuteDuringBreaks,
 }: AudioControlsProps) {
   const { theme } = useTheme();
-  const [showCustom, setShowCustom] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState<PresetProfile>('balanced');
   const [currentSettings, setCurrentSettings] = useState<AudioSettings>(audioService.getSettings());
 
-  // Load saved profile on mount
   useEffect(() => {
-    const loadSavedProfile = async () => {
-      const savedSettings = await loadAudioSettings();
-      setSelectedPreset(savedSettings.selectedProfile);
-      setCurrentSettings(audioService.getSettings());
-    };
-    loadSavedProfile();
+    setCurrentSettings(audioService.getSettings());
   }, []);
 
-  const handlePresetSelect = async (preset: AudioPreset) => {
-    setSelectedPreset(preset.id);
-    setShowCustom(false);
-    await audioService.updateSettings(preset.settings as AudioSettings);
-    setCurrentSettings(audioService.getSettings());
-
-    // Persist the selected profile
-    try {
-      const currentStorage = await loadAudioSettings();
-      await saveAudioSettings({
-        ...currentStorage,
-        selectedProfile: preset.id,
-      });
-    } catch (error) {
-      console.error('Failed to save selected profile:', error);
-    }
-
-    // Update parent state
-    if (preset.settings.muteAll !== undefined) {
-      if (preset.settings.muteAll !== muteAll) {
-        onToggleMuteAll();
-      }
-    }
-    if (preset.settings.muteDuringBreaks !== undefined) {
-      if (preset.settings.muteDuringBreaks !== muteDuringBreaks) {
-        onToggleMuteDuringBreaks();
-      }
-    }
-  };
-
-  const handleCustomize = async () => {
-    setSelectedPreset('custom');
-    setShowCustom(true);
-
-    // Persist the custom profile selection
-    try {
-      const currentStorage = await loadAudioSettings();
-      await saveAudioSettings({
-        ...currentStorage,
-        selectedProfile: 'custom',
-      });
-    } catch (error) {
-      console.error('Failed to save custom profile selection:', error);
-    }
-  };
-
-  const updateCustomSetting = <K extends keyof AudioSettings>(
+  const updateSetting = <K extends keyof AudioSettings>(
     key: K,
     value: AudioSettings[K]
   ) => {
     audioService.updateSettings({ [key]: value });
     setCurrentSettings(audioService.getSettings());
-
-    // Update parent state if needed
-    if (key === 'muteAll' && value !== muteAll) {
-      onToggleMuteAll();
-    }
-    if (key === 'muteDuringBreaks' && value !== muteDuringBreaks) {
-      onToggleMuteDuringBreaks();
-    }
   };
 
-  if (showCustom) {
-    return (
-      <ScrollView style={styles.customContainer}>
-        <View style={styles.customHeader}>
-          <TouchableOpacity onPress={() => setShowCustom(false)}>
-            <Text style={[styles.backButton, { color: theme.colors.primary }]}>← Presets</Text>
-          </TouchableOpacity>
-          <Text style={[styles.customTitle, { color: theme.colors.textSecondary }]}>Customize Audio</Text>
-        </View>
-
-        {/* Tick Sound */}
-        <View style={styles.customSection}>
-          <Text style={[styles.customLabel, { color: theme.colors.text }]}>Tick Sound</Text>
-
-          {/* First row - 3 buttons */}
-          <View style={styles.segmentRow}>
-            {(['single', 'alternating', 'alternating2'] as const).map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.segmentButton,
-                  { borderColor: theme.colors.border },
-                  currentSettings.tickSound === option && {
-                    backgroundColor: theme.colors.primary,
-                    borderColor: theme.colors.primary,
-                  },
-                ]}
-                onPress={() => updateCustomSetting('tickSound', option)}
-              >
-                <Text
-                  style={[
-                    styles.segmentText,
-                    { color: theme.colors.text },
-                    currentSettings.tickSound === option && styles.segmentTextActive,
-                  ]}
-                >
-                  {option === 'single' ? 'Single' : option === 'alternating' ? 'Alt 1' : 'Alt 2'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Second row - 2 buttons */}
-          <View style={[styles.segmentRow, { marginTop: 8 }]}>
-            {(['classic', 'beep'] as const).map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.segmentButton,
-                  { borderColor: theme.colors.border },
-                  currentSettings.tickSound === option && {
-                    backgroundColor: theme.colors.primary,
-                    borderColor: theme.colors.primary,
-                  },
-                ]}
-                onPress={() => updateCustomSetting('tickSound', option)}
-              >
-                <Text
-                  style={[
-                    styles.segmentText,
-                    { color: theme.colors.text },
-                    currentSettings.tickSound === option && styles.segmentTextActive,
-                  ]}
-                >
-                  {option === 'classic' ? 'Classic' : 'Beep'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Tick Volume */}
-        <View style={styles.customSection}>
-          <Text style={[styles.customLabel, { color: theme.colors.text }]}>
-            Tick Volume
-          </Text>
-          <View style={styles.volumeControl}>
-            <TouchableOpacity
-              style={[styles.volumeAdjustButton, { borderColor: theme.colors.border }]}
-              onPress={() => updateCustomSetting('tickVolume', Math.max(0, currentSettings.tickVolume - 0.01))}
-              disabled={currentSettings.tickVolume <= 0}
-            >
-              <Text style={[styles.volumeAdjustText, { color: theme.colors.text }]}>−</Text>
-            </TouchableOpacity>
-
-            <View style={[styles.volumeDisplay, { borderColor: theme.colors.border }]}>
-              <Text style={[styles.volumeDisplayText, { color: theme.colors.text }]}>
-                {Math.round(currentSettings.tickVolume * 100)}%
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.volumeAdjustButton, { borderColor: theme.colors.border }]}
-              onPress={() => updateCustomSetting('tickVolume', Math.min(1, currentSettings.tickVolume + 0.01))}
-              disabled={currentSettings.tickVolume >= 1}
-            >
-              <Text style={[styles.volumeAdjustText, { color: theme.colors.text }]}>+</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Quick presets */}
-          <View style={styles.volumePresets}>
-            {[0, 0.25, 0.5, 0.75, 1].map((vol) => (
-              <TouchableOpacity
-                key={vol}
-                style={[
-                  styles.presetPill,
-                  { borderColor: theme.colors.border },
-                  Math.abs(currentSettings.tickVolume - vol) < 0.01 && {
-                    backgroundColor: theme.colors.primaryLight,
-                    borderColor: theme.colors.primary,
-                  },
-                ]}
-                onPress={() => updateCustomSetting('tickVolume', vol)}
-              >
-                <Text
-                  style={[
-                    styles.presetPillText,
-                    { color: theme.colors.textSecondary },
-                    Math.abs(currentSettings.tickVolume - vol) < 0.01 && { color: theme.colors.primary },
-                  ]}
-                >
-                  {Math.round(vol * 100)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Announcement Volume */}
-        <View style={styles.customSection}>
-          <Text style={[styles.customLabel, { color: theme.colors.text }]}>
-            Announcement Volume
-          </Text>
-          <View style={styles.volumeControl}>
-            <TouchableOpacity
-              style={[styles.volumeAdjustButton, { borderColor: theme.colors.border }]}
-              onPress={() => updateCustomSetting('announcementVolume', Math.max(0, currentSettings.announcementVolume - 0.01))}
-              disabled={currentSettings.announcementVolume <= 0}
-            >
-              <Text style={[styles.volumeAdjustText, { color: theme.colors.text }]}>−</Text>
-            </TouchableOpacity>
-
-            <View style={[styles.volumeDisplay, { borderColor: theme.colors.border }]}>
-              <Text style={[styles.volumeDisplayText, { color: theme.colors.text }]}>
-                {Math.round(currentSettings.announcementVolume * 100)}%
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.volumeAdjustButton, { borderColor: theme.colors.border }]}
-              onPress={() => updateCustomSetting('announcementVolume', Math.min(1, currentSettings.announcementVolume + 0.01))}
-              disabled={currentSettings.announcementVolume >= 1}
-            >
-              <Text style={[styles.volumeAdjustText, { color: theme.colors.text }]}>+</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Quick presets */}
-          <View style={styles.volumePresets}>
-            {[0, 0.25, 0.5, 0.75, 1].map((vol) => (
-              <TouchableOpacity
-                key={vol}
-                style={[
-                  styles.presetPill,
-                  { borderColor: theme.colors.border },
-                  Math.abs(currentSettings.announcementVolume - vol) < 0.01 && {
-                    backgroundColor: theme.colors.primaryLight,
-                    borderColor: theme.colors.primary,
-                  },
-                ]}
-                onPress={() => updateCustomSetting('announcementVolume', vol)}
-              >
-                <Text
-                  style={[
-                    styles.presetPillText,
-                    { color: theme.colors.textSecondary },
-                    Math.abs(currentSettings.announcementVolume - vol) < 0.01 && { color: theme.colors.primary },
-                  ]}
-                >
-                  {Math.round(vol * 100)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Announcement Interval */}
-        <View style={styles.customSection}>
-          <Text style={[styles.customLabel, { color: theme.colors.text }]}>
-            Interval: Every {currentSettings.announcementInterval} min
-          </Text>
-          <View style={styles.segmentRow}>
-            {[1, 2, 3, 5, 10].map((interval) => (
-              <TouchableOpacity
-                key={interval}
-                style={[
-                  styles.segmentButton,
-                  { borderColor: theme.colors.border },
-                  currentSettings.announcementInterval === interval && {
-                    backgroundColor: theme.colors.primary,
-                    borderColor: theme.colors.primary,
-                  },
-                ]}
-                onPress={() => updateCustomSetting('announcementInterval', interval as 1 | 2 | 3 | 5 | 10)}
-              >
-                <Text
-                  style={[
-                    styles.segmentText,
-                    { color: theme.colors.text },
-                    currentSettings.announcementInterval === interval && styles.segmentTextActive,
-                  ]}
-                >
-                  {interval}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Seconds Countdown */}
-        <View style={styles.customSection}>
-          <TouchableOpacity
-            style={[
-              styles.toggleRow,
-              { borderColor: theme.colors.border },
-              currentSettings.secondsCountdown && {
-                backgroundColor: theme.colors.primaryLight,
-                borderColor: theme.colors.primary,
-              },
-            ]}
-            onPress={() => updateCustomSetting('secondsCountdown', !currentSettings.secondsCountdown)}
-          >
-            <Text style={[styles.toggleLabel, { color: theme.colors.text }]}>
-              Seconds Countdown
-            </Text>
-            <Text style={styles.toggleIcon}>{currentSettings.secondsCountdown ? '🔢' : '⏱️'}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Mute During Breaks */}
-        <View style={styles.customSection}>
-          <TouchableOpacity
-            style={[
-              styles.toggleRow,
-              { borderColor: theme.colors.border },
-              muteDuringBreaks && {
-                backgroundColor: theme.colors.primaryLight,
-                borderColor: theme.colors.primary,
-              },
-            ]}
-            onPress={onToggleMuteDuringBreaks}
-          >
-            <Text style={[styles.toggleLabel, { color: theme.colors.text }]}>
-              Mute During Breaks
-            </Text>
-            <Text style={styles.toggleIcon}>{muteDuringBreaks ? '☕' : '🔊'}</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    );
-  }
+  const tickVolume = getClosestPreset(currentSettings.tickVolume);
+  const announcementVolume = getClosestPreset(currentSettings.announcementVolume);
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Audio Profile</Text>
-
-      <View style={styles.presetsGrid}>
-        {PRESETS.map((preset) => (
-          <TouchableOpacity
-            key={preset.id}
-            style={[
-              styles.presetCard,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
-              },
-              selectedPreset === preset.id && {
-                borderColor: theme.colors.primary,
-                backgroundColor: theme.colors.primaryLight,
-              },
-            ]}
-            onPress={() => handlePresetSelect(preset)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.presetIcon}>{preset.icon}</Text>
-            <Text
+      {/* Tick Sound Type */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+          Tick Sound
+        </Text>
+        <View style={styles.buttonRow}>
+          {(['alternating', 'classic', 'beep'] as const).map((option) => (
+            <TouchableOpacity
+              key={option}
               style={[
-                styles.presetLabel,
-                { color: theme.colors.text },
-                selectedPreset === preset.id && { color: theme.colors.primary, fontWeight: '600' },
+                styles.button,
+                { borderColor: theme.colors.border },
+                currentSettings.tickSound === option && {
+                  backgroundColor: theme.colors.primary,
+                  borderColor: theme.colors.primary,
+                },
               ]}
+              onPress={() => updateSetting('tickSound', option)}
             >
-              {preset.label}
-            </Text>
-            <Text
-              style={[
-                styles.presetDescription,
-                { color: theme.colors.textTertiary },
-              ]}
-            >
-              {preset.description}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.buttonText,
+                  { color: theme.colors.text },
+                  currentSettings.tickSound === option && styles.buttonTextActive,
+                ]}
+              >
+                {option === 'alternating' ? 'Alt' : option === 'classic' ? 'Classic' : 'Beep'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
-      <TouchableOpacity
-        style={[
-          styles.customizeButton,
-          { borderColor: theme.colors.border },
-          selectedPreset === 'custom' && {
-            borderColor: theme.colors.primary,
-            backgroundColor: theme.colors.primaryLight,
-          },
-        ]}
-        onPress={handleCustomize}
-        activeOpacity={0.7}
-      >
-        <Text
-          style={[
-            styles.customizeButtonText,
-            { color: theme.colors.textSecondary },
-            selectedPreset === 'custom' && { color: theme.colors.primary, fontWeight: '600' },
-          ]}
-        >
-          ⚙️ Customize
+      {/* Tick Volume */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+          Tick Volume
         </Text>
-      </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          {VOLUME_PRESETS.map((preset) => (
+            <TouchableOpacity
+              key={preset.label}
+              style={[
+                styles.volumeButton,
+                { borderColor: theme.colors.border },
+                tickVolume === preset.value && {
+                  backgroundColor: theme.colors.primary,
+                  borderColor: theme.colors.primary,
+                },
+              ]}
+              onPress={() => updateSetting('tickVolume', preset.value)}
+            >
+              <Text
+                style={[
+                  styles.volumeButtonText,
+                  { color: theme.colors.text },
+                  tickVolume === preset.value && styles.buttonTextActive,
+                ]}
+              >
+                {preset.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Voice Volume */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+          Voice Volume
+        </Text>
+        <View style={styles.buttonRow}>
+          {VOLUME_PRESETS.map((preset) => (
+            <TouchableOpacity
+              key={preset.label}
+              style={[
+                styles.volumeButton,
+                { borderColor: theme.colors.border },
+                announcementVolume === preset.value && {
+                  backgroundColor: theme.colors.primary,
+                  borderColor: theme.colors.primary,
+                },
+              ]}
+              onPress={() => updateSetting('announcementVolume', preset.value)}
+            >
+              <Text
+                style={[
+                  styles.volumeButtonText,
+                  { color: theme.colors.text },
+                  announcementVolume === preset.value && styles.buttonTextActive,
+                ]}
+              >
+                {preset.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Voice Interval */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+          Voice Every
+        </Text>
+        <View style={styles.buttonRow}>
+          {([1, 5, 10] as const).map((interval) => (
+            <TouchableOpacity
+              key={interval}
+              style={[
+                styles.button,
+                { borderColor: theme.colors.border },
+                currentSettings.announcementInterval === interval && {
+                  backgroundColor: theme.colors.primary,
+                  borderColor: theme.colors.primary,
+                },
+              ]}
+              onPress={() => updateSetting('announcementInterval', interval)}
+            >
+              <Text
+                style={[
+                  styles.buttonText,
+                  { color: theme.colors.text },
+                  currentSettings.announcementInterval === interval && styles.buttonTextActive,
+                ]}
+              >
+                {interval}m
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Toggles */}
+      <View style={styles.toggleSection}>
+        <TouchableOpacity
+          style={[
+            styles.toggleRow,
+            { borderColor: theme.colors.border },
+            currentSettings.secondsCountdown && {
+              backgroundColor: theme.colors.primaryLight,
+              borderColor: theme.colors.primary,
+            },
+          ]}
+          onPress={() => updateSetting('secondsCountdown', !currentSettings.secondsCountdown)}
+        >
+          <Text style={[styles.toggleLabel, { color: theme.colors.text }]}>
+            Countdown (last 60s)
+          </Text>
+          <Text style={styles.toggleIcon}>{currentSettings.secondsCountdown ? '✓' : ''}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.toggleRow,
+            { borderColor: theme.colors.border },
+            muteDuringBreaks && {
+              backgroundColor: theme.colors.primaryLight,
+              borderColor: theme.colors.primary,
+            },
+          ]}
+          onPress={onToggleMuteDuringBreaks}
+        >
+          <Text style={[styles.toggleLabel, { color: theme.colors.text }]}>
+            Mute During Breaks
+          </Text>
+          <Text style={styles.toggleIcon}>{muteDuringBreaks ? '✓' : ''}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 8,
+    gap: 20,
   },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '400',
-    textAlign: 'center',
-    marginBottom: 20,
-    letterSpacing: 0.5,
+  section: {
+    gap: 10,
   },
-  presetsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    paddingHorizontal: 8,
-    marginBottom: 16,
+  toggleSection: {
+    gap: 10,
+    marginTop: 4,
   },
-  presetCard: {
-    width: '47%',
-    borderWidth: 2,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    gap: 6,
-  },
-  presetIcon: {
-    fontSize: 28,
-    marginBottom: 4,
-  },
-  presetLabel: {
-    fontSize: 15,
+  sectionLabel: {
+    fontSize: 13,
     fontWeight: '500',
     letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
-  presetDescription: {
-    fontSize: 12,
-    textAlign: 'center',
-    letterSpacing: 0.2,
-  },
-  customizeButton: {
-    borderWidth: 2,
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginHorizontal: 8,
-    alignItems: 'center',
-  },
-  customizeButtonText: {
-    fontSize: 15,
-    fontWeight: '500',
-    letterSpacing: 0.3,
-  },
-  customContainer: {
-    maxHeight: 600,
-  },
-  customHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 8,
-    gap: 16,
-  },
-  backButton: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  customTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    letterSpacing: 0.3,
-  },
-  customSection: {
-    marginBottom: 24,
-    paddingHorizontal: 8,
-  },
-  customLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 12,
-    letterSpacing: 0.2,
-  },
-  segmentRow: {
+  buttonRow: {
     flexDirection: 'row',
     gap: 8,
   },
-  segmentButton: {
+  button: {
     flex: 1,
     borderWidth: 2,
-    borderRadius: 8,
-    paddingVertical: 10,
+    borderRadius: 10,
+    paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  segmentText: {
-    fontSize: 13,
-    fontWeight: '500',
+  buttonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
-  segmentTextActive: {
+  buttonTextActive: {
     color: '#FFFFFF',
   },
-  volumeControl: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  volumeAdjustButton: {
-    borderWidth: 2,
-    borderRadius: 8,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  volumeAdjustText: {
-    fontSize: 24,
-    fontWeight: '300',
-    lineHeight: 28,
-  },
-  volumeDisplay: {
+  volumeButton: {
     flex: 1,
     borderWidth: 2,
-    borderRadius: 8,
+    borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  volumeDisplayText: {
-    fontSize: 16,
+  volumeButtonText: {
+    fontSize: 12,
     fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  volumePresets: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  presetPill: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingVertical: 6,
-    alignItems: 'center',
-  },
-  presetPillText: {
-    fontSize: 11,
-    fontWeight: '500',
   },
   toggleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderWidth: 2,
-    borderRadius: 12,
+    borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
@@ -660,6 +293,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   toggleIcon: {
-    fontSize: 20,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

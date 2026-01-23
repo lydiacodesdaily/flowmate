@@ -40,7 +40,7 @@ class AudioService {
   private settings: AudioSettings = {
     tickVolume: 0.5,
     announcementVolume: 0.7,
-    tickSound: 'classic',
+    tickSound: 'alternating',
     muteAll: false,
     muteDuringBreaks: false,
     announcementInterval: 1,
@@ -94,14 +94,7 @@ class AudioService {
   async loadTickSounds() {
     try {
       // Load sounds based on tick sound setting
-      if (this.settings.tickSound === 'single') {
-        // Single mode: use single_tick.wav
-        const tick = createAudioPlayer(require('../../assets/audio/effects/single_tick.wav'), {
-          keepAudioSessionActive: true,
-        });
-        tick.volume = this.settings.tickVolume;
-        this.tickSound = tick;
-      } else if (this.settings.tickSound === 'alternating') {
+      if (this.settings.tickSound === 'alternating') {
         // Alternating mode: use tick1.mp3 and tok1.mp3
         const tick1 = createAudioPlayer(require('../../assets/audio/effects/tick1.mp3'), {
           keepAudioSessionActive: true,
@@ -110,19 +103,6 @@ class AudioService {
         this.tickSound = tick1;
 
         const tick2 = createAudioPlayer(require('../../assets/audio/effects/tok1.mp3'), {
-          keepAudioSessionActive: true,
-        });
-        tick2.volume = this.settings.tickVolume;
-        this.alternateTickSound = tick2;
-      } else if (this.settings.tickSound === 'alternating2') {
-        // Alternating 2 mode: use tick2.wav and tok2.wav
-        const tick1 = createAudioPlayer(require('../../assets/audio/effects/tick2.wav'), {
-          keepAudioSessionActive: true,
-        });
-        tick1.volume = this.settings.tickVolume;
-        this.tickSound = tick1;
-
-        const tick2 = createAudioPlayer(require('../../assets/audio/effects/tok2.wav'), {
           keepAudioSessionActive: true,
         });
         tick2.volume = this.settings.tickVolume;
@@ -270,10 +250,9 @@ class AudioService {
         shouldPlayInBackground: true,
         interruptionMode: 'mixWithOthers',
       });
-      // Handle alternating sounds (alternating and alternating2)
+      // Handle alternating sounds
       // Reuses the same player instances - no new allocations per tick
-      if ((this.settings.tickSound === 'alternating' || this.settings.tickSound === 'alternating2')
-          && this.alternateTickSound && this.tickSound) {
+      if (this.settings.tickSound === 'alternating' && this.alternateTickSound && this.tickSound) {
         const soundToPlay = this.isAlternate ? this.alternateTickSound : this.tickSound;
         this.isAlternate = !this.isAlternate;
 

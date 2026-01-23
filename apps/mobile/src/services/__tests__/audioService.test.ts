@@ -9,11 +9,10 @@ jest.mock('../../utils/storage', () => ({
     Promise.resolve({
       tickVolume: 0.5,
       announcementVolume: 0.7,
-      tickSound: 'classic',
+      tickSound: 'alternating',
       muteAll: false,
       muteDuringBreaks: false,
       announcementInterval: 1,
-      currentProfile: 'Balanced',
     })
   ),
   saveAudioSettings: jest.fn(() => Promise.resolve()),
@@ -55,10 +54,11 @@ describe('AudioService', () => {
       expect(settings).toEqual({
         tickVolume: 0.5,
         announcementVolume: 0.7,
-        tickSound: 'classic',
+        tickSound: 'alternating',
         muteAll: false,
         muteDuringBreaks: false,
         announcementInterval: 1,
+        secondsCountdown: true,
       });
     });
 
@@ -95,13 +95,13 @@ describe('AudioService', () => {
       await audioService.loadTickSounds();
 
       const newSettings: Partial<AudioSettings> = {
-        tickSound: 'single',
+        tickSound: 'beep',
       };
 
       await audioService.updateSettings(newSettings);
 
       const settings = audioService.getSettings();
-      expect(settings.tickSound).toBe('single');
+      expect(settings.tickSound).toBe('beep');
     });
 
     it('should handle storage errors gracefully when updating settings', async () => {
@@ -320,29 +320,9 @@ describe('AudioService', () => {
   });
 
   describe('loadTickSounds', () => {
-    it('should load single tick sound', async () => {
-      await audioService.initialize();
-      await audioService.updateSettings({ tickSound: 'single' });
-
-      await audioService.loadTickSounds();
-
-      // Test passes if no error is thrown
-      expect(true).toBe(true);
-    });
-
     it('should load alternating tick sounds', async () => {
       await audioService.initialize();
       await audioService.updateSettings({ tickSound: 'alternating' });
-
-      await audioService.loadTickSounds();
-
-      // Test passes if no error is thrown
-      expect(true).toBe(true);
-    });
-
-    it('should load alternating2 tick sounds', async () => {
-      await audioService.initialize();
-      await audioService.updateSettings({ tickSound: 'alternating2' });
 
       await audioService.loadTickSounds();
 

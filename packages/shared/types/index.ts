@@ -75,10 +75,10 @@ export interface DailySummary {
 export interface AudioSettings {
   tickVolume: number;
   announcementVolume: number;
-  tickSound: 'single' | 'alternating' | 'alternating2' | 'classic' | 'beep';
+  tickSound: 'alternating' | 'classic' | 'beep';
   muteAll: boolean;
   muteDuringBreaks: boolean;
-  announcementInterval: 1 | 2 | 3 | 5 | 10;
+  announcementInterval: 1 | 5 | 10;
   secondsCountdown: boolean;
 }
 
