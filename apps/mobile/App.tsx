@@ -4,7 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider, useTheme } from './src/theme';
-import { TimerProvider } from './src/contexts/TimerContext';
+import { TimerProvider, AccessibilityProvider } from './src/contexts';
 import { FloatingTimerMini } from './src/components/FloatingTimerMini';
 
 function NavigationContent() {
@@ -33,9 +33,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <TimerProvider>
-          <AppContent />
-        </TimerProvider>
+        <AccessibilityProvider>
+          <TimerProvider>
+            <AppContent />
+          </TimerProvider>
+        </AccessibilityProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

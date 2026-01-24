@@ -14,6 +14,10 @@ import type { SettingsScreenProps } from '../navigation/types';
 import { notificationService } from '../services/notificationService';
 import type { NotificationSettings } from '../utils/storage';
 import { useCelebrationSettings } from '../components/ConfettiCelebration';
+import { useAccessibility } from '../contexts';
+import { useSensoryPresets } from '../hooks/useSensoryPresets';
+import { SENSORY_PRESETS } from '../constants/sensoryPresets';
+import { hapticService } from '../services/hapticService';
 
 export function SettingsScreen({ navigation }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
@@ -26,6 +30,13 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
     sound: true,
   });
   const { settings: celebrationSettings, updateSettings: updateCelebrationSettings } = useCelebrationSettings();
+  const { reduceMotion, hapticsEnabled, setReduceMotion, setHapticsEnabled } = useAccessibility();
+  const { selectedPreset, selectPreset, isLoading: sensoryLoading } = useSensoryPresets();
+
+  const handlePresetSelect = async (presetId: typeof selectedPreset) => {
+    await hapticService.selection();
+    await selectPreset(presetId);
+  };
 
   useEffect(() => {
     loadNotificationSettings();
@@ -135,6 +146,48 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
       </View>
 
       <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Sensory Profile</Text>
+        <Text style={[styles.sectionDescription, { color: theme.colors.textTertiary }]}>
+          Choose how you want audio and haptic feedback
+        </Text>
+
+        <View style={styles.presetsContainer}>
+          {SENSORY_PRESETS.map((preset) => {
+            const isSelected = selectedPreset === preset.id;
+            return (
+              <TouchableOpacity
+                key={preset.id}
+                style={[
+                  styles.presetCard,
+                  {
+                    backgroundColor: isSelected ? theme.colors.primary : theme.colors.surfaceSecondary,
+                    borderColor: isSelected ? theme.colors.primary : theme.colors.border,
+                  },
+                ]}
+                onPress={() => handlePresetSelect(preset.id)}
+                activeOpacity={0.7}
+                disabled={sensoryLoading}
+              >
+                <Text style={styles.presetIcon}>{preset.icon}</Text>
+                <Text
+                  style={[
+                    styles.presetName,
+                    { color: isSelected ? '#FFFFFF' : theme.colors.text },
+                  ]}
+                >
+                  {preset.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <Text style={[styles.presetDescription, { color: theme.colors.textSecondary }]}>
+          {SENSORY_PRESETS.find(p => p.id === selectedPreset)?.description}
+        </Text>
+      </View>
+
+      <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
         <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Notifications</Text>
 
         <View style={styles.settingRow}>
@@ -230,6 +283,40 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           <Switch
             value={celebrationSettings.confettiEnabled}
             onValueChange={(value) => updateCelebrationSettings({ confettiEnabled: value })}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#FFFFFF"
+          />
+        </View>
+      </View>
+
+      <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Accessibility</Text>
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingLabelContainer}>
+            <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Reduce Motion</Text>
+            <Text style={[styles.settingDescription, { color: theme.colors.textTertiary }]}>
+              Disable confetti and modal animations
+            </Text>
+          </View>
+          <Switch
+            value={reduceMotion}
+            onValueChange={setReduceMotion}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#FFFFFF"
+          />
+        </View>
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingLabelContainer}>
+            <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Haptic Feedback</Text>
+            <Text style={[styles.settingDescription, { color: theme.colors.textTertiary }]}>
+              Vibration feedback on interactions
+            </Text>
+          </View>
+          <Switch
+            value={hapticsEnabled}
+            onValueChange={setHapticsEnabled}
             trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
             thumbColor="#FFFFFF"
           />
@@ -362,5 +449,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     letterSpacing: 0.2,
+  },
+  sectionDescription: {
+    fontSize: 13,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  presetsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  presetCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  presetIcon: {
+    fontSize: 24,
+    marginBottom: 6,
+  },
+  presetName: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  presetDescription: {
+    fontSize: 13,
+    textAlign: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
 });

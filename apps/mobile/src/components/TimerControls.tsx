@@ -8,7 +8,7 @@ interface TimerControlsProps {
   onStart: () => void;
   onPause: () => void;
   onResume: () => void;
-  onReset: () => void;
+  onReset?: () => void;
   onSkip?: () => void;
 }
 
@@ -51,12 +51,14 @@ export function TimerControls({
             >
               <Text style={styles.primaryButtonText}>Resume</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.secondaryButton, { borderColor: theme.colors.border }]}
-              onPress={onReset}
-            >
-              <Text style={[styles.secondaryButtonText, { color: theme.colors.text }]}>Reset</Text>
-            </TouchableOpacity>
+            {onReset && (
+              <TouchableOpacity
+                style={[styles.button, styles.secondaryButton, { borderColor: theme.colors.border }]}
+                onPress={onReset}
+              >
+                <Text style={[styles.secondaryButtonText, { color: theme.colors.text }]}>Reset</Text>
+              </TouchableOpacity>
+            )}
           </>
         )}
 

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SessionDraft, PrepStep, SessionStatus, TimerType } from '@flowmate/shared/types';
 import { useTheme } from '../theme/ThemeContext';
+import { useAccessibility } from '../contexts';
 import { ConfettiCelebration } from './ConfettiCelebration';
 
 interface SessionCompleteProps {
@@ -44,6 +45,7 @@ export function SessionComplete({
   onDiscard,
 }: SessionCompleteProps) {
   const { theme } = useTheme();
+  const { reduceMotion } = useAccessibility();
   const [status, setStatus] = useState<SessionStatus>('completed');
   const [steps, setSteps] = useState<PrepStep[]>([]);
   const [note, setNote] = useState('');
@@ -106,7 +108,7 @@ export function SessionComplete({
     return (
       <Modal
         visible={visible}
-        animationType="fade"
+        animationType={reduceMotion ? 'none' : 'fade'}
         transparent={true}
         onRequestClose={handleDiscard}
       >
@@ -150,7 +152,7 @@ export function SessionComplete({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType={reduceMotion ? 'none' : 'slide'}
       transparent={true}
       onRequestClose={() => handleSave()}
     >

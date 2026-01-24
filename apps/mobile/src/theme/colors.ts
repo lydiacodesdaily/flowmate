@@ -15,6 +15,9 @@ export const lightTheme: Theme = {
     warning: '#FF9500',
     error: '#E94B4B',
     overlay: 'rgba(0, 0, 0, 0.5)',
+    // Break session colors - warm, calming tones for rest periods
+    breakBackground: '#FFF7ED',
+    breakAccent: '#FB923C',
   },
   isDark: false,
 };
@@ -34,6 +37,9 @@ export const darkTheme: Theme = {
     warning: '#FF9F0A',
     error: '#E94B4B',
     overlay: 'rgba(0, 0, 0, 0.75)',
+    // Break session colors - warm, calming tones for rest periods
+    breakBackground: '#1C1917',
+    breakAccent: '#F97316',
   },
   isDark: true,
 };

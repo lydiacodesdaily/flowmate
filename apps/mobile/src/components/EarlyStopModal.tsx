@@ -9,6 +9,7 @@ import {
   Pressable,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { useAccessibility } from '../contexts';
 
 interface EarlyStopModalProps {
   visible: boolean;
@@ -18,11 +19,12 @@ interface EarlyStopModalProps {
 
 export function EarlyStopModal({ visible, onContinue, onStop }: EarlyStopModalProps) {
   const { theme } = useTheme();
+  const { reduceMotion } = useAccessibility();
 
   return (
     <Modal
       visible={visible}
-      animationType="fade"
+      animationType={reduceMotion ? 'none' : 'fade'}
       transparent={true}
       onRequestClose={onContinue}
     >

@@ -7,6 +7,7 @@ import {
   CelebrationSettings,
   getDefaultCelebrationSettings,
 } from '../utils/storage';
+import { useAccessibility } from '../contexts';
 
 interface ConfettiCelebrationProps {
   trigger: boolean;
@@ -26,6 +27,7 @@ const CONFETTI_COLORS = [
 export function ConfettiCelebration({ trigger, onComplete }: ConfettiCelebrationProps) {
   const [shouldShow, setShouldShow] = useState(false);
   const [isEnabled, setIsEnabled] = useState(true);
+  const { reduceMotion } = useAccessibility();
 
   useEffect(() => {
     loadCelebrationSettings().then((settings) => {
@@ -34,12 +36,15 @@ export function ConfettiCelebration({ trigger, onComplete }: ConfettiCelebration
   }, []);
 
   useEffect(() => {
-    if (trigger && isEnabled) {
+    if (trigger && isEnabled && !reduceMotion) {
       setShouldShow(true);
+    } else if (trigger && (reduceMotion || !isEnabled)) {
+      // Still call onComplete even when skipping animation
+      onComplete?.();
     }
-  }, [trigger, isEnabled]);
+  }, [trigger, isEnabled, reduceMotion]);
 
-  if (!shouldShow || !isEnabled) {
+  if (!shouldShow || !isEnabled || reduceMotion) {
     return null;
   }
 

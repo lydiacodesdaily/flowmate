@@ -1,40 +1,22 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { GuidedType } from '@flowmate/shared';
 import { GUIDED_CONFIGS } from '@flowmate/shared';
 import type { GuidedSelectionScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
 import { useTimerContext } from '../contexts/TimerContext';
-
-type GuidedStyle = 'pom' | 'deep';
-
-const GUIDED_OPTIONS: Record<GuidedStyle, Array<{ type: GuidedType; title: string; description: string }>> = {
-  pom: [
-    { type: 'guided-30-pom', title: '30 Minutes', description: '3m settle → 25m focus → 2m wrap' },
-    { type: 'guided-60-pom', title: '60 Minutes', description: '5m settle → 25m+20m focus → 5m wrap' },
-    { type: 'guided-90-pom', title: '90 Minutes', description: '5m settle → 25m+25m+20m focus → 5m wrap' },
-    { type: 'guided-120-pom', title: '2 Hours', description: '5m settle → 25m+25m+25m+20m focus → 5m wrap' },
-    { type: 'guided-180-pom', title: '3 Hours', description: '5m settle → 6 focus blocks → 5m wrap' },
-  ],
-  deep: [
-    { type: 'guided-30-deep', title: '30 Minutes', description: '3m settle → 25m focus → 2m wrap' },
-    { type: 'guided-60-deep', title: '60 Minutes', description: '5m settle → 50m focus → 5m wrap' },
-    { type: 'guided-90-deep', title: '90 Minutes', description: '5m settle → 80m focus → 5m wrap' },
-    { type: 'guided-120-deep', title: '2 Hours', description: '5m settle → 50m+55m focus → 5m wrap' },
-    { type: 'guided-180-deep', title: '3 Hours', description: '5m settle → 50m+50m+60m focus → 5m wrap' },
-  ],
-};
+import { hapticService } from '../services/hapticService';
+import { FOCUS_RECIPES, type FocusRecipe } from '../constants/recipes';
 
 export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps) {
   const { theme } = useTheme();
   const { isActive, reset } = useTimerContext();
-  const [style, setStyle] = useState<GuidedStyle>('pom');
   const insets = useSafeAreaInsets();
 
-  const handleSessionSelect = (guidedType: GuidedType) => {
+  const handleRecipeSelect = async (recipe: FocusRecipe) => {
+    await hapticService.light();
+
     if (isActive) {
-      // Show alert if there's an active timer
       Alert.alert(
         'Active Session in Progress',
         'You have an active timer running. Do you want to end it and start a new session?',
@@ -48,14 +30,13 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
             style: 'destructive',
             onPress: () => {
               reset();
-              navigation.navigate('ActiveTimer', { sessions: GUIDED_CONFIGS[guidedType] });
+              navigation.navigate('ActiveTimer', { sessions: GUIDED_CONFIGS[recipe.guidedType] });
             },
           },
         ]
       );
     } else {
-      // No active timer, proceed normally
-      navigation.navigate('ActiveTimer', { sessions: GUIDED_CONFIGS[guidedType] });
+      navigation.navigate('ActiveTimer', { sessions: GUIDED_CONFIGS[recipe.guidedType] });
     }
   };
 
@@ -69,43 +50,27 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Text style={[styles.title, { color: theme.colors.text }]}>guided</Text>
-        <Text style={[styles.subtitle, { color: theme.colors.textTertiary }]}>structured focus sessions</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textTertiary }]}>pick a focus recipe</Text>
 
-        <View style={[styles.styleSelector, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        {FOCUS_RECIPES.map((recipe) => (
           <TouchableOpacity
-            style={[styles.styleButton, style === 'pom' && { backgroundColor: theme.colors.background }]}
-            onPress={() => setStyle('pom')}
+            key={recipe.id}
+            style={[styles.recipeCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+            onPress={() => handleRecipeSelect(recipe)}
             activeOpacity={0.85}
           >
-            <Text style={[styles.styleButtonText, { color: style === 'pom' ? theme.colors.text : theme.colors.textSecondary }]}>
-              Pomodoro
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.styleButton, style === 'deep' && { backgroundColor: theme.colors.background }]}
-            onPress={() => setStyle('deep')}
-            activeOpacity={0.85}
-          >
-            <Text style={[styles.styleButtonText, { color: style === 'deep' ? theme.colors.text : theme.colors.textSecondary }]}>
-              Deep
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {GUIDED_OPTIONS[style].map(({ type, title, description }) => (
-          <TouchableOpacity
-            key={type}
-            style={[styles.optionCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
-            onPress={() => handleSessionSelect(type)}
-            activeOpacity={0.85}
-          >
-            <View style={styles.optionHeader}>
-              <Text style={[styles.optionTitle, { color: theme.colors.text }]}>{title}</Text>
-              <Text style={[styles.optionDuration, { color: theme.colors.textSecondary }]}>
-                {GUIDED_CONFIGS[type].reduce((sum, s) => sum + s.durationMinutes, 0)}m
+            <View style={styles.recipeHeader}>
+              <View style={styles.recipeTitle}>
+                <Text style={styles.recipeIcon}>{recipe.icon}</Text>
+                <Text style={[styles.recipeName, { color: theme.colors.text }]}>{recipe.name}</Text>
+              </View>
+              <Text style={[styles.recipeDuration, { color: theme.colors.textSecondary }]}>
+                {recipe.duration}m
               </Text>
             </View>
-            <Text style={[styles.optionDescription, { color: theme.colors.textSecondary }]}>{description}</Text>
+            <Text style={[styles.recipeDescription, { color: theme.colors.textSecondary }]}>
+              {recipe.description}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -151,49 +116,40 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.8,
   },
-  styleSelector: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 4,
-    marginBottom: 24,
-  },
-  styleButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  styleButtonText: {
-    fontSize: 14,
-    fontWeight: '400',
-    letterSpacing: 0.2,
-  },
-  optionCard: {
+  recipeCard: {
     borderRadius: 16,
     borderWidth: 1,
-    padding: 24,
+    padding: 20,
     marginBottom: 12,
   },
-  optionHeader: {
+  recipeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  optionTitle: {
+  recipeTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  recipeIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  recipeName: {
     fontSize: 18,
-    fontWeight: '400',
+    fontWeight: '500',
     letterSpacing: 0.2,
   },
-  optionDuration: {
+  recipeDuration: {
     fontSize: 15,
     fontWeight: '300',
     letterSpacing: 0.2,
   },
-  optionDescription: {
+  recipeDescription: {
     fontSize: 14,
     fontWeight: '300',
     letterSpacing: 0.2,
+    marginLeft: 36,
   },
 });

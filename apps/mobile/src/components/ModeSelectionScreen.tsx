@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ModeCard } from './ModeCard';
 import { WelcomeModal } from './WelcomeModal';
 import { useTheme } from '../theme';
-import { hasSeenWelcome, markWelcomeSeen } from '../utils/storage';
+import { hasSeenWelcome, markWelcomeSeen, loadLastSession, type LastSessionConfig } from '../utils/storage';
+import { useTimerContext } from '../contexts/TimerContext';
+import { hapticService } from '../services/hapticService';
 import type { ModeSelectionScreenProps } from '../navigation/types';
 
 export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { isActive, reset } = useTimerContext();
   const [showWelcome, setShowWelcome] = useState(false);
+  const [lastSession, setLastSession] = useState<LastSessionConfig | null>(null);
 
   useEffect(() => {
     const checkWelcome = async () => {
@@ -21,6 +25,37 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
     };
     checkWelcome();
   }, []);
+
+  // Load last session for quick-start
+  useEffect(() => {
+    loadLastSession().then(setLastSession);
+  }, []);
+
+  const handleQuickStart = async () => {
+    if (!lastSession) return;
+
+    await hapticService.medium();
+
+    if (isActive) {
+      Alert.alert(
+        'Active Session in Progress',
+        'You have an active timer running. Do you want to end it and start a new session?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'End & Start New',
+            style: 'destructive',
+            onPress: () => {
+              reset();
+              navigation.navigate('ActiveTimer', { sessions: lastSession.sessions });
+            },
+          },
+        ]
+      );
+    } else {
+      navigation.navigate('ActiveTimer', { sessions: lastSession.sessions });
+    }
+  };
 
   const handleDismissWelcome = async () => {
     setShowWelcome(false);
@@ -37,6 +72,22 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
     >
       <Text style={[styles.title, { color: theme.colors.text }]}>ready when you are</Text>
       <Text style={[styles.subtitle, { color: theme.colors.textTertiary }]}>choose a focus mode</Text>
+
+      {lastSession && (
+        <TouchableOpacity
+          style={[styles.quickStartCard, { backgroundColor: theme.colors.primary }]}
+          onPress={handleQuickStart}
+          activeOpacity={0.85}
+        >
+          <View style={styles.quickStartContent}>
+            <Text style={styles.quickStartIcon}>⚡</Text>
+            <View style={styles.quickStartText}>
+              <Text style={styles.quickStartTitle}>Quick Start</Text>
+              <Text style={styles.quickStartLabel}>{lastSession.label}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      )}
 
       <View style={styles.cardsContainer}>
         <ModeCard
@@ -93,5 +144,32 @@ const styles = StyleSheet.create({
   },
   cardsContainer: {
     gap: 16,
+  },
+  quickStartCard: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+  },
+  quickStartContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quickStartIcon: {
+    fontSize: 28,
+    marginRight: 16,
+  },
+  quickStartText: {
+    flex: 1,
+  },
+  quickStartTitle: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  quickStartLabel: {
+    fontSize: 14,
+    fontWeight: '300',
+    color: 'rgba(255, 255, 255, 0.85)',
   },
 });

@@ -15,6 +15,9 @@ export interface Theme {
     warning: string;
     error: string;
     overlay: string;
+    // Break session colors for visual distinction
+    breakBackground: string;
+    breakAccent: string;
   };
   isDark: boolean;
 }

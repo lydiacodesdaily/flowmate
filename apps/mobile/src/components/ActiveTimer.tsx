@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Modal, Pressable } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Modal, Pressable, Switch } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimerContext } from '../contexts/TimerContext';
@@ -19,13 +19,34 @@ import { createSessionRecord, appendHistory } from '../services/sessionService';
 import { hapticService } from '../services/hapticService';
 import { notificationService } from '../services/notificationService';
 import { useTheme } from '../theme';
+import { useAccessibility } from '../contexts';
 import type { ActiveTimerScreenProps } from '../navigation/types';
-import type { SessionStatus, TimerMode } from '@flowmate/shared';
+import type { Session, SessionStatus, TimerMode } from '@flowmate/shared';
+import { saveLastSession, loadFocusLockSettings, saveFocusLockSettings } from '../utils/storage';
+
+// Generate a label for quick-start display
+function generateSessionLabel(mode: TimerMode, sessions: Session[]): string {
+  const totalMinutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+
+  if (mode === 'pomodoro') {
+    const focusCount = sessions.filter(s => s.type === 'focus').length;
+    return `${focusCount} Pomodoro${focusCount > 1 ? 's' : ''}`;
+  }
+
+  if (mode === 'guided') {
+    const hasDeepFocus = sessions.some(s => s.type === 'focus' && s.durationMinutes >= 50);
+    const style = hasDeepFocus ? 'Deep' : 'Pomodoro';
+    return `${totalMinutes}m Guided (${style})`;
+  }
+
+  return `${totalMinutes}m Custom`;
+}
 
 export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const { sessions: routeSessions } = route.params;
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
+  const { reduceMotion } = useAccessibility();
   const audioInitializedRef = useRef(false);
   const timerInitializedRef = useRef(false);
 
@@ -39,6 +60,15 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showEarlyStopModal, setShowEarlyStopModal] = useState(false);
   const [setupInitialized, setSetupInitialized] = useState(false);
+
+  // Focus lock state
+  const [focusLockEnabled, setFocusLockEnabled] = useState(false);
+
+  // Load focus lock setting on mount
+  useEffect(() => {
+    loadFocusLockSettings().then(settings => setFocusLockEnabled(settings.enabled));
+  }, []);
+
 
   const {
     sessions,
@@ -67,6 +97,16 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     setSessionDraft,
     updateSessionDraft,
   } = useTimerContext();
+
+  // Check if controls should be locked
+  const isLocked = focusLockEnabled && (status === 'running' || status === 'paused');
+
+  const handleToggleFocusLock = async () => {
+    const newValue = !focusLockEnabled;
+    setFocusLockEnabled(newValue);
+    await saveFocusLockSettings({ enabled: newValue });
+    await hapticService.selection();
+  };
 
   // Reset setup state when route params change (new session started)
   useEffect(() => {
@@ -169,9 +209,9 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 
     initAudio();
 
-    return () => {
-      audioService.cleanup();
-    };
+    // NOTE: We intentionally do NOT call audioService.cleanup() on unmount.
+    // The timer continues running in TimerContext when this screen is minimized,
+    // so audio should keep playing. Cleanup happens when the timer is reset/stopped.
   }, []);
 
   // NOTE: Tick sounds, announcements, and minute haptics are now handled by
@@ -282,6 +322,15 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     const mode = timerMode || 'custom';
     const type = timerType || 'focus';
     startTimer(routeSessions, mode, type, draft);
+
+    // Save for quick-start
+    saveLastSession({
+      mode,
+      sessions: routeSessions,
+      timerType: type,
+      label: generateSessionLabel(mode, routeSessions),
+      timestamp: Date.now(),
+    });
   };
 
   const handleSetupSkip = () => {
@@ -291,6 +340,15 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     const mode = timerMode || 'custom';
     const type = timerType || 'focus';
     startTimer(routeSessions, mode, type, { intent: '', steps: [] });
+
+    // Save for quick-start
+    saveLastSession({
+      mode,
+      sessions: routeSessions,
+      timerType: type,
+      label: generateSessionLabel(mode, routeSessions),
+      timestamp: Date.now(),
+    });
   };
 
   // Session Complete handlers
@@ -346,15 +404,25 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   // Check if we can remove pomodoros (need at least currentSessionIndex + 1 sessions)
   const canRemovePomodoro = sessions.length > currentSessionIndex + 2;
 
+  // Determine if current session is a break for visual distinction
+  const isBreakSession = currentSession?.type === 'break';
+  const containerBackground = isBreakSession ? theme.colors.breakBackground : theme.colors.background;
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: containerBackground }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
       {/* Minimal header with back, mute toggle, and settings */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
-          <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>←</Text>
-        </TouchableOpacity>
+        {isLocked ? (
+          <View style={styles.headerButton}>
+            <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>🔒</Text>
+          </View>
+        ) : (
+          <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
+            <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>←</Text>
+          </TouchableOpacity>
+        )}
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={handleToggleMuteAll} style={styles.headerButton}>
             <Text style={[styles.headerButtonText, { color: muteAll ? theme.colors.textTertiary : theme.colors.text }]}>
@@ -389,18 +457,23 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
           )}
 
           <View style={styles.progressContainer}>
-            <ProgressBar progress={progress} />
+            <ProgressBar
+              progress={progress}
+              color={isBreakSession ? theme.colors.breakAccent : undefined}
+            />
           </View>
 
-          <TimerAdjustments
-            onAddTime={handleAddTime}
-            onSubtractTime={handleSubtractTime}
-            onAddPomodoro={handleAddPomodoro}
-            onRemovePomodoro={handleRemovePomodoro}
-            disabled={status === 'completed'}
-            canRemovePomodoro={canRemovePomodoro}
-            showPomodoroControls={isPomodoroStyle}
-          />
+          {!isLocked && (
+            <TimerAdjustments
+              onAddTime={handleAddTime}
+              onSubtractTime={handleSubtractTime}
+              onAddPomodoro={handleAddPomodoro}
+              onRemovePomodoro={handleRemovePomodoro}
+              disabled={status === 'completed'}
+              canRemovePomodoro={canRemovePomodoro}
+              showPomodoroControls={isPomodoroStyle}
+            />
+          )}
         </View>
 
         <View style={styles.controlsContainer}>
@@ -409,8 +482,8 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
             onStart={handleStart}
             onPause={handlePause}
             onResume={handleResume}
-            onReset={handleReset}
-            onSkip={handleSkip}
+            onReset={isLocked ? undefined : handleReset}
+            onSkip={isLocked ? undefined : handleSkip}
           />
         </View>
       </View>
@@ -419,7 +492,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       <Modal
         visible={showSettings}
         transparent={true}
-        animationType="fade"
+        animationType={reduceMotion ? 'none' : 'fade'}
         onRequestClose={handleToggleSettings}
       >
         <TouchableOpacity
@@ -436,6 +509,23 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
               onToggleMuteAll={handleToggleMuteAll}
               onToggleMuteDuringBreaks={handleToggleMuteDuringBreaks}
             />
+
+            <View style={styles.focusLockSection}>
+              <View style={styles.focusLockRow}>
+                <View style={styles.focusLockText}>
+                  <Text style={[styles.focusLockLabel, { color: theme.colors.text }]}>Focus Lock</Text>
+                  <Text style={[styles.focusLockDescription, { color: theme.colors.textTertiary }]}>
+                    Hide controls during sessions
+                  </Text>
+                </View>
+                <Switch
+                  value={focusLockEnabled}
+                  onValueChange={handleToggleFocusLock}
+                  trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+            </View>
 
             <TouchableOpacity
               style={styles.modalCloseButton}
@@ -561,5 +651,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '400',
     letterSpacing: 0.3,
+  },
+  focusLockSection: {
+    marginTop: 24,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(128, 128, 128, 0.2)',
+  },
+  focusLockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  focusLockText: {
+    flex: 1,
+    marginRight: 16,
+  },
+  focusLockLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  focusLockDescription: {
+    fontSize: 13,
+    marginTop: 2,
   },
 });

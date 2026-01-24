@@ -1,7 +1,18 @@
 import * as Haptics from 'expo-haptics';
 
 class HapticService {
+  private enabled: boolean = true;
+
+  setEnabled(enabled: boolean) {
+    this.enabled = enabled;
+  }
+
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
   async light() {
+    if (!this.enabled) return;
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error) {
@@ -10,6 +21,7 @@ class HapticService {
   }
 
   async medium() {
+    if (!this.enabled) return;
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (error) {
@@ -18,6 +30,7 @@ class HapticService {
   }
 
   async heavy() {
+    if (!this.enabled) return;
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch (error) {
@@ -26,6 +39,7 @@ class HapticService {
   }
 
   async success() {
+    if (!this.enabled) return;
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
@@ -34,6 +48,7 @@ class HapticService {
   }
 
   async warning() {
+    if (!this.enabled) return;
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     } catch (error) {
@@ -42,6 +57,7 @@ class HapticService {
   }
 
   async error() {
+    if (!this.enabled) return;
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } catch (error) {
@@ -50,6 +66,7 @@ class HapticService {
   }
 
   async selection() {
+    if (!this.enabled) return;
     try {
       await Haptics.selectionAsync();
     } catch (error) {

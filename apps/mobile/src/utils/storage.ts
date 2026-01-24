@@ -177,3 +177,149 @@ export const saveCelebrationSettings = async (settings: CelebrationSettings): Pr
     console.error('Failed to save celebration settings:', error);
   }
 };
+
+/**
+ * Accessibility settings storage
+ */
+
+export interface AccessibilitySettings {
+  reduceMotion: boolean;
+  hapticsEnabled: boolean;
+}
+
+const ACCESSIBILITY_SETTINGS_KEY = '@flowmate:accessibility-settings';
+
+export const getDefaultAccessibilitySettings = (): AccessibilitySettings => ({
+  reduceMotion: false,
+  hapticsEnabled: true,
+});
+
+export const loadAccessibilitySettings = async (): Promise<AccessibilitySettings> => {
+  try {
+    const stored = await AsyncStorage.getItem(ACCESSIBILITY_SETTINGS_KEY);
+    if (!stored) return getDefaultAccessibilitySettings();
+
+    const settings = JSON.parse(stored) as AccessibilitySettings;
+    return settings;
+  } catch (error) {
+    console.error('Failed to load accessibility settings:', error);
+    return getDefaultAccessibilitySettings();
+  }
+};
+
+export const saveAccessibilitySettings = async (settings: AccessibilitySettings): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(ACCESSIBILITY_SETTINGS_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save accessibility settings:', error);
+  }
+};
+
+/**
+ * Last session storage (for Quick-Start feature)
+ */
+
+import type { Session, TimerMode, TimerType } from '@flowmate/shared';
+
+export interface LastSessionConfig {
+  mode: TimerMode;
+  sessions: Session[];
+  timerType: TimerType;
+  label: string;
+  timestamp: number;
+}
+
+const LAST_SESSION_KEY = '@flowmate:last-session';
+
+export const loadLastSession = async (): Promise<LastSessionConfig | null> => {
+  try {
+    const stored = await AsyncStorage.getItem(LAST_SESSION_KEY);
+    if (!stored) return null;
+
+    const config = JSON.parse(stored) as LastSessionConfig;
+    return config;
+  } catch (error) {
+    console.error('Failed to load last session:', error);
+    return null;
+  }
+};
+
+export const saveLastSession = async (config: LastSessionConfig): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(LAST_SESSION_KEY, JSON.stringify(config));
+  } catch (error) {
+    console.error('Failed to save last session:', error);
+  }
+};
+
+/**
+ * Focus lock settings storage
+ */
+
+export interface FocusLockSettings {
+  enabled: boolean;
+}
+
+const FOCUS_LOCK_SETTINGS_KEY = '@flowmate:focus-lock-settings';
+
+export const getDefaultFocusLockSettings = (): FocusLockSettings => ({
+  enabled: false,
+});
+
+export const loadFocusLockSettings = async (): Promise<FocusLockSettings> => {
+  try {
+    const stored = await AsyncStorage.getItem(FOCUS_LOCK_SETTINGS_KEY);
+    if (!stored) return getDefaultFocusLockSettings();
+
+    const settings = JSON.parse(stored) as FocusLockSettings;
+    return settings;
+  } catch (error) {
+    console.error('Failed to load focus lock settings:', error);
+    return getDefaultFocusLockSettings();
+  }
+};
+
+export const saveFocusLockSettings = async (settings: FocusLockSettings): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(FOCUS_LOCK_SETTINGS_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save focus lock settings:', error);
+  }
+};
+
+/**
+ * Sensory preset storage
+ */
+
+export type SensoryPresetId = 'full' | 'gentle' | 'minimal' | 'silent';
+
+export interface SensoryPresetSettings {
+  selectedPreset: SensoryPresetId;
+}
+
+const SENSORY_PRESET_KEY = '@flowmate:sensory-preset';
+
+export const getDefaultSensoryPresetSettings = (): SensoryPresetSettings => ({
+  selectedPreset: 'full',
+});
+
+export const loadSensoryPresetSettings = async (): Promise<SensoryPresetSettings> => {
+  try {
+    const stored = await AsyncStorage.getItem(SENSORY_PRESET_KEY);
+    if (!stored) return getDefaultSensoryPresetSettings();
+
+    const settings = JSON.parse(stored) as SensoryPresetSettings;
+    return settings;
+  } catch (error) {
+    console.error('Failed to load sensory preset settings:', error);
+    return getDefaultSensoryPresetSettings();
+  }
+};
+
+export const saveSensoryPresetSettings = async (settings: SensoryPresetSettings): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(SENSORY_PRESET_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save sensory preset settings:', error);
+  }
+};
