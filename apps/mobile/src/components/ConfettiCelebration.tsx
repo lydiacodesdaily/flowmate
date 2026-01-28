@@ -1,13 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
-import {
-  loadCelebrationSettings,
-  saveCelebrationSettings,
-  CelebrationSettings,
-  getDefaultCelebrationSettings,
-} from '../utils/storage';
-import { useAccessibility } from '../contexts';
+import { useAccessibility, useCelebrationSettings } from '../contexts';
 
 interface ConfettiCelebrationProps {
   trigger: boolean;
@@ -26,25 +20,19 @@ const CONFETTI_COLORS = [
 
 export function ConfettiCelebration({ trigger, onComplete }: ConfettiCelebrationProps) {
   const [shouldShow, setShouldShow] = useState(false);
-  const [isEnabled, setIsEnabled] = useState(true);
+  const { confettiEnabled } = useCelebrationSettings();
   const { reduceMotion } = useAccessibility();
 
   useEffect(() => {
-    loadCelebrationSettings().then((settings) => {
-      setIsEnabled(settings.confettiEnabled);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (trigger && isEnabled && !reduceMotion) {
+    if (trigger && confettiEnabled && !reduceMotion) {
       setShouldShow(true);
-    } else if (trigger && (reduceMotion || !isEnabled)) {
+    } else if (trigger && (reduceMotion || !confettiEnabled)) {
       // Still call onComplete even when skipping animation
       onComplete?.();
     }
-  }, [trigger, isEnabled, reduceMotion]);
+  }, [trigger, confettiEnabled, reduceMotion]);
 
-  if (!shouldShow || !isEnabled || reduceMotion) {
+  if (!shouldShow || !confettiEnabled || reduceMotion) {
     return null;
   }
 
@@ -65,27 +53,6 @@ export function ConfettiCelebration({ trigger, onComplete }: ConfettiCelebration
       />
     </View>
   );
-}
-
-// Hook for managing celebration settings
-export function useCelebrationSettings() {
-  const [settings, setSettings] = useState<CelebrationSettings>(getDefaultCelebrationSettings());
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadCelebrationSettings().then((loaded) => {
-      setSettings(loaded);
-      setIsLoading(false);
-    });
-  }, []);
-
-  const updateSettings = async (updates: Partial<CelebrationSettings>) => {
-    const newSettings = { ...settings, ...updates };
-    setSettings(newSettings);
-    await saveCelebrationSettings(newSettings);
-  };
-
-  return { settings, updateSettings, isLoading };
 }
 
 const styles = StyleSheet.create({

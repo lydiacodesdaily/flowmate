@@ -13,10 +13,13 @@ import type { ThemeMode } from '../theme';
 import type { SettingsScreenProps } from '../navigation/types';
 import { notificationService } from '../services/notificationService';
 import type { NotificationSettings } from '../utils/storage';
-import { useCelebrationSettings } from '../components/ConfettiCelebration';
-import { useAccessibility, useTimerDisplaySettings } from '../contexts';
+import {
+  useAccessibility,
+  useTimerDisplaySettings,
+  useTimerVisual,
+  useCelebrationSettings,
+} from '../contexts';
 import { useSensoryPresets } from '../hooks/useSensoryPresets';
-import { useTimerVisual } from '../hooks/useTimerVisual';
 import { SENSORY_PRESETS } from '../constants/sensoryPresets';
 import { TIMER_VISUAL_PRESETS } from '../constants/timerVisuals';
 import { hapticService } from '../services/hapticService';
@@ -31,7 +34,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
     timeRemaining: false,
     sound: true,
   });
-  const { settings: celebrationSettings, updateSettings: updateCelebrationSettings } = useCelebrationSettings();
+  const { confettiEnabled, setConfettiEnabled } = useCelebrationSettings();
   const { reduceMotion, hapticsEnabled, setReduceMotion, setHapticsEnabled } = useAccessibility();
   const { showElapsedTime, setShowElapsedTime } = useTimerDisplaySettings();
   const { selectedPreset, selectPreset, isLoading: sensoryLoading } = useSensoryPresets();
@@ -332,8 +335,8 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
             </Text>
           </View>
           <Switch
-            value={celebrationSettings.confettiEnabled}
-            onValueChange={(value) => updateCelebrationSettings({ confettiEnabled: value })}
+            value={confettiEnabled}
+            onValueChange={setConfettiEnabled}
             trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
             thumbColor="#FFFFFF"
           />

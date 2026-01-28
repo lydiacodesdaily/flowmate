@@ -1,6 +1,5 @@
 import React from 'react';
-import { useTimerVisual } from '../../hooks/useTimerVisual';
-import { useAccessibility } from '../../contexts';
+import { useAccessibility, useTimerVisual } from '../../contexts';
 import { ThinProgressBar } from './ThinProgressBar';
 import { CircularTimer } from './CircularTimer';
 import { ThickProgressBar } from './ThickProgressBar';
