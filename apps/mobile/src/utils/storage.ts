@@ -185,6 +185,7 @@ export const saveCelebrationSettings = async (settings: CelebrationSettings): Pr
 export interface AccessibilitySettings {
   reduceMotion: boolean;
   hapticsEnabled: boolean;
+  skipFocusPrompt: boolean;
 }
 
 const ACCESSIBILITY_SETTINGS_KEY = '@flowmate:accessibility-settings';
@@ -192,6 +193,7 @@ const ACCESSIBILITY_SETTINGS_KEY = '@flowmate:accessibility-settings';
 export const getDefaultAccessibilitySettings = (): AccessibilitySettings => ({
   reduceMotion: false,
   hapticsEnabled: true,
+  skipFocusPrompt: true, // Default to skipping - reduces friction for ADHD users
 });
 
 export const loadAccessibilitySettings = async (): Promise<AccessibilitySettings> => {
@@ -199,8 +201,9 @@ export const loadAccessibilitySettings = async (): Promise<AccessibilitySettings
     const stored = await AsyncStorage.getItem(ACCESSIBILITY_SETTINGS_KEY);
     if (!stored) return getDefaultAccessibilitySettings();
 
-    const settings = JSON.parse(stored) as AccessibilitySettings;
-    return settings;
+    const settings = JSON.parse(stored) as Partial<AccessibilitySettings>;
+    // Merge with defaults to handle migration of new properties
+    return { ...getDefaultAccessibilitySettings(), ...settings };
   } catch (error) {
     console.error('Failed to load accessibility settings:', error);
     return getDefaultAccessibilitySettings();

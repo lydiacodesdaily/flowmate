@@ -43,10 +43,10 @@ function generateSessionLabel(mode: TimerMode, sessions: Session[]): string {
 }
 
 export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
-  const { sessions: routeSessions } = route.params;
+  const { sessions: routeSessions, isQuickStart } = route.params;
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
-  const { reduceMotion } = useAccessibility();
+  const { reduceMotion, skipFocusPrompt } = useAccessibility();
   const audioInitializedRef = useRef(false);
   const timerInitializedRef = useRef(false);
 
@@ -130,12 +130,14 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       console.log('Inferred mode:', inferredMode, 'timerType:', timerType, 'status:', status);
 
       // Check if this is a focus session that needs setup (custom, pomodoro, or guided)
-      const shouldShowSetup = (inferredMode === 'custom' || inferredMode === 'pomodoro' || inferredMode === 'guided') && timerType === 'focus';
+      // Skip setup for Quick Start or if user has disabled focus prompt in settings
+      const isFocusSession = (inferredMode === 'custom' || inferredMode === 'pomodoro' || inferredMode === 'guided') && timerType === 'focus';
+      const shouldShowSetup = isFocusSession && !isQuickStart && !skipFocusPrompt;
 
-      console.log('shouldShowSetup:', shouldShowSetup);
+      console.log('shouldShowSetup:', shouldShowSetup, 'isQuickStart:', isQuickStart, 'skipFocusPrompt:', skipFocusPrompt);
 
       if (shouldShowSetup && status === 'idle') {
-        // Show setup modal for custom and pomodoro focus sessions
+        // Show setup modal for focus sessions (unless quick start or setting disabled)
         console.log('Setting showSetupModal to true');
         setShowSetupModal(true);
       } else if (status === 'idle') {
@@ -145,7 +147,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       }
       setSetupInitialized(true);
     }
-  }, [routeSessions, timerType, status, setupInitialized, startTimer, sessionDraft]);
+  }, [routeSessions, timerType, status, setupInitialized, startTimer, sessionDraft, isQuickStart, skipFocusPrompt]);
 
   // Set up callbacks for session completion
   useEffect(() => {

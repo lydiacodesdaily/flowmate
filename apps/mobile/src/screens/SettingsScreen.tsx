@@ -35,7 +35,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
     sound: true,
   });
   const { confettiEnabled, setConfettiEnabled } = useCelebrationSettings();
-  const { reduceMotion, hapticsEnabled, setReduceMotion, setHapticsEnabled } = useAccessibility();
+  const { reduceMotion, hapticsEnabled, skipFocusPrompt, setReduceMotion, setHapticsEnabled, setSkipFocusPrompt } = useAccessibility();
   const { showElapsedTime, setShowElapsedTime } = useTimerDisplaySettings();
   const { selectedPreset, selectPreset, isLoading: sensoryLoading } = useSensoryPresets();
   const { selectedStyle: selectedVisual, selectStyle: selectVisual, isLoading: visualLoading } = useTimerVisual();
@@ -386,6 +386,21 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           <Switch
             value={showElapsedTime}
             onValueChange={setShowElapsedTime}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#FFFFFF"
+          />
+        </View>
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingLabelContainer}>
+            <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Skip Focus Prompt</Text>
+            <Text style={[styles.settingDescription, { color: theme.colors.textTertiary }]}>
+              Start sessions immediately without the "Let's focus" screen
+            </Text>
+          </View>
+          <Switch
+            value={skipFocusPrompt}
+            onValueChange={setSkipFocusPrompt}
             trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
             thumbColor="#FFFFFF"
           />

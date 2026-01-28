@@ -10,8 +10,10 @@ import { hapticService } from '../services/hapticService';
 interface AccessibilityContextType {
   reduceMotion: boolean;
   hapticsEnabled: boolean;
+  skipFocusPrompt: boolean;
   setReduceMotion: (enabled: boolean) => Promise<void>;
   setHapticsEnabled: (enabled: boolean) => Promise<void>;
+  setSkipFocusPrompt: (enabled: boolean) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -55,13 +57,21 @@ export function AccessibilityProvider({ children }: AccessibilityProviderProps) 
     await saveAccessibilitySettings(newSettings);
   };
 
+  const setSkipFocusPrompt = async (enabled: boolean) => {
+    const newSettings = { ...settings, skipFocusPrompt: enabled };
+    setSettings(newSettings);
+    await saveAccessibilitySettings(newSettings);
+  };
+
   return (
     <AccessibilityContext.Provider
       value={{
         reduceMotion: settings.reduceMotion,
         hapticsEnabled: settings.hapticsEnabled,
+        skipFocusPrompt: settings.skipFocusPrompt,
         setReduceMotion,
         setHapticsEnabled,
+        setSkipFocusPrompt,
         isLoading,
       }}
     >

@@ -47,13 +47,13 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
             style: 'destructive',
             onPress: () => {
               reset();
-              navigation.navigate('ActiveTimer', { sessions: lastSession.sessions });
+              navigation.navigate('ActiveTimer', { sessions: lastSession.sessions, isQuickStart: true });
             },
           },
         ]
       );
     } else {
-      navigation.navigate('ActiveTimer', { sessions: lastSession.sessions });
+      navigation.navigate('ActiveTimer', { sessions: lastSession.sessions, isQuickStart: true });
     }
   };
 
@@ -75,15 +75,15 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
 
       {lastSession && (
         <TouchableOpacity
-          style={[styles.quickStartCard, { backgroundColor: theme.colors.primary }]}
+          style={[styles.quickStartCard, { backgroundColor: theme.colors.primaryLight }]}
           onPress={handleQuickStart}
           activeOpacity={0.85}
         >
           <View style={styles.quickStartContent}>
             <Text style={styles.quickStartIcon}>⚡</Text>
             <View style={styles.quickStartText}>
-              <Text style={styles.quickStartTitle}>Quick Start</Text>
-              <Text style={styles.quickStartLabel}>{lastSession.label}</Text>
+              <Text style={[styles.quickStartTitle, { color: theme.colors.primary }]}>Quick Start</Text>
+              <Text style={[styles.quickStartLabel, { color: theme.colors.textSecondary }]}>{lastSession.label}</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -163,13 +163,11 @@ const styles = StyleSheet.create({
   },
   quickStartTitle: {
     fontSize: 18,
-    fontWeight: '500',
-    color: '#FFFFFF',
+    fontWeight: '600',
     marginBottom: 2,
   },
   quickStartLabel: {
     fontSize: 14,
-    fontWeight: '300',
-    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '400',
   },
 });
