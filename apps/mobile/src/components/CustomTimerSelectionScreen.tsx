@@ -8,8 +8,9 @@ import { useTimerContext } from '../contexts/TimerContext';
 
 const QUICK_PRESETS = [
   { minutes: 5, label: '5 min' },
-  { minutes: 10, label: '10 min' },
-  { minutes: 50, label: '50 min' },
+  { minutes: 15, label: '15 min' },
+  { minutes: 30, label: '30 min' },
+  { minutes: 45, label: '45 min' },
 ];
 
 export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreenProps) {
@@ -142,7 +143,8 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
           </TouchableOpacity>
         </View>
 
-        <View style={styles.inputSection}>
+        {/* Custom input row */}
+        <View style={styles.inputRow}>
           <TextInput
             style={[
               styles.input,
@@ -159,11 +161,7 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
             keyboardType="numeric"
             returnKeyType="done"
             onSubmitEditing={handleCustomSubmit}
-            autoFocus={false}
           />
-
-          {error ? <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text> : null}
-
           <TouchableOpacity
             style={[styles.startButton, { backgroundColor: theme.colors.primary }]}
             onPress={handleCustomSubmit}
@@ -172,10 +170,11 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
             <Text style={styles.startButtonText}>begin</Text>
           </TouchableOpacity>
         </View>
+        {error ? <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text> : null}
 
         <Text style={[styles.orText, { color: theme.colors.textTertiary }]}>or choose a preset</Text>
 
-        <View style={styles.presetButtons}>
+        <View style={styles.presetGrid}>
           {QUICK_PRESETS.map(({ minutes, label }) => (
             <TouchableOpacity
               key={minutes}
@@ -254,52 +253,56 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: 0.3,
   },
-  inputSection: {
-    marginBottom: 32,
+  inputRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 8,
   },
   input: {
+    flex: 1,
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 20,
-    fontSize: 52,
-    fontWeight: '200',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 18,
+    fontWeight: '400',
     textAlign: 'center',
-    marginBottom: 16,
-  },
-  errorText: {
-    fontSize: 14,
-    marginBottom: 12,
-    textAlign: 'center',
-    fontWeight: '300',
   },
   startButton: {
-    borderRadius: 16,
-    padding: 18,
-    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
   },
   startButtonText: {
     color: '#fff',
-    fontSize: 17,
-    fontWeight: '400',
-    letterSpacing: 0.5,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  errorText: {
+    fontSize: 14,
+    marginBottom: 16,
+    textAlign: 'center',
+    fontWeight: '300',
   },
   orText: {
     fontSize: 14,
     fontWeight: '300',
-    marginBottom: 24,
+    marginTop: 16,
+    marginBottom: 16,
     textAlign: 'center',
     letterSpacing: 0.8,
   },
-  presetButtons: {
+  presetGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
     marginBottom: 32,
   },
   presetButton: {
-    flex: 1,
+    width: '48%',
+    flexGrow: 1,
     borderWidth: 1,
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     alignItems: 'center',
   },
   presetButtonText: {
