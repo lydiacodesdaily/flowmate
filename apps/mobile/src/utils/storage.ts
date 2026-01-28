@@ -291,10 +291,21 @@ export const saveFocusLockSettings = async (settings: FocusLockSettings): Promis
  * Sensory preset storage
  */
 
-export type SensoryPresetId = 'full' | 'gentle' | 'minimal' | 'silent';
+export type SensoryPresetId = 'full' | 'gentle' | 'minimal' | 'silent' | 'highAlert' | 'custom';
+
+export interface CustomSensoryConfig {
+  tickSound: 'alternating' | 'classic' | 'beep' | 'none';
+  tickVolume: number;
+  announcements: boolean;
+  announcementVolume: number;
+  announcementInterval: 1 | 5 | 10;
+  secondsCountdown: boolean;
+  haptics: boolean;
+}
 
 export interface SensoryPresetSettings {
   selectedPreset: SensoryPresetId;
+  customConfig?: CustomSensoryConfig;
 }
 
 const SENSORY_PRESET_KEY = '@flowmate:sensory-preset';
@@ -321,5 +332,52 @@ export const saveSensoryPresetSettings = async (settings: SensoryPresetSettings)
     await AsyncStorage.setItem(SENSORY_PRESET_KEY, JSON.stringify(settings));
   } catch (error) {
     console.error('Failed to save sensory preset settings:', error);
+  }
+};
+
+export const getDefaultCustomSensoryConfig = (): CustomSensoryConfig => ({
+  tickSound: 'alternating',
+  tickVolume: 0.5,
+  announcements: true,
+  announcementVolume: 0.7,
+  announcementInterval: 5,
+  secondsCountdown: false,
+  haptics: true,
+});
+
+/**
+ * Timer visual style storage
+ */
+
+export type TimerVisualStyle = 'thin' | 'circular' | 'thick' | 'gradient' | 'filling';
+
+export interface TimerVisualSettings {
+  selectedStyle: TimerVisualStyle;
+}
+
+const TIMER_VISUAL_KEY = '@flowmate:timer-visual';
+
+export const getDefaultTimerVisualSettings = (): TimerVisualSettings => ({
+  selectedStyle: 'thin',
+});
+
+export const loadTimerVisualSettings = async (): Promise<TimerVisualSettings> => {
+  try {
+    const stored = await AsyncStorage.getItem(TIMER_VISUAL_KEY);
+    if (!stored) return getDefaultTimerVisualSettings();
+
+    const settings = JSON.parse(stored) as TimerVisualSettings;
+    return settings;
+  } catch (error) {
+    console.error('Failed to load timer visual settings:', error);
+    return getDefaultTimerVisualSettings();
+  }
+};
+
+export const saveTimerVisualSettings = async (settings: TimerVisualSettings): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(TIMER_VISUAL_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save timer visual settings:', error);
   }
 };

@@ -8,7 +8,7 @@ import { TimerDisplay } from './TimerDisplay';
 import { TimerControls } from './TimerControls';
 import { TimerAdjustments } from './TimerAdjustments';
 import { AudioControls } from './AudioControls';
-import { ProgressBar } from './ProgressBar';
+import { TimerVisual } from './timer-visuals';
 import { SessionIndicators } from './SessionIndicators';
 import { SessionSetup } from './SessionSetup';
 import { SessionComplete } from './SessionComplete';
@@ -457,9 +457,9 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
           )}
 
           <View style={styles.progressContainer}>
-            <ProgressBar
+            <TimerVisual
               progress={progress}
-              color={isBreakSession ? theme.colors.breakAccent : undefined}
+              isBreakSession={isBreakSession}
             />
           </View>
 

@@ -79,6 +79,36 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       haptics: false,
     },
   },
+  {
+    id: 'highAlert',
+    name: 'High Alert',
+    description: 'Maximum feedback for staying engaged',
+    icon: '📢',
+    config: {
+      tickSound: 'beep',
+      tickVolume: 0.8,
+      announcements: true,
+      announcementVolume: 1.0,
+      announcementInterval: 1,
+      secondsCountdown: true,
+      haptics: true,
+    },
+  },
+  {
+    id: 'custom',
+    name: 'Custom',
+    description: 'Your personalized settings',
+    icon: '🎨',
+    config: {
+      tickSound: 'alternating',
+      tickVolume: 0.5,
+      announcements: true,
+      announcementVolume: 0.7,
+      announcementInterval: 5,
+      secondsCountdown: false,
+      haptics: true,
+    },
+  },
 ];
 
 export function getPresetById(id: SensoryPresetId): SensoryPreset | undefined {

@@ -16,7 +16,9 @@ import type { NotificationSettings } from '../utils/storage';
 import { useCelebrationSettings } from '../components/ConfettiCelebration';
 import { useAccessibility } from '../contexts';
 import { useSensoryPresets } from '../hooks/useSensoryPresets';
+import { useTimerVisual } from '../hooks/useTimerVisual';
 import { SENSORY_PRESETS } from '../constants/sensoryPresets';
+import { TIMER_VISUAL_PRESETS } from '../constants/timerVisuals';
 import { hapticService } from '../services/hapticService';
 
 export function SettingsScreen({ navigation }: SettingsScreenProps) {
@@ -32,10 +34,16 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
   const { settings: celebrationSettings, updateSettings: updateCelebrationSettings } = useCelebrationSettings();
   const { reduceMotion, hapticsEnabled, setReduceMotion, setHapticsEnabled } = useAccessibility();
   const { selectedPreset, selectPreset, isLoading: sensoryLoading } = useSensoryPresets();
+  const { selectedStyle: selectedVisual, selectStyle: selectVisual, isLoading: visualLoading } = useTimerVisual();
 
   const handlePresetSelect = async (presetId: typeof selectedPreset) => {
     await hapticService.selection();
     await selectPreset(presetId);
+  };
+
+  const handleVisualSelect = async (visualId: typeof selectedVisual) => {
+    await hapticService.selection();
+    await selectVisual(visualId);
   };
 
   useEffect(() => {
@@ -143,6 +151,48 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
             </TouchableOpacity>
           </View>
         </View>
+      </View>
+
+      <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Timer Visual</Text>
+        <Text style={[styles.sectionDescription, { color: theme.colors.textTertiary }]}>
+          Choose how the timer progress is displayed
+        </Text>
+
+        <View style={styles.presetsContainer}>
+          {TIMER_VISUAL_PRESETS.map((preset) => {
+            const isSelected = selectedVisual === preset.id;
+            return (
+              <TouchableOpacity
+                key={preset.id}
+                style={[
+                  styles.presetCard,
+                  {
+                    backgroundColor: isSelected ? theme.colors.primary : theme.colors.surfaceSecondary,
+                    borderColor: isSelected ? theme.colors.primary : theme.colors.border,
+                  },
+                ]}
+                onPress={() => handleVisualSelect(preset.id)}
+                activeOpacity={0.7}
+                disabled={visualLoading}
+              >
+                <Text style={styles.presetIcon}>{preset.icon}</Text>
+                <Text
+                  style={[
+                    styles.presetName,
+                    { color: isSelected ? '#FFFFFF' : theme.colors.text },
+                  ]}
+                >
+                  {preset.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <Text style={[styles.presetDescription, { color: theme.colors.textSecondary }]}>
+          {TIMER_VISUAL_PRESETS.find(p => p.id === selectedVisual)?.description}
+        </Text>
       </View>
 
       <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
