@@ -445,6 +445,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         <View style={styles.timerContainer}>
           <TimerDisplay
             timeRemaining={timeRemaining}
+            totalTime={totalTime}
           />
 
           {/* Display session intent if present */}

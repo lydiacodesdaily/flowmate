@@ -17,6 +17,7 @@ import { useCelebrationSettings } from '../components/ConfettiCelebration';
 import { useAccessibility } from '../contexts';
 import { useSensoryPresets } from '../hooks/useSensoryPresets';
 import { useTimerVisual } from '../hooks/useTimerVisual';
+import { useTimerDisplaySettings } from '../hooks/useTimerDisplaySettings';
 import { SENSORY_PRESETS } from '../constants/sensoryPresets';
 import { TIMER_VISUAL_PRESETS } from '../constants/timerVisuals';
 import { hapticService } from '../services/hapticService';
@@ -33,6 +34,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
   });
   const { settings: celebrationSettings, updateSettings: updateCelebrationSettings } = useCelebrationSettings();
   const { reduceMotion, hapticsEnabled, setReduceMotion, setHapticsEnabled } = useAccessibility();
+  const { showElapsedTime, setShowElapsedTime } = useTimerDisplaySettings();
   const { selectedPreset, selectPreset, isLoading: sensoryLoading } = useSensoryPresets();
   const { selectedStyle: selectedVisual, selectStyle: selectVisual, isLoading: visualLoading } = useTimerVisual();
 
@@ -367,6 +369,21 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           <Switch
             value={hapticsEnabled}
             onValueChange={setHapticsEnabled}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#FFFFFF"
+          />
+        </View>
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingLabelContainer}>
+            <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Show Elapsed Time</Text>
+            <Text style={[styles.settingDescription, { color: theme.colors.textTertiary }]}>
+              Show time worked instead of time remaining
+            </Text>
+          </View>
+          <Switch
+            value={showElapsedTime}
+            onValueChange={setShowElapsedTime}
             trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
             thumbColor="#FFFFFF"
           />

@@ -381,3 +381,38 @@ export const saveTimerVisualSettings = async (settings: TimerVisualSettings): Pr
     console.error('Failed to save timer visual settings:', error);
   }
 };
+
+/**
+ * Timer display settings storage
+ */
+
+export interface TimerDisplaySettings {
+  showElapsedTime: boolean;
+}
+
+const TIMER_DISPLAY_KEY = '@flowmate:timer-display';
+
+export const getDefaultTimerDisplaySettings = (): TimerDisplaySettings => ({
+  showElapsedTime: false,
+});
+
+export const loadTimerDisplaySettings = async (): Promise<TimerDisplaySettings> => {
+  try {
+    const stored = await AsyncStorage.getItem(TIMER_DISPLAY_KEY);
+    if (!stored) return getDefaultTimerDisplaySettings();
+
+    const settings = JSON.parse(stored) as TimerDisplaySettings;
+    return settings;
+  } catch (error) {
+    console.error('Failed to load timer display settings:', error);
+    return getDefaultTimerDisplaySettings();
+  }
+};
+
+export const saveTimerDisplaySettings = async (settings: TimerDisplaySettings): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(TIMER_DISPLAY_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save timer display settings:', error);
+  }
+};

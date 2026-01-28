@@ -1,17 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../theme';
+import { useTimerDisplaySettings } from '../hooks/useTimerDisplaySettings';
 
 interface TimerDisplayProps {
   timeRemaining: number;
+  totalTime: number;
   sessionLabel?: string;
   sessionType?: string;
 }
 
 export function TimerDisplay({
   timeRemaining,
+  totalTime,
 }: TimerDisplayProps) {
   const { theme } = useTheme();
+  const { showElapsedTime } = useTimerDisplaySettings();
 
   const formatTime = (seconds: number): string => {
     const hrs = Math.floor(seconds / 3600);
@@ -24,9 +28,11 @@ export function TimerDisplay({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const displayTime = showElapsedTime ? totalTime - timeRemaining : timeRemaining;
+
   return (
     <View style={styles.container}>
-      <Text style={[styles.time, { color: theme.colors.text }]}>{formatTime(timeRemaining)}</Text>
+      <Text style={[styles.time, { color: theme.colors.text }]}>{formatTime(displayTime)}</Text>
     </View>
   );
 }
