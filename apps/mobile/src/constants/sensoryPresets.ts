@@ -8,6 +8,9 @@ export interface SensoryPresetConfig {
   announcementInterval: 1 | 5 | 10;
   secondsCountdown: boolean;
   haptics: boolean;
+  // Transition warning settings
+  transitionWarning: boolean;
+  transitionChime: boolean;
 }
 
 export interface SensoryPreset {
@@ -32,6 +35,8 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       announcementInterval: 1,
       secondsCountdown: true,
       haptics: true,
+      transitionWarning: true,
+      transitionChime: false, // Seconds countdown already provides audio cues
     },
   },
   {
@@ -47,6 +52,8 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       announcementInterval: 5,
       secondsCountdown: false,
       haptics: true,
+      transitionWarning: true,
+      transitionChime: true, // Chime enabled since no seconds countdown
     },
   },
   {
@@ -62,6 +69,8 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       announcementInterval: 10,
       secondsCountdown: false,
       haptics: false,
+      transitionWarning: true, // Visual only
+      transitionChime: false,
     },
   },
   {
@@ -77,6 +86,8 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       announcementInterval: 1,
       secondsCountdown: false,
       haptics: false,
+      transitionWarning: true, // Visual warning still useful
+      transitionChime: false,
     },
   },
   {
@@ -92,6 +103,8 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       announcementInterval: 1,
       secondsCountdown: true,
       haptics: true,
+      transitionWarning: true,
+      transitionChime: false, // Seconds countdown already provides audio cues
     },
   },
   {
@@ -107,6 +120,8 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       announcementInterval: 5,
       secondsCountdown: false,
       haptics: true,
+      transitionWarning: true,
+      transitionChime: true, // Chime enabled since no seconds countdown
     },
   },
 ];

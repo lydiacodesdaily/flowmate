@@ -18,6 +18,9 @@ export const lightTheme: Theme = {
     // Break session colors - warm, calming tones for rest periods
     breakBackground: '#FFF7ED',
     breakAccent: '#FB923C',
+    // Transition warning colors - amber tones for "wrapping up" phase
+    transitionBackground: '#FFFBEB',
+    transitionAccent: '#F59E0B',
   },
   isDark: false,
 };
@@ -40,6 +43,9 @@ export const darkTheme: Theme = {
     // Break session colors - warm, calming tones for rest periods
     breakBackground: '#1C1917',
     breakAccent: '#F97316',
+    // Transition warning colors - amber tones for "wrapping up" phase
+    transitionBackground: '#1C1712',
+    transitionAccent: '#D97706',
   },
   isDark: true,
 };

@@ -73,6 +73,22 @@ class HapticService {
       console.error('Haptic feedback error:', error);
     }
   }
+
+  /**
+   * Double-tap haptic for transition warnings
+   * Two quick light taps to signal "wrapping up"
+   */
+  async doubleTap() {
+    if (!this.enabled) return;
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      // Small delay between taps for distinct feel
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (error) {
+      console.error('Haptic feedback error:', error);
+    }
+  }
 }
 
 export const hapticService = new HapticService();

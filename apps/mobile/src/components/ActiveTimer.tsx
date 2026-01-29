@@ -13,6 +13,7 @@ import { SessionIndicators } from './SessionIndicators';
 import { SessionSetup } from './SessionSetup';
 import { SessionComplete } from './SessionComplete';
 import { EarlyStopModal } from './EarlyStopModal';
+import { TransitionWarning } from './TransitionWarning';
 import { audioService } from '../services/audioService';
 import { statsService } from '../services/statsService';
 import { createSessionRecord, appendHistory } from '../services/sessionService';
@@ -96,6 +97,8 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     setAllSessionsCompleteCallback,
     setSessionDraft,
     updateSessionDraft,
+    isInTransitionZone,
+    transitionSecondsRemaining,
   } = useTimerContext();
 
   // Check if controls should be locked
@@ -408,7 +411,21 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 
   // Determine if current session is a break for visual distinction
   const isBreakSession = currentSession?.type === 'break';
-  const containerBackground = isBreakSession ? theme.colors.breakBackground : theme.colors.background;
+
+  // Determine background color based on session type and transition state
+  const getContainerBackground = () => {
+    // Transition zone takes precedence (subtle amber tint)
+    if (isInTransitionZone) {
+      return theme.colors.transitionBackground;
+    }
+    // Break sessions have warm background
+    if (isBreakSession) {
+      return theme.colors.breakBackground;
+    }
+    // Default background
+    return theme.colors.background;
+  };
+  const containerBackground = getContainerBackground();
 
   return (
     <View style={[styles.container, { backgroundColor: containerBackground }]}>
@@ -458,6 +475,13 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
               </Text>
             </View>
           )}
+
+          {/* Transition warning - "wrapping up" indicator */}
+          <TransitionWarning
+            isActive={isInTransitionZone}
+            secondsRemaining={transitionSecondsRemaining}
+            sessionType={currentSession?.type || null}
+          />
 
           <View style={styles.progressContainer}>
             <TimerVisual

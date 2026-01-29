@@ -304,6 +304,8 @@ export interface CustomSensoryConfig {
   announcementInterval: 1 | 5 | 10;
   secondsCountdown: boolean;
   haptics: boolean;
+  transitionWarning: boolean;
+  transitionChime: boolean;
 }
 
 export interface SensoryPresetSettings {
@@ -346,6 +348,8 @@ export const getDefaultCustomSensoryConfig = (): CustomSensoryConfig => ({
   announcementInterval: 5,
   secondsCountdown: false,
   haptics: true,
+  transitionWarning: true,
+  transitionChime: true, // Enabled since secondsCountdown is off by default
 });
 
 /**
@@ -417,5 +421,58 @@ export const saveTimerDisplaySettings = async (settings: TimerDisplaySettings): 
     await AsyncStorage.setItem(TIMER_DISPLAY_KEY, JSON.stringify(settings));
   } catch (error) {
     console.error('Failed to save timer display settings:', error);
+  }
+};
+
+/**
+ * Transition warning settings storage
+ * Controls the "wrapping up" visual/haptic cues before session transitions
+ */
+
+export interface TransitionWarningSettings {
+  /** Enable transition warning feature */
+  enabled: boolean;
+  /** Duration in seconds before session end to start warning (default: 60) */
+  durationSeconds: number;
+  /** Show visual amber tint during transition zone */
+  visualWarning: boolean;
+  /** Show "Wrapping up..." label */
+  showLabel: boolean;
+  /** Haptic feedback at 60s and 30s marks */
+  hapticWarning: boolean;
+  /** Play a chime at 30s (for users with seconds countdown OFF) */
+  transitionChime: boolean;
+}
+
+const TRANSITION_WARNING_KEY = '@flowmate:transition-warning';
+
+export const getDefaultTransitionWarningSettings = (): TransitionWarningSettings => ({
+  enabled: true,
+  durationSeconds: 60,
+  visualWarning: true,
+  showLabel: true,
+  hapticWarning: true,
+  transitionChime: false, // Off by default since seconds countdown handles this
+});
+
+export const loadTransitionWarningSettings = async (): Promise<TransitionWarningSettings> => {
+  try {
+    const stored = await AsyncStorage.getItem(TRANSITION_WARNING_KEY);
+    if (!stored) return getDefaultTransitionWarningSettings();
+
+    const settings = JSON.parse(stored) as Partial<TransitionWarningSettings>;
+    // Merge with defaults to handle migration of new properties
+    return { ...getDefaultTransitionWarningSettings(), ...settings };
+  } catch (error) {
+    console.error('Failed to load transition warning settings:', error);
+    return getDefaultTransitionWarningSettings();
+  }
+};
+
+export const saveTransitionWarningSettings = async (settings: TransitionWarningSettings): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(TRANSITION_WARNING_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save transition warning settings:', error);
   }
 };

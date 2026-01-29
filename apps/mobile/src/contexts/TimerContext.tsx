@@ -42,6 +42,10 @@ interface TimerContextValue {
   isActive: boolean; // true when status is 'running' or 'paused'
   formattedTime: string; // "25:00" or "1:25:00"
   currentPhase: 'focus' | 'break' | 'settle' | 'wrap' | null;
+  /** True when timer is in the "wrapping up" zone (last 60s by default) */
+  isInTransitionZone: boolean;
+  /** Seconds remaining until session end (for transition warning intensity) */
+  transitionSecondsRemaining: number;
 
   // Callbacks
   onSessionComplete?: (session: Session, sessionIndex: number) => void;
@@ -101,6 +105,21 @@ export function TimerProvider({ children }: TimerProviderProps) {
     if (currentSession.type === 'wrap') return 'wrap';
     return null;
   }, [currentSession]);
+
+  // Transition zone detection (last 60 seconds before session end)
+  const TRANSITION_ZONE_DURATION = 60; // seconds
+  const isInTransitionZone = useMemo(() => {
+    // Only show transition zone when running and time is low
+    if (status !== 'running') return false;
+    // Don't show for very short sessions (less than 2 minutes)
+    if (totalTime < 120) return false;
+    return timeRemaining > 0 && timeRemaining <= TRANSITION_ZONE_DURATION;
+  }, [status, timeRemaining, totalTime]);
+
+  const transitionSecondsRemaining = useMemo(() => {
+    if (!isInTransitionZone) return 0;
+    return timeRemaining;
+  }, [isInTransitionZone, timeRemaining]);
 
   // Cleanup interval on unmount
   useEffect(() => {
@@ -196,6 +215,10 @@ export function TimerProvider({ children }: TimerProviderProps) {
         // Explicit haptic callback - not in effect dependency chain
         onHapticLight: () => {
           hapticService.light();
+        },
+        // Transition warning haptic callback - double-tap at 60s and 30s
+        onTransitionHaptic: () => {
+          hapticService.doubleTap();
         },
       });
 
@@ -374,6 +397,8 @@ export function TimerProvider({ children }: TimerProviderProps) {
     isActive,
     formattedTime,
     currentPhase,
+    isInTransitionZone,
+    transitionSecondsRemaining,
     onSessionComplete: onSessionCompleteRef.current,
     onAllSessionsComplete: onAllSessionsCompleteRef.current,
     setSessionCompleteCallback,
@@ -403,6 +428,8 @@ export function TimerProvider({ children }: TimerProviderProps) {
     isActive,
     formattedTime,
     currentPhase,
+    isInTransitionZone,
+    transitionSecondsRemaining,
     setSessionCompleteCallback,
     setAllSessionsCompleteCallback,
     updateSessionDraft,

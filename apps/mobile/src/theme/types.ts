@@ -18,6 +18,9 @@ export interface Theme {
     // Break session colors for visual distinction
     breakBackground: string;
     breakAccent: string;
+    // Transition warning colors - amber tones for "wrapping up" phase
+    transitionBackground: string;
+    transitionAccent: string;
   };
   isDark: boolean;
 }

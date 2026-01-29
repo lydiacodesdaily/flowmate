@@ -18,6 +18,8 @@ export interface TickLoopCallbacks {
   getSessionType: () => SessionType | null;
   /** Called on minute boundary crossings */
   onHapticLight: () => void;
+  /** Called for transition warning haptics (double-tap at 60s and 30s) */
+  onTransitionHaptic?: () => void;
 }
 
 class AudioService {
@@ -37,7 +39,12 @@ class AudioService {
   private lastAnnouncedMinute: number = -1;
   private lastAnnouncedSecond: number = -1;
 
-  private settings: AudioSettings = {
+  // Transition warning state
+  private transitionWarningTriggered60: boolean = false;
+  private transitionWarningTriggered30: boolean = false;
+  private transitionChimeSound: AudioPlayer | null = null;
+
+  private settings: AudioSettings & { transitionWarningEnabled: boolean; transitionChimeEnabled: boolean } = {
     tickVolume: 0.5,
     announcementVolume: 0.7,
     tickSound: 'alternating',
@@ -45,6 +52,8 @@ class AudioService {
     muteDuringBreaks: false,
     announcementInterval: 1,
     secondsCountdown: true,
+    transitionWarningEnabled: true,
+    transitionChimeEnabled: false,
   };
 
   async initialize() {
@@ -59,6 +68,8 @@ class AudioService {
         muteDuringBreaks: savedSettings.muteDuringBreaks,
         announcementInterval: savedSettings.announcementInterval,
         secondsCountdown: savedSettings.secondsCountdown ?? true,
+        transitionWarningEnabled: true, // Default enabled
+        transitionChimeEnabled: false, // Default disabled (seconds countdown handles audio)
       };
 
       // Set audio mode for background playback and mixing with other apps
@@ -307,6 +318,8 @@ class AudioService {
     this.lastTickedSecond = -1;
     this.lastAnnouncedMinute = -1;
     this.lastAnnouncedSecond = -1;
+    this.transitionWarningTriggered60 = false;
+    this.transitionWarningTriggered30 = false;
   }
 
   /**
@@ -316,6 +329,8 @@ class AudioService {
   resetAnnouncementTracking(): void {
     this.lastAnnouncedMinute = -1;
     this.lastAnnouncedSecond = -1;
+    this.transitionWarningTriggered60 = false;
+    this.transitionWarningTriggered30 = false;
   }
 
   /**
@@ -379,6 +394,32 @@ class AudioService {
 
         if (isAwarenessMode && this.settings.secondsCountdown) {
           this.announceSecondsRemaining(currentSecond);
+        }
+      }
+    }
+
+    // ─── TRANSITION WARNING (60s and 30s before end) ───
+    // Only for sessions >= 2 minutes (to avoid overlap with very short sessions)
+    if (this.settings.transitionWarningEnabled && totalTime >= 120) {
+      // Trigger at 60 seconds
+      if (currentSecond <= 60 && currentSecond > 30 && !this.transitionWarningTriggered60) {
+        this.transitionWarningTriggered60 = true;
+        // Double-tap haptic for transition warning
+        if (this.tickLoopCallbacks?.onTransitionHaptic) {
+          this.tickLoopCallbacks.onTransitionHaptic();
+        }
+      }
+
+      // Trigger at 30 seconds
+      if (currentSecond <= 30 && currentSecond > 0 && !this.transitionWarningTriggered30) {
+        this.transitionWarningTriggered30 = true;
+        // Double-tap haptic for transition warning
+        if (this.tickLoopCallbacks?.onTransitionHaptic) {
+          this.tickLoopCallbacks.onTransitionHaptic();
+        }
+        // Play transition chime if enabled (for users without seconds countdown)
+        if (this.settings.transitionChimeEnabled && !this.settings.secondsCountdown) {
+          this.playTransitionChime();
         }
       }
     }
@@ -491,6 +532,50 @@ class AudioService {
     }
   }
 
+  /**
+   * Load the transition chime sound (gentle notification for wrapping up)
+   */
+  async loadTransitionChime() {
+    if (this.transitionChimeSound) return; // Already loaded
+
+    try {
+      // Reuse the ding sound for transition chime (gentle, non-intrusive)
+      this.transitionChimeSound = createAudioPlayer(require('../../assets/audio/effects/ding.mp3'), {
+        keepAudioSessionActive: true,
+      });
+      this.transitionChimeSound.volume = this.settings.announcementVolume * 0.7; // Slightly softer
+    } catch (error) {
+      console.error('Failed to load transition chime:', error);
+    }
+  }
+
+  /**
+   * Play a gentle chime to signal transition is approaching
+   * Used for users who have seconds countdown disabled
+   */
+  async playTransitionChime() {
+    if (this.settings.muteAll) return;
+
+    // Load on demand if not already loaded
+    if (!this.transitionChimeSound) {
+      await this.loadTransitionChime();
+    }
+
+    if (this.transitionChimeSound) {
+      try {
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          interruptionMode: 'duckOthers',
+        });
+        await this.transitionChimeSound.seekTo(0);
+        this.transitionChimeSound.play();
+      } catch (error) {
+        console.error('Failed to play transition chime:', error);
+      }
+    }
+  }
+
   async updateSettings(newSettings: Partial<AudioSettings>) {
     const oldTickSound = this.settings.tickSound;
     this.settings = { ...this.settings, ...newSettings };
@@ -579,6 +664,10 @@ class AudioService {
     if (this.dingSound) {
       this.dingSound.remove();
       this.dingSound = null;
+    }
+    if (this.transitionChimeSound) {
+      this.transitionChimeSound.remove();
+      this.transitionChimeSound = null;
     }
 
     // Cleanup all minute announcements
