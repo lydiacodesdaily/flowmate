@@ -1,0 +1,168 @@
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../../theme';
+import { OnboardingProgressDots } from './OnboardingProgressDots';
+import { TimerVisualPreviewCard } from './TimerVisualPreviewCard';
+import { TIMER_VISUAL_PRESETS } from '../../constants/timerVisuals';
+import type { TimerVisualStyle } from '../../utils/storage';
+import { hapticService } from '../../services/hapticService';
+
+interface OnboardingTimerVisualProps {
+  selectedStyle: TimerVisualStyle;
+  onStyleChange: (style: TimerVisualStyle) => void;
+  onComplete: () => void;
+  onBack: () => void;
+  onSkip: () => void;
+}
+
+export function OnboardingTimerVisual({
+  selectedStyle,
+  onStyleChange,
+  onComplete,
+  onBack,
+  onSkip,
+}: OnboardingTimerVisualProps) {
+  const { theme } = useTheme();
+
+  const handleComplete = async () => {
+    await hapticService.success();
+    onComplete();
+  };
+
+  const handleBack = () => {
+    hapticService.selection();
+    onBack();
+  };
+
+  const handleSkip = () => {
+    hapticService.selection();
+    onSkip();
+  };
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+          <Text style={[styles.backText, { color: theme.colors.textSecondary }]}>Back</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+          <Text style={[styles.skipText, { color: theme.colors.textSecondary }]}>Skip</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.titleContainer}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          Pick your timer style
+        </Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+          How do you want to see time?
+        </Text>
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.grid}>
+          {TIMER_VISUAL_PRESETS.map(preset => (
+            <TimerVisualPreviewCard
+              key={preset.id}
+              preset={preset}
+              isSelected={selectedStyle === preset.id}
+              onSelect={() => onStyleChange(preset.id)}
+            />
+          ))}
+        </View>
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <Text style={[styles.footerNote, { color: theme.colors.textTertiary }]}>
+          You can change this anytime in Settings
+        </Text>
+
+        <OnboardingProgressDots currentStep={3} />
+
+        <TouchableOpacity
+          onPress={handleComplete}
+          style={[styles.button, { backgroundColor: theme.colors.primary }]}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonText}>Start Focusing</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+  },
+  backButton: {
+    padding: 8,
+  },
+  backText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  skipButton: {
+    padding: 8,
+  },
+  skipText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  titleContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 15,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  footer: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  footerNote: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  button: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+});

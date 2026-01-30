@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ModeCard } from './ModeCard';
-import { WelcomeModal } from './WelcomeModal';
+import { ContextualTip } from './tips';
 import { useTheme } from '../theme';
-import { hasSeenWelcome, markWelcomeSeen, loadLastSession, type LastSessionConfig } from '../utils/storage';
+import { loadLastSession, type LastSessionConfig } from '../utils/storage';
 import { useTimerContext } from '../contexts/TimerContext';
 import { hapticService } from '../services/hapticService';
 import type { ModeSelectionScreenProps } from '../navigation/types';
@@ -13,22 +13,18 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { isActive, reset } = useTimerContext();
-  const [showWelcome, setShowWelcome] = useState(false);
   const [lastSession, setLastSession] = useState<LastSessionConfig | null>(null);
-
-  useEffect(() => {
-    const checkWelcome = async () => {
-      const seen = await hasSeenWelcome();
-      if (!seen) {
-        setShowWelcome(true);
-      }
-    };
-    checkWelcome();
-  }, []);
+  const [showQuickStartTip, setShowQuickStartTip] = useState(false);
 
   // Load last session for quick-start
   useEffect(() => {
-    loadLastSession().then(setLastSession);
+    loadLastSession().then(session => {
+      setLastSession(session);
+      // Show tip when quick start becomes available
+      if (session) {
+        setShowQuickStartTip(true);
+      }
+    });
   }, []);
 
   const handleQuickStart = async () => {
@@ -57,11 +53,6 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
     }
   };
 
-  const handleDismissWelcome = async () => {
-    setShowWelcome(false);
-    await markWelcomeSeen();
-  };
-
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
@@ -75,7 +66,7 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
 
       {lastSession && (
         <TouchableOpacity
-          style={[styles.quickStartCard, { backgroundColor: theme.colors.primaryLight }]}
+          style={[styles.quickStartCard, { backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.primary }]}
           onPress={handleQuickStart}
           activeOpacity={0.85}
         >
@@ -115,7 +106,15 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
         />
       </View>
 
-      <WelcomeModal visible={showWelcome} onDismiss={handleDismissWelcome} />
+      {/* Quick Start Tip */}
+      {lastSession && showQuickStartTip && (
+        <ContextualTip
+          tipId="quick-start"
+          message="Quick Start repeats your last session"
+          position="top"
+          onDismiss={() => setShowQuickStartTip(false)}
+        />
+      )}
     </ScrollView>
   );
 }
@@ -147,6 +146,7 @@ const styles = StyleSheet.create({
   },
   quickStartCard: {
     borderRadius: 16,
+    borderWidth: 1,
     padding: 20,
     marginBottom: 24,
   },

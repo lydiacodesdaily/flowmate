@@ -425,6 +425,86 @@ export const saveTimerDisplaySettings = async (settings: TimerDisplaySettings): 
 };
 
 /**
+ * Onboarding completion storage
+ */
+
+const ONBOARDING_COMPLETED_KEY = '@flowmate:onboarding-completed';
+
+export const hasCompletedOnboarding = async (): Promise<boolean> => {
+  try {
+    // Check if user completed new onboarding
+    const completed = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+    if (completed === 'true') return true;
+
+    // Migration: existing users who saw old welcome modal skip onboarding
+    const sawOldWelcome = await AsyncStorage.getItem(WELCOME_SEEN_KEY);
+    if (sawOldWelcome === 'true') {
+      // Mark as completed so we don't check again
+      await markOnboardingCompleted();
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Failed to check onboarding status:', error);
+    return true; // Default to completed if storage fails
+  }
+};
+
+export const markOnboardingCompleted = async (): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+  } catch (error) {
+    console.error('Failed to mark onboarding complete:', error);
+  }
+};
+
+export const resetOnboarding = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
+    await AsyncStorage.removeItem(WELCOME_SEEN_KEY);
+  } catch (error) {
+    console.error('Failed to reset onboarding:', error);
+  }
+};
+
+/**
+ * Contextual tips storage
+ * Tracks which one-time tips have been shown to the user
+ */
+
+export type TipId = 'audio-menu' | 'break-purpose' | 'stats-intro' | 'quick-start';
+
+const TIP_PREFIX = '@flowmate:tip:';
+
+export const hasSeenTip = async (tipId: TipId): Promise<boolean> => {
+  try {
+    const seen = await AsyncStorage.getItem(`${TIP_PREFIX}${tipId}`);
+    return seen === 'true';
+  } catch (error) {
+    console.error(`Failed to check tip status for ${tipId}:`, error);
+    return true; // Default to seen if storage fails
+  }
+};
+
+export const markTipSeen = async (tipId: TipId): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(`${TIP_PREFIX}${tipId}`, 'true');
+  } catch (error) {
+    console.error(`Failed to mark tip ${tipId} as seen:`, error);
+  }
+};
+
+export const resetAllTips = async (): Promise<void> => {
+  try {
+    const tipIds: TipId[] = ['audio-menu', 'break-purpose', 'stats-intro', 'quick-start'];
+    await Promise.all(tipIds.map(id => AsyncStorage.removeItem(`${TIP_PREFIX}${id}`)));
+  } catch (error) {
+    console.error('Failed to reset tips:', error);
+  }
+};
+
+/**
  * Transition warning settings storage
  * Controls the "wrapping up" visual/haptic cues before session transitions
  */

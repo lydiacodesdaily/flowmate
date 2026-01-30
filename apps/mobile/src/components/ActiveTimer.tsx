@@ -14,6 +14,7 @@ import { SessionSetup } from './SessionSetup';
 import { SessionComplete } from './SessionComplete';
 import { EarlyStopModal } from './EarlyStopModal';
 import { TransitionWarning } from './TransitionWarning';
+import { ContextualTip } from './tips';
 import { audioService } from '../services/audioService';
 import { statsService } from '../services/statsService';
 import { createSessionRecord, appendHistory } from '../services/sessionService';
@@ -589,6 +590,21 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         onContinue={handleEarlyStopContinue}
         onStop={handleEarlyStopConfirm}
       />
+
+      {/* Contextual Tips */}
+      <ContextualTip
+        tipId="audio-menu"
+        message="Tap ⋯ to adjust audio anytime"
+        position="top"
+      />
+
+      {isBreakSession && (
+        <ContextualTip
+          tipId="break-purpose"
+          message="Breaks help reset focus. Step away if you can!"
+          position="bottom"
+        />
+      )}
     </View>
   );
 }

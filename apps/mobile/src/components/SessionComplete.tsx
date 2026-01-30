@@ -15,6 +15,7 @@ import { SessionDraft, PrepStep, SessionStatus, TimerType } from '@flowmate/shar
 import { useTheme } from '../theme/ThemeContext';
 import { useAccessibility } from '../contexts';
 import { ConfettiCelebration } from './ConfettiCelebration';
+import { ContextualTip } from './tips';
 
 interface SessionCompleteProps {
   visible: boolean;
@@ -186,6 +187,13 @@ export function SessionComplete({
                 </Text>
               </View>
             </View>
+
+            {/* Stats tip */}
+            <ContextualTip
+              tipId="stats-intro"
+              message="Nice work! Track your progress in the Stats tab"
+              position="bottom"
+            />
 
             {/* Show original intent */}
             {draft?.intent && (
