@@ -2,13 +2,13 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { statsService } from '../services/statsService';
-import { formatFocusTime } from '@flowmate/shared';
+import { formatFocusTime, getThisWeekStats } from '@flowmate/shared';
 import type { UserStats, DailyStat, DailySummary } from '@flowmate/shared';
 import { WeeklyChart } from '../components/WeeklyChart';
 import { SessionHistory } from '../components/SessionHistory';
 import type { StatsScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
-import { getTodayStats, getAllTimeTotalMinutes, getAllTimeSavedSessions, groupSessionsByDay } from '../services/sessionService';
+import { groupSessionsByDay } from '../services/sessionService';
 
 type TabView = 'stats' | 'history';
 
@@ -22,10 +22,8 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
   const [refreshing, setRefreshing] = useState(false);
 
   // New session-based stats
-  const [todaySessionStats, setTodaySessionStats] = useState<any>(null);
-  const [allTimeMinutes, setAllTimeMinutes] = useState(0);
-  const [allTimeSessions, setAllTimeSessions] = useState(0);
   const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
+  const [thisWeekStats, setThisWeekStats] = useState({ daysActive: 0, totalMinutes: 0, totalSessions: 0 });
 
   const loadStats = useCallback(async () => {
     // Load old stats for backwards compatibility
@@ -38,15 +36,11 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
     setWeekStats(week);
 
     // Load new session-based stats
-    const todaySession = await getTodayStats();
-    const allMinutes = await getAllTimeTotalMinutes();
-    const allSessions = await getAllTimeSavedSessions();
     const summaries = await groupSessionsByDay();
-
-    setTodaySessionStats(todaySession);
-    setAllTimeMinutes(allMinutes);
-    setAllTimeSessions(allSessions);
     setDailySummaries(summaries);
+
+    // Calculate this week's stats
+    setThisWeekStats(getThisWeekStats(allStats));
   }, []);
 
   const onRefresh = useCallback(async () => {
@@ -145,19 +139,27 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
         </View>
       </View>
 
-      {/* Streaks */}
+      {/* This Week */}
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textTertiary }]}>streaks</Text>
-        <View style={styles.streakContainer}>
-          <View style={[styles.streakCard, { backgroundColor: theme.colors.surface }]}>
-            <Text style={styles.streakEmoji}>🔥</Text>
-            <Text style={[styles.streakValue, { color: theme.colors.text }]}>{stats.currentStreak}</Text>
-            <Text style={[styles.streakLabel, { color: theme.colors.textTertiary }]}>current</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textTertiary }]}>this week</Text>
+        <View style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
+          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
+            <Text style={[styles.statLabel, { color: theme.colors.text }]}>days you focused</Text>
+            <Text style={[styles.statValue, { color: theme.colors.text }]}>
+              {thisWeekStats.daysActive}
+            </Text>
           </View>
-          <View style={[styles.streakCard, { backgroundColor: theme.colors.surface }]}>
-            <Text style={styles.streakEmoji}>⭐</Text>
-            <Text style={[styles.streakValue, { color: theme.colors.text }]}>{stats.longestStreak}</Text>
-            <Text style={[styles.streakLabel, { color: theme.colors.textTertiary }]}>longest</Text>
+          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
+            <Text style={[styles.statLabel, { color: theme.colors.text }]}>focus time</Text>
+            <Text style={[styles.statValue, { color: theme.colors.text }]}>
+              {formatFocusTime(thisWeekStats.totalMinutes)}
+            </Text>
+          </View>
+          <View style={[styles.statRow, { borderBottomWidth: 0 }]}>
+            <Text style={[styles.statLabel, { color: theme.colors.text }]}>sessions</Text>
+            <Text style={[styles.statValue, { color: theme.colors.text }]}>
+              {thisWeekStats.totalSessions}
+            </Text>
           </View>
         </View>
       </View>
@@ -289,34 +291,5 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: '500',
-  },
-  streakContainer: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  streakCard: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  streakEmoji: {
-    fontSize: 32,
-    marginBottom: 12,
-  },
-  streakValue: {
-    fontSize: 32,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  streakLabel: {
-    fontSize: 13,
-    fontWeight: '300',
-    letterSpacing: 0.5,
   },
 });

@@ -54,25 +54,28 @@ export function WeeklyChart({ weekStats }: WeeklyChartProps) {
         {last7Days.map((stat, index) => {
           const heightPercentage = (stat.focusTimeMinutes / maxMinutes) * 100;
           const isToday = index === 6;
+          const hasActivity = stat.focusTimeMinutes > 0;
 
           return (
             <View key={stat.date} style={styles.barContainer}>
               <View style={styles.barWrapper}>
-                <View
-                  style={[
-                    styles.bar,
-                    {
-                      height: `${Math.min(Math.max(heightPercentage, 2), 100)}%`,
-                      backgroundColor: isToday ? theme.colors.textTertiary : theme.colors.border,
-                    },
-                  ]}
-                />
+                {hasActivity ? (
+                  <View
+                    style={[
+                      styles.bar,
+                      {
+                        height: `${Math.min(Math.max(heightPercentage, 8), 100)}%`,
+                        backgroundColor: isToday ? theme.colors.primary : theme.colors.textTertiary,
+                      },
+                    ]}
+                  />
+                ) : null}
               </View>
               <Text style={[styles.dayLabel, { color: theme.colors.textTertiary }, isToday && { color: theme.colors.text, fontWeight: '500' }]}>
                 {getDayLabel(stat.date)}
               </Text>
               <Text style={[styles.minutesLabel, { color: theme.colors.textSecondary }]}>
-                {stat.focusTimeMinutes > 0 ? `${stat.focusTimeMinutes}m` : ''}
+                {hasActivity ? `${stat.focusTimeMinutes}m` : ''}
               </Text>
             </View>
           );

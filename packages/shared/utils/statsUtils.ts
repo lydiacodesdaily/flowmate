@@ -151,3 +151,26 @@ export const getRecentStats = (stats: UserStats, days: number = 7): DailyStat[] 
 
   return sortedStats.slice(0, days);
 };
+
+// Get this week's summary (Mon-Sun or partial week)
+export const getThisWeekStats = (stats: UserStats): { daysActive: number; totalMinutes: number; totalSessions: number } => {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  // Get Monday of this week (Sunday = 0, so we need special handling)
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - mondayOffset);
+  monday.setHours(0, 0, 0, 0);
+
+  const mondayStr = monday.toISOString().split("T")[0];
+
+  const thisWeekStats = stats.dailyStats.filter(
+    (s) => s.date >= mondayStr && s.sessionsCompleted > 0
+  );
+
+  return {
+    daysActive: thisWeekStats.length,
+    totalMinutes: thisWeekStats.reduce((sum, s) => sum + s.focusTimeMinutes, 0),
+    totalSessions: thisWeekStats.reduce((sum, s) => sum + s.sessionsCompleted, 0),
+  };
+};
