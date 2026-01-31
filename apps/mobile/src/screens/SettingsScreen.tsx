@@ -163,7 +163,12 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           Choose how the timer progress is displayed
         </Text>
 
-        <View style={styles.presetsContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScrollContent}
+          style={styles.horizontalScroll}
+        >
           {TIMER_VISUAL_PRESETS.map((preset) => {
             const isSelected = selectedVisual === preset.id;
             return (
@@ -186,13 +191,14 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
                     styles.presetName,
                     { color: isSelected ? '#FFFFFF' : theme.colors.text },
                   ]}
+                  numberOfLines={1}
                 >
                   {preset.name}
                 </Text>
               </TouchableOpacity>
             );
           })}
-        </View>
+        </ScrollView>
 
         <Text style={[styles.presetDescription, { color: theme.colors.textSecondary }]}>
           {TIMER_VISUAL_PRESETS.find(p => p.id === selectedVisual)?.description}
@@ -205,7 +211,12 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           Choose how you want audio and haptic feedback
         </Text>
 
-        <View style={styles.presetsContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalScrollContent}
+          style={styles.horizontalScroll}
+        >
           {SENSORY_PRESETS.map((preset) => {
             const isSelected = selectedPreset === preset.id;
             return (
@@ -228,13 +239,14 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
                     styles.presetName,
                     { color: isSelected ? '#FFFFFF' : theme.colors.text },
                   ]}
+                  numberOfLines={1}
                 >
                   {preset.name}
                 </Text>
               </TouchableOpacity>
             );
           })}
-        </View>
+        </ScrollView>
 
         <Text style={[styles.presetDescription, { color: theme.colors.textSecondary }]}>
           {SENSORY_PRESETS.find(p => p.id === selectedPreset)?.description}
@@ -540,13 +552,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 18,
   },
-  presetsContainer: {
-    flexDirection: 'row',
+  horizontalScroll: {
+    flexGrow: 0,
+  },
+  horizontalScrollContent: {
     paddingHorizontal: 12,
-    gap: 8,
+    gap: 10,
   },
   presetCard: {
-    flex: 1,
+    width: 80,
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 8,
