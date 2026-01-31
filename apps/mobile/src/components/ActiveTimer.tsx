@@ -53,7 +53,6 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const timerInitializedRef = useRef(false);
 
   // Audio settings state
-  const [muteAll, setMuteAll] = useState(false);
   const [muteDuringBreaks, setMuteDuringBreaks] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -206,7 +205,6 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 
         // Load saved audio settings and sync with local state
         const settings = audioService.getSettings();
-        setMuteAll(settings.muteAll);
         setMuteDuringBreaks(settings.muteDuringBreaks);
 
         audioInitializedRef.current = true;
@@ -288,13 +286,6 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const handleSubtractTime = async () => {
     await hapticService.light();
     subtractTime(300); // Subtract 5 minutes (300 seconds)
-  };
-
-  const handleToggleMuteAll = async () => {
-    await hapticService.selection();
-    const newMuteAll = !muteAll;
-    setMuteAll(newMuteAll);
-    audioService.updateSettings({ muteAll: newMuteAll });
   };
 
   const handleToggleMuteDuringBreaks = async () => {
@@ -443,16 +434,9 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
             <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>←</Text>
           </TouchableOpacity>
         )}
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={handleToggleMuteAll} style={styles.headerButton}>
-            <Text style={[styles.headerButtonText, { color: muteAll ? theme.colors.textTertiary : theme.colors.text }]}>
-              {muteAll ? '🔇' : '🔊'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleToggleSettings} style={styles.headerButton}>
-            <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>⋯</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={handleToggleSettings} style={styles.headerButton}>
+          <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>⋯</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Main content - centered and spacious */}
@@ -532,9 +516,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
             <Text style={[styles.modalTitle, { color: theme.colors.textTertiary }]}>Audio Settings</Text>
 
             <AudioControls
-              muteAll={muteAll}
               muteDuringBreaks={muteDuringBreaks}
-              onToggleMuteAll={handleToggleMuteAll}
               onToggleMuteDuringBreaks={handleToggleMuteDuringBreaks}
             />
 
@@ -619,10 +601,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     paddingHorizontal: 20,
     backgroundColor: 'transparent',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   headerButton: {
     padding: 12,

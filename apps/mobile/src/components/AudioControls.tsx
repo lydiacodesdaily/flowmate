@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, ScrollView } from 'react-native';
 import type { AudioSettings } from '@flowmate/shared';
 import { audioService } from '../services/audioService';
 import { useTheme } from '../theme';
+import { useSensoryPresets } from '../hooks/useSensoryPresets';
+import { SENSORY_PRESETS } from '../constants/sensoryPresets';
+import { hapticService } from '../services/hapticService';
 
 interface AudioControlsProps {
-  muteAll: boolean;
   muteDuringBreaks: boolean;
-  onToggleMuteAll: () => void;
   onToggleMuteDuringBreaks: () => void;
 }
 
@@ -41,10 +42,18 @@ export function AudioControls({
 }: AudioControlsProps) {
   const { theme } = useTheme();
   const [currentSettings, setCurrentSettings] = useState<AudioSettings>(audioService.getSettings());
+  const { selectedPreset, selectPreset, isLoading: presetLoading } = useSensoryPresets();
 
   useEffect(() => {
     setCurrentSettings(audioService.getSettings());
   }, []);
+
+  const handlePresetSelect = async (presetId: typeof selectedPreset) => {
+    await hapticService.selection();
+    await selectPreset(presetId);
+    // Refresh local settings state after preset applies
+    setCurrentSettings(audioService.getSettings());
+  };
 
   const updateSetting = <K extends keyof AudioSettings>(
     key: K,
@@ -57,8 +66,59 @@ export function AudioControls({
   const tickVolume = getClosestPreset(currentSettings.tickVolume);
   const announcementVolume = getClosestPreset(currentSettings.announcementVolume);
 
+  // Filter out 'custom' preset for cleaner UI - users customize via controls below
+  const displayPresets = SENSORY_PRESETS.filter(p => p.id !== 'custom');
+
   return (
     <View style={styles.container}>
+      {/* Sensory Presets */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
+          Preset
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.presetScrollContent}
+          style={styles.presetScroll}
+        >
+          {displayPresets.map((preset) => {
+            const isSelected = selectedPreset === preset.id;
+            return (
+              <TouchableOpacity
+                key={preset.id}
+                style={[
+                  styles.presetCard,
+                  { borderColor: theme.colors.border },
+                  isSelected && {
+                    backgroundColor: theme.colors.primary,
+                    borderColor: theme.colors.primary,
+                  },
+                ]}
+                onPress={() => handlePresetSelect(preset.id)}
+                activeOpacity={0.7}
+                disabled={presetLoading}
+              >
+                <Text style={styles.presetIcon}>{preset.icon}</Text>
+                <Text
+                  style={[
+                    styles.presetName,
+                    { color: theme.colors.text },
+                    isSelected && { color: '#FFFFFF' },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {preset.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        <Text style={[styles.presetDescription, { color: theme.colors.textTertiary }]}>
+          {SENSORY_PRESETS.find(p => p.id === selectedPreset)?.description}
+        </Text>
+      </View>
+
       {/* Tick Sound Type */}
       <View style={styles.section}>
         <Text style={[styles.sectionLabel, { color: theme.colors.textSecondary }]}>
@@ -295,5 +355,35 @@ const styles = StyleSheet.create({
   toggleIcon: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  presetScroll: {
+    flexGrow: 0,
+    marginHorizontal: -4,
+  },
+  presetScrollContent: {
+    paddingHorizontal: 4,
+    gap: 8,
+  },
+  presetCard: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 2,
+    minWidth: 70,
+  },
+  presetIcon: {
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  presetName: {
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  presetDescription: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
   },
 });

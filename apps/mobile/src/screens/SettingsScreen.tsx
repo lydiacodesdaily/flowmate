@@ -19,8 +19,6 @@ import {
   useTimerVisual,
   useCelebrationSettings,
 } from '../contexts';
-import { useSensoryPresets } from '../hooks/useSensoryPresets';
-import { SENSORY_PRESETS } from '../constants/sensoryPresets';
 import { TIMER_VISUAL_PRESETS } from '../constants/timerVisuals';
 import { hapticService } from '../services/hapticService';
 
@@ -37,13 +35,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
   const { confettiEnabled, setConfettiEnabled } = useCelebrationSettings();
   const { reduceMotion, hapticsEnabled, skipFocusPrompt, setReduceMotion, setHapticsEnabled, setSkipFocusPrompt } = useAccessibility();
   const { showElapsedTime, setShowElapsedTime } = useTimerDisplaySettings();
-  const { selectedPreset, selectPreset, isLoading: sensoryLoading } = useSensoryPresets();
   const { selectedStyle: selectedVisual, selectStyle: selectVisual, isLoading: visualLoading } = useTimerVisual();
-
-  const handlePresetSelect = async (presetId: typeof selectedPreset) => {
-    await hapticService.selection();
-    await selectPreset(presetId);
-  };
 
   const handleVisualSelect = async (visualId: typeof selectedVisual) => {
     await hapticService.selection();
@@ -202,54 +194,6 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
 
         <Text style={[styles.presetDescription, { color: theme.colors.textSecondary }]}>
           {TIMER_VISUAL_PRESETS.find(p => p.id === selectedVisual)?.description}
-        </Text>
-      </View>
-
-      <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Sensory Profile</Text>
-        <Text style={[styles.sectionDescription, { color: theme.colors.textTertiary }]}>
-          Choose how you want audio and haptic feedback
-        </Text>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalScrollContent}
-          style={styles.horizontalScroll}
-        >
-          {SENSORY_PRESETS.map((preset) => {
-            const isSelected = selectedPreset === preset.id;
-            return (
-              <TouchableOpacity
-                key={preset.id}
-                style={[
-                  styles.presetCard,
-                  {
-                    backgroundColor: isSelected ? theme.colors.primary : theme.colors.surfaceSecondary,
-                    borderColor: isSelected ? theme.colors.primary : theme.colors.border,
-                  },
-                ]}
-                onPress={() => handlePresetSelect(preset.id)}
-                activeOpacity={0.7}
-                disabled={sensoryLoading}
-              >
-                <Text style={styles.presetIcon}>{preset.icon}</Text>
-                <Text
-                  style={[
-                    styles.presetName,
-                    { color: isSelected ? '#FFFFFF' : theme.colors.text },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {preset.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        <Text style={[styles.presetDescription, { color: theme.colors.textSecondary }]}>
-          {SENSORY_PRESETS.find(p => p.id === selectedPreset)?.description}
         </Text>
       </View>
 
@@ -420,18 +364,6 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
       </View>
 
       <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Audio</Text>
-
-        <View style={styles.infoCard}>
-          <Text style={[styles.infoIcon]}>🎵</Text>
-          <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-            Audio settings have moved to the timer screen.{'\n'}
-            Tap the ⋯ menu while running a timer to adjust.
-          </Text>
-        </View>
-      </View>
-
-      <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
         <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>About</Text>
         <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
           <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Version</Text>
@@ -528,23 +460,6 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: '#fff',
-  },
-  infoCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  infoIcon: {
-    fontSize: 24,
-    marginTop: 2,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
-    letterSpacing: 0.2,
   },
   sectionDescription: {
     fontSize: 13,

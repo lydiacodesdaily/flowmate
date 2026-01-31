@@ -25,7 +25,7 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
   {
     id: 'full',
     name: 'Full',
-    description: 'All feedback enabled',
+    description: 'Ticks + voice every minute + countdown',
     icon: '🔊',
     config: {
       tickSound: 'alternating',
@@ -36,16 +36,16 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       secondsCountdown: true,
       haptics: true,
       transitionWarning: true,
-      transitionChime: false, // Seconds countdown already provides audio cues
+      transitionChime: false,
     },
   },
   {
     id: 'gentle',
     name: 'Gentle',
-    description: 'Softer, less frequent cues',
+    description: 'Soft ticks, voice every 5 min',
     icon: '🔉',
     config: {
-      tickSound: 'classic',
+      tickSound: 'alternating',
       tickVolume: 0.3,
       announcements: true,
       announcementVolume: 0.5,
@@ -53,13 +53,13 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       secondsCountdown: false,
       haptics: true,
       transitionWarning: true,
-      transitionChime: true, // Chime enabled since no seconds countdown
+      transitionChime: true,
     },
   },
   {
     id: 'minimal',
     name: 'Minimal',
-    description: 'Essential cues only',
+    description: 'Voice only, every 10 min',
     icon: '🔈',
     config: {
       tickSound: 'none',
@@ -69,14 +69,14 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       announcementInterval: 10,
       secondsCountdown: false,
       haptics: false,
-      transitionWarning: true, // Visual only
+      transitionWarning: true,
       transitionChime: false,
     },
   },
   {
     id: 'silent',
     name: 'Silent',
-    description: 'No audio or haptic feedback',
+    description: 'Visual only, no audio or vibration',
     icon: '🔇',
     config: {
       tickSound: 'none',
@@ -86,14 +86,14 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       announcementInterval: 1,
       secondsCountdown: false,
       haptics: false,
-      transitionWarning: true, // Visual warning still useful
+      transitionWarning: true,
       transitionChime: false,
     },
   },
   {
     id: 'highAlert',
     name: 'High Alert',
-    description: 'Maximum feedback for staying engaged',
+    description: 'Loud beeps, voice every minute + countdown',
     icon: '📢',
     config: {
       tickSound: 'beep',
@@ -104,7 +104,7 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       secondsCountdown: true,
       haptics: true,
       transitionWarning: true,
-      transitionChime: false, // Seconds countdown already provides audio cues
+      transitionChime: false,
     },
   },
   {
@@ -121,7 +121,7 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
       secondsCountdown: false,
       haptics: true,
       transitionWarning: true,
-      transitionChime: true, // Chime enabled since no seconds countdown
+      transitionChime: true,
     },
   },
 ];
