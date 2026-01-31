@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Modal, Pressable, Switch } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Modal, Switch, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimerContext } from '../contexts/TimerContext';
@@ -512,38 +512,47 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
           activeOpacity={1}
           onPress={handleToggleSettings}
         >
-          <Pressable style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
-            <Text style={[styles.modalTitle, { color: theme.colors.textTertiary }]}>Audio Settings</Text>
-
-            <AudioControls
-              muteDuringBreaks={muteDuringBreaks}
-              onToggleMuteDuringBreaks={handleToggleMuteDuringBreaks}
-            />
-
-            <View style={styles.focusLockSection}>
-              <View style={styles.focusLockRow}>
-                <View style={styles.focusLockText}>
-                  <Text style={[styles.focusLockLabel, { color: theme.colors.text }]}>Focus Lock</Text>
-                  <Text style={[styles.focusLockDescription, { color: theme.colors.textTertiary }]}>
-                    Hide controls during sessions
-                  </Text>
-                </View>
-                <Switch
-                  value={focusLockEnabled}
-                  onValueChange={handleToggleFocusLock}
-                  trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-                  thumbColor="#FFFFFF"
-                />
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={handleToggleSettings}
+          <View
+            style={[styles.modalContent, { backgroundColor: theme.colors.background }]}
+            onStartShouldSetResponder={() => true}
+          >
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+              contentContainerStyle={styles.modalScrollContent}
             >
-              <Text style={[styles.modalCloseButtonText, { color: theme.colors.textTertiary }]}>Done</Text>
-            </TouchableOpacity>
-          </Pressable>
+              <Text style={[styles.modalTitle, { color: theme.colors.textTertiary }]}>Audio Settings</Text>
+
+              <AudioControls
+                muteDuringBreaks={muteDuringBreaks}
+                onToggleMuteDuringBreaks={handleToggleMuteDuringBreaks}
+              />
+
+              <View style={styles.focusLockSection}>
+                <View style={styles.focusLockRow}>
+                  <View style={styles.focusLockText}>
+                    <Text style={[styles.focusLockLabel, { color: theme.colors.text }]}>Focus Lock</Text>
+                    <Text style={[styles.focusLockDescription, { color: theme.colors.textTertiary }]}>
+                      Hide controls during sessions
+                    </Text>
+                  </View>
+                  <Switch
+                    value={focusLockEnabled}
+                    onValueChange={handleToggleFocusLock}
+                    trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                    thumbColor="#FFFFFF"
+                  />
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={handleToggleSettings}
+              >
+                <Text style={[styles.modalCloseButtonText, { color: theme.colors.textTertiary }]}>Done</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
         </TouchableOpacity>
       </Modal>
 
@@ -650,9 +659,12 @@ const styles = StyleSheet.create({
   modalContent: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    paddingHorizontal: 32,
+    maxHeight: '85%',
+  },
+  modalScrollContent: {
     paddingTop: 32,
     paddingBottom: 48,
-    paddingHorizontal: 32,
   },
   modalTitle: {
     fontSize: 17,

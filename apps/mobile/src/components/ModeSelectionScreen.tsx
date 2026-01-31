@@ -62,10 +62,7 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
       ]}
     >
       <Text style={[styles.title, { color: theme.colors.text }]}>ready when you are</Text>
-      <Text style={[styles.subtitle, { color: theme.colors.textTertiary }]}>choose a focus mode</Text>
-      <Text style={[styles.tagline, { color: theme.colors.textTertiary }]}>
-        a gentle timer for time awareness, not pressure
-      </Text>
+      <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>time awareness, not pressure</Text>
 
       {lastSession && (
         <TouchableOpacity
@@ -131,26 +128,18 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '300',
-    marginBottom: 8,
+    fontSize: 26,
+    fontWeight: '400',
+    marginBottom: 6,
     textAlign: 'center',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
   subtitle: {
-    fontSize: 15,
-    fontWeight: '300',
-    marginBottom: 12,
+    fontSize: 17,
+    fontWeight: '400',
+    marginBottom: 40,
     textAlign: 'center',
-    letterSpacing: 0.8,
-  },
-  tagline: {
-    fontSize: 13,
-    fontWeight: '300',
-    fontStyle: 'italic',
-    marginBottom: 36,
-    textAlign: 'center',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   cardsContainer: {
     gap: 16,
