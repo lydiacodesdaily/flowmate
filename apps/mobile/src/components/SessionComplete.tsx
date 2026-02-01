@@ -23,6 +23,7 @@ interface SessionCompleteProps {
   completedSeconds: number;
   plannedSeconds: number;
   draft?: SessionDraft;
+  isAutoSaved?: boolean; // Session was already saved, modal is for enhancement
   onSave: (status: SessionStatus, updatedSteps?: PrepStep[], note?: string) => void;
   onDiscard: () => void;
 }
@@ -42,6 +43,7 @@ export function SessionComplete({
   completedSeconds,
   plannedSeconds,
   draft,
+  isAutoSaved = false,
   onSave,
   onDiscard,
 }: SessionCompleteProps) {
@@ -344,14 +346,16 @@ export function SessionComplete({
               style={[styles.discardButton, { borderColor: theme.colors.border }]}
             >
               <Text style={[styles.discardButtonText, { color: theme.colors.textSecondary }]}>
-                Discard
+                {isAutoSaved ? 'Done' : 'Discard'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleSave()}
               style={[styles.saveButton, { backgroundColor: theme.colors.primary }]}
             >
-              <Text style={styles.saveButtonText}>Save Session</Text>
+              <Text style={styles.saveButtonText}>
+                {isAutoSaved ? 'Save Changes' : 'Save Session'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

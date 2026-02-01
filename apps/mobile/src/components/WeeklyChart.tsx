@@ -91,8 +91,8 @@ export function WeeklyChart({ weekStats }: WeeklyChartProps) {
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 14,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -103,8 +103,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    height: 180,
-    paddingBottom: 40,
+    height: 140,
+    paddingBottom: 36,
   },
   barContainer: {
     flex: 1,

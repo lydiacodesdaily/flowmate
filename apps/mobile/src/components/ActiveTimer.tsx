@@ -24,7 +24,7 @@ import { EarlyCompletionBanner } from './EarlyCompletionBanner';
 import { ContextualTip } from './tips';
 import { audioService } from '../services/audioService';
 import { statsService } from '../services/statsService';
-import { createSessionRecord, appendHistory } from '../services/sessionService';
+import { createSessionRecord, appendHistory, updateHistoryRecord } from '../services/sessionService';
 import { hapticService } from '../services/hapticService';
 import { notificationService } from '../services/notificationService';
 import { useTheme } from '../theme';
@@ -78,6 +78,9 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   // Expandable intent state
   const [intentExpanded, setIntentExpanded] = useState(false);
 
+  // Auto-saved record tracking (for enhancement modal flow)
+  const [autoSavedRecordId, setAutoSavedRecordId] = useState<string | null>(null);
+
   // Load focus lock setting on mount
   useEffect(() => {
     loadFocusLockSettings().then(settings => setFocusLockEnabled(settings.enabled));
@@ -113,6 +116,24 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     isInTransitionZone,
     transitionSecondsRemaining,
   } = useTimerContext();
+
+  // Refs for callback access (to avoid stale closures)
+  const sessionDraftRef = useRef(sessionDraft);
+  const timerModeRef = useRef(timerMode);
+  const timerTypeRef = useRef(timerType);
+  const sessionStartTimeRef = useRef(sessionStartTime);
+  const sessionEndTimeRef = useRef(sessionEndTime);
+  const totalTimeRef = useRef(totalTime);
+
+  // Keep refs in sync with current values
+  useEffect(() => {
+    sessionDraftRef.current = sessionDraft;
+    timerModeRef.current = timerMode;
+    timerTypeRef.current = timerType;
+    sessionStartTimeRef.current = sessionStartTime;
+    sessionEndTimeRef.current = sessionEndTime;
+    totalTimeRef.current = totalTime;
+  }, [sessionDraft, timerMode, timerType, sessionStartTime, sessionEndTime, totalTime]);
 
   // Check if controls should be locked
   const isLocked = focusLockEnabled && (status === 'running' || status === 'paused');
@@ -197,12 +218,48 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       await audioService.announceAllComplete();
       audioService.resetAnnouncementTracking();
 
-      // Show complete modal for custom focus sessions
-      if (timerMode === 'custom' && timerType === 'focus') {
-        setShowCompleteModal(true);
+      // Read current values from refs (avoids stale closure)
+      const currentSessionStart = sessionStartTimeRef.current;
+      const currentSessionEnd = sessionEndTimeRef.current || Date.now();
+      const currentTotalTime = totalTimeRef.current;
+      const currentDraft = sessionDraftRef.current;
+      const currentMode = timerModeRef.current;
+      const currentType = timerTypeRef.current;
+
+      // Auto-save session immediately with "completed" status
+      if (currentSessionStart && currentMode && currentType) {
+        const sessionType = currentSession?.type || 'focus';
+        const record = createSessionRecord(
+          currentSessionStart,
+          currentSessionEnd,
+          currentTotalTime,
+          currentTotalTime, // completedSeconds = totalTime when timer finishes naturally
+          currentMode,
+          currentType,
+          sessionType,
+          'completed',
+          currentDraft
+        );
+
+        await appendHistory(record);
+        setAutoSavedRecordId(record.id);
+
+        // Show enhancement modal for focus sessions with intent or steps
+        const hasIntent = currentDraft?.intent && currentDraft.intent.trim().length > 0;
+        const hasSteps = currentDraft?.steps && currentDraft.steps.length > 0;
+        if (currentType === 'focus' && (hasIntent || hasSteps)) {
+          setShowCompleteModal(true);
+        } else {
+          // No intent/steps - just navigate back after a brief moment
+          setTimeout(() => {
+            setSessionDraft({ intent: '', steps: [] });
+            reset();
+            navigation.navigate('ModeSelection');
+          }, 500);
+        }
       }
     });
-  }, [sessions, timerMode, timerType, setSessionCompleteCallback, setAllSessionsCompleteCallback]);
+  }, [sessions, currentSession, setSessionCompleteCallback, setAllSessionsCompleteCallback, setSessionDraft, reset, navigation]);
 
   // Keep screen awake when timer is running
   useKeepAwake(status === 'running');
@@ -286,8 +343,40 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     await hapticService.medium();
     audioService.resetAnnouncementTracking();
     setShowEarlyStopModal(false);
-    reset();
     await notificationService.cancelAllNotifications();
+
+    // Auto-save session with "partial" status
+    if (sessionStartTime && timerMode && timerType) {
+      const endTime = Date.now();
+      const completedSeconds = totalTime - timeRemaining;
+      const sessionType = currentSession?.type || 'focus';
+
+      const record = createSessionRecord(
+        sessionStartTime,
+        endTime,
+        totalTime,
+        completedSeconds,
+        timerMode,
+        timerType,
+        sessionType,
+        'partial',
+        sessionDraft
+      );
+
+      await appendHistory(record);
+      setAutoSavedRecordId(record.id);
+
+      // Show enhancement modal for focus sessions with intent or steps
+      const hasIntent = sessionDraft?.intent && sessionDraft.intent.trim().length > 0;
+      const hasSteps = sessionDraft?.steps && sessionDraft.steps.length > 0;
+      if (timerType === 'focus' && (hasIntent || hasSteps)) {
+        setShowCompleteModal(true);
+        return; // Don't navigate yet - modal will handle it
+      }
+    }
+
+    // No intent/steps - just navigate back
+    reset();
     navigation.navigate('ModeSelection');
   };
 
@@ -340,13 +429,39 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   // Early completion handlers
   const handleEarlyComplete = async () => {
     await hapticService.medium();
-    // Show the completion modal for custom focus sessions
-    if (timerMode === 'custom' && timerType === 'focus') {
-      setShowCompleteModal(true);
-    } else {
-      // For other modes, just skip to next session or complete
-      skip();
+
+    // Auto-save session with "completed" status (user finished early but completed the task)
+    if (sessionStartTime && timerMode && timerType) {
+      const endTime = Date.now();
+      const completedSeconds = totalTime - timeRemaining;
+      const sessionType = currentSession?.type || 'focus';
+
+      const record = createSessionRecord(
+        sessionStartTime,
+        endTime,
+        totalTime,
+        completedSeconds,
+        timerMode,
+        timerType,
+        sessionType,
+        'completed',
+        sessionDraft
+      );
+
+      await appendHistory(record);
+      setAutoSavedRecordId(record.id);
+
+      // Show the completion modal for focus sessions with intent/steps
+      const hasIntent = sessionDraft?.intent && sessionDraft.intent.trim().length > 0;
+      const hasSteps = sessionDraft?.steps && sessionDraft.steps.length > 0;
+      if (timerType === 'focus' && (hasIntent || hasSteps)) {
+        setShowCompleteModal(true);
+        return;
+      }
     }
+
+    // No intent/steps - just skip to next session or complete
+    skip();
   };
 
   const handleDismissEarlyCompletion = async () => {
@@ -400,28 +515,41 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   };
 
   // Session Complete handlers
-  const handleSessionSave = (sessionStatus: SessionStatus, updatedSteps?: any, notes?: string) => {
-    // Create session record
-    if (sessionStartTime && sessionEndTime && timerMode && timerType) {
-      const plannedSeconds = totalTime;
-      const completedSeconds = totalTime - timeRemaining;
-      const sessionType = currentSession?.type || 'focus';
+  const handleSessionSave = async (sessionStatus: SessionStatus, updatedSteps?: any, notes?: string) => {
+    // If we have an auto-saved record, update it with user's changes
+    if (autoSavedRecordId) {
+      const stepsSummary = updatedSteps && updatedSteps.length > 0
+        ? { total: updatedSteps.length, done: updatedSteps.filter((s: any) => s.done).length }
+        : undefined;
 
-      const record = createSessionRecord(
-        sessionStartTime,
-        sessionEndTime,
-        plannedSeconds,
-        completedSeconds,
-        timerMode,
-        timerType,
-        sessionType,
-        sessionStatus,
-        sessionDraft,
-        notes
-      );
+      await updateHistoryRecord(autoSavedRecordId, {
+        status: sessionStatus,
+        note: notes,
+        steps: stepsSummary,
+      });
+      setAutoSavedRecordId(null);
+    } else {
+      // Fallback: create new record if somehow we don't have an auto-saved one
+      if (sessionStartTime && sessionEndTime && timerMode && timerType) {
+        const plannedSeconds = totalTime;
+        const completedSeconds = totalTime - timeRemaining;
+        const sessionType = currentSession?.type || 'focus';
 
-      // Save to history
-      appendHistory(record);
+        const record = createSessionRecord(
+          sessionStartTime,
+          sessionEndTime,
+          plannedSeconds,
+          completedSeconds,
+          timerMode,
+          timerType,
+          sessionType,
+          sessionStatus,
+          sessionDraft,
+          notes
+        );
+
+        await appendHistory(record);
+      }
     }
 
     // Clear session draft for next session
@@ -432,9 +560,10 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     navigation.navigate('ModeSelection');
   };
 
-  const handleSessionDiscard = () => {
-    // Clear session draft for next session
-    console.log('handleSessionDiscard: Clearing sessionDraft and resetting timer');
+  const handleSessionDismiss = () => {
+    // Session is already auto-saved - just close the modal and navigate
+    console.log('handleSessionDismiss: Session already saved, closing modal');
+    setAutoSavedRecordId(null);
     setSessionDraft({ intent: '', steps: [] });
     reset(); // Reset timer status to idle
     setShowCompleteModal(false);
@@ -662,8 +791,9 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         completedSeconds={totalTime - timeRemaining}
         plannedSeconds={totalTime}
         draft={sessionDraft}
+        isAutoSaved={autoSavedRecordId !== null}
         onSave={handleSessionSave}
-        onDiscard={handleSessionDiscard}
+        onDiscard={handleSessionDismiss}
       />
 
       {/* Early Stop Confirmation Modal */}

@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
+import type {
   SessionRecord,
   SessionDraft,
   PrepStep,
@@ -93,6 +93,26 @@ export async function clearHistory(): Promise<void> {
     await AsyncStorage.removeItem(STORAGE_KEYS.HISTORY);
   } catch (error) {
     console.error('Error clearing history:', error);
+  }
+}
+
+export async function updateHistoryRecord(
+  id: string,
+  updates: Partial<Pick<SessionRecord, 'status' | 'note' | 'steps'>>
+): Promise<boolean> {
+  try {
+    const history = await getHistory();
+    const index = history.findIndex((record) => record.id === id);
+    if (index === -1) {
+      console.warn('Record not found for update:', id);
+      return false;
+    }
+    history[index] = { ...history[index], ...updates };
+    await AsyncStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+    return true;
+  } catch (error) {
+    console.error('Error updating history record:', error);
+    return false;
   }
 }
 

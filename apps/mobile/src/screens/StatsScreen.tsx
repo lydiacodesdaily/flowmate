@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { statsService } from '../services/statsService';
 import { formatFocusTime, getThisWeekStats } from '@flowmate/shared';
 import type { UserStats, DailyStat, DailySummary } from '@flowmate/shared';
@@ -49,9 +50,12 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
     setRefreshing(false);
   }, [loadStats]);
 
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+  // Reload stats whenever the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadStats();
+    }, [loadStats])
+  );
 
   if (!stats) {
     return (
@@ -120,47 +124,25 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
           }
         >
 
-      {/* Today's Stats */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textTertiary }]}>today</Text>
-        <View style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
-          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.statLabel, { color: theme.colors.text }]}>focus time</Text>
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>
-              {formatFocusTime(todayStats?.focusTimeMinutes || 0)}
-            </Text>
-          </View>
-          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.statLabel, { color: theme.colors.text }]}>sessions</Text>
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>
-              {todayStats?.sessionsCompleted || 0}
-            </Text>
-          </View>
+      {/* Today + This Week Grid */}
+      <View style={styles.statsGrid}>
+        <View style={[styles.statBlock, { backgroundColor: theme.colors.surface }]}>
+          <Text style={[styles.blockLabel, { color: theme.colors.textTertiary }]}>today</Text>
+          <Text style={[styles.blockValue, { color: theme.colors.text }]}>
+            {formatFocusTime(todayStats?.focusTimeMinutes || 0)}
+          </Text>
+          <Text style={[styles.blockSubtext, { color: theme.colors.textSecondary }]}>
+            {todayStats?.sessionsCompleted || 0} {todayStats?.sessionsCompleted === 1 ? 'session' : 'sessions'}
+          </Text>
         </View>
-      </View>
-
-      {/* This Week */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.textTertiary }]}>this week</Text>
-        <View style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
-          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.statLabel, { color: theme.colors.text }]}>days you focused</Text>
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>
-              {thisWeekStats.daysActive}
-            </Text>
-          </View>
-          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.statLabel, { color: theme.colors.text }]}>focus time</Text>
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>
-              {formatFocusTime(thisWeekStats.totalMinutes)}
-            </Text>
-          </View>
-          <View style={[styles.statRow, { borderBottomWidth: 0 }]}>
-            <Text style={[styles.statLabel, { color: theme.colors.text }]}>sessions</Text>
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>
-              {thisWeekStats.totalSessions}
-            </Text>
-          </View>
+        <View style={[styles.statBlock, { backgroundColor: theme.colors.surface }]}>
+          <Text style={[styles.blockLabel, { color: theme.colors.textTertiary }]}>this week</Text>
+          <Text style={[styles.blockValue, { color: theme.colors.text }]}>
+            {formatFocusTime(thisWeekStats.totalMinutes)}
+          </Text>
+          <Text style={[styles.blockSubtext, { color: theme.colors.textSecondary }]}>
+            {thisWeekStats.totalSessions} {thisWeekStats.totalSessions === 1 ? 'session' : 'sessions'} · {thisWeekStats.daysActive} {thisWeekStats.daysActive === 1 ? 'day' : 'days'}
+          </Text>
         </View>
       </View>
 
@@ -173,20 +155,20 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
       {/* All Time Stats */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: theme.colors.textTertiary }]}>all time</Text>
-        <View style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
-          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.statLabel, { color: theme.colors.text }]}>total focus time</Text>
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>
+        <View style={styles.allTimeRow}>
+          <View style={[styles.allTimeBlock, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.allTimeValue, { color: theme.colors.text }]}>
               {formatFocusTime(stats.totalFocusTime)}
             </Text>
+            <Text style={[styles.allTimeLabel, { color: theme.colors.textTertiary }]}>focus time</Text>
           </View>
-          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.statLabel, { color: theme.colors.text }]}>total sessions</Text>
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>{stats.totalSessions}</Text>
+          <View style={[styles.allTimeBlock, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.allTimeValue, { color: theme.colors.text }]}>{stats.totalSessions}</Text>
+            <Text style={[styles.allTimeLabel, { color: theme.colors.textTertiary }]}>sessions</Text>
           </View>
-          <View style={[styles.statRow, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.statLabel, { color: theme.colors.text }]}>days active</Text>
-            <Text style={[styles.statValue, { color: theme.colors.text }]}>{stats.dailyStats.length}</Text>
+          <View style={[styles.allTimeBlock, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.allTimeValue, { color: theme.colors.text }]}>{stats.dailyStats.length}</Text>
+            <Text style={[styles.allTimeLabel, { color: theme.colors.textTertiary }]}>days</Text>
           </View>
         </View>
       </View>
@@ -205,8 +187,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 24,
-    paddingBottom: 60,
+    padding: 20,
+    paddingBottom: 40,
   },
   loadingText: {
     fontSize: 16,
@@ -215,11 +197,11 @@ const styles = StyleSheet.create({
     marginTop: 100,
   },
   header: {
-    paddingHorizontal: 24,
-    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
   },
   backButton: {
-    marginBottom: 16,
+    marginBottom: 12,
     alignSelf: 'flex-start',
   },
   backButtonText: {
@@ -231,18 +213,18 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '300',
     letterSpacing: 0.5,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   tabContainer: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
+    gap: 10,
+    marginTop: 4,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
   },
@@ -257,39 +239,74 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  section: {
-    marginBottom: 32,
+  // Today + This Week grid
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
   },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '400',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    marginBottom: 12,
-  },
-  statCard: {
-    borderRadius: 16,
-    padding: 20,
+  statBlock: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,
   },
-  statRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  statLabel: {
-    fontSize: 16,
-    fontWeight: '300',
-    letterSpacing: 0.3,
-  },
-  statValue: {
-    fontSize: 18,
+  blockLabel: {
+    fontSize: 11,
     fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  blockValue: {
+    fontSize: 28,
+    fontWeight: '300',
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  blockSubtext: {
+    fontSize: 13,
+    fontWeight: '400',
+    letterSpacing: 0.2,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
+  // All time horizontal row
+  allTimeRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  allTimeBlock: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  allTimeValue: {
+    fontSize: 20,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  allTimeLabel: {
+    fontSize: 11,
+    fontWeight: '400',
+    letterSpacing: 0.3,
   },
 });
