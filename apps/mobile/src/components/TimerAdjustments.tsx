@@ -90,8 +90,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
-    gap: 20,
+    marginTop: 12,
+    gap: 16,
   },
   section: {
     flexDirection: 'row',

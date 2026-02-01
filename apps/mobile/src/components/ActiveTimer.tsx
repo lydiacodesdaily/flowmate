@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Modal, Switch, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Modal, Switch, ScrollView, LayoutAnimation, Platform, UIManager } from 'react-native';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTimerContext } from '../contexts/TimerContext';
@@ -14,6 +19,8 @@ import { SessionSetup } from './SessionSetup';
 import { SessionComplete } from './SessionComplete';
 import { EarlyStopModal } from './EarlyStopModal';
 import { TransitionWarning } from './TransitionWarning';
+import { ActiveSteps } from './ActiveSteps';
+import { EarlyCompletionBanner } from './EarlyCompletionBanner';
 import { ContextualTip } from './tips';
 import { audioService } from '../services/audioService';
 import { statsService } from '../services/statsService';
@@ -64,6 +71,12 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 
   // Focus lock state
   const [focusLockEnabled, setFocusLockEnabled] = useState(false);
+
+  // Early completion banner dismissed state
+  const [earlyCompletionDismissed, setEarlyCompletionDismissed] = useState(false);
+
+  // Expandable intent state
+  const [intentExpanded, setIntentExpanded] = useState(false);
 
   // Load focus lock setting on mount
   useEffect(() => {
@@ -310,6 +323,44 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     removePomodoros(1);
   };
 
+  // Step toggling during active session
+  const handleToggleStep = async (stepId: string) => {
+    if (!sessionDraft?.steps) return;
+
+    await hapticService.selection();
+    const updatedSteps = sessionDraft.steps.map((step) =>
+      step.id === stepId ? { ...step, done: !step.done } : step
+    );
+    updateSessionDraft({ ...sessionDraft, steps: updatedSteps });
+
+    // Reset early completion dismissed state when toggling steps
+    setEarlyCompletionDismissed(false);
+  };
+
+  // Early completion handlers
+  const handleEarlyComplete = async () => {
+    await hapticService.medium();
+    // Show the completion modal for custom focus sessions
+    if (timerMode === 'custom' && timerType === 'focus') {
+      setShowCompleteModal(true);
+    } else {
+      // For other modes, just skip to next session or complete
+      skip();
+    }
+  };
+
+  const handleDismissEarlyCompletion = async () => {
+    await hapticService.light();
+    setEarlyCompletionDismissed(true);
+  };
+
+  // Check if all steps are complete (for early completion prompt)
+  const allStepsComplete = sessionDraft?.steps?.length > 0 &&
+    sessionDraft.steps.every(step => step.done);
+  const showEarlyCompletionBanner = allStepsComplete &&
+    !earlyCompletionDismissed &&
+    status === 'running';
+
   // Session Setup handlers
   const handleSetupStart = (draft: any) => {
     setSessionDraft(draft);
@@ -423,7 +474,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     <View style={[styles.container, { backgroundColor: containerBackground }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
-      {/* Minimal header with back, mute toggle, and settings */}
+      {/* Minimal header with back, skip, and settings */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         {isLocked ? (
           <View style={styles.headerButton}>
@@ -434,31 +485,71 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
             <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>←</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity onPress={handleToggleSettings} style={styles.headerButton}>
-          <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>⋯</Text>
-        </TouchableOpacity>
+
+        {/* Right side: Skip (when available) + Settings */}
+        <View style={styles.headerRight}>
+          {!isLocked && status !== 'idle' && status !== 'completed' && (
+            <TouchableOpacity onPress={handleSkip} style={styles.skipHeaderButton}>
+              <Text style={[styles.skipHeaderText, { color: theme.colors.textTertiary }]}>
+                Skip →
+              </Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={handleToggleSettings} style={styles.headerButton}>
+            <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>⋯</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Main content - centered and spacious */}
+      {/* Main content - no scroll, everything fits on screen */}
       <View style={styles.content}>
-        <SessionIndicators
-          sessions={sessions}
-          currentSessionIndex={currentSessionIndex}
-        />
+        <View style={styles.mainArea}>
+          <SessionIndicators
+            sessions={sessions}
+            currentSessionIndex={currentSessionIndex}
+          />
 
-        <View style={styles.timerContainer}>
+          <View style={styles.timerContainer}>
           <TimerDisplay
             timeRemaining={timeRemaining}
             totalTime={totalTime}
           />
 
-          {/* Display session intent if present */}
+          {/* Display session intent if present - truncated, tap to expand */}
           {sessionDraft?.intent && (
-            <View style={styles.intentContainer}>
-              <Text style={[styles.intentText, { color: theme.colors.textSecondary }]}>
+            <TouchableOpacity
+              style={styles.intentContainer}
+              onPress={() => {
+                if (!reduceMotion) {
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                }
+                setIntentExpanded(!intentExpanded);
+              }}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[styles.intentText, { color: theme.colors.textSecondary }]}
+                numberOfLines={intentExpanded ? undefined : 2}
+              >
                 {sessionDraft.intent}
               </Text>
-            </View>
+            </TouchableOpacity>
+          )}
+
+          {/* Display task breakdown steps - collapsible */}
+          {sessionDraft?.steps?.length > 0 && (
+            <ActiveSteps
+              steps={sessionDraft.steps}
+              onToggleStep={handleToggleStep}
+            />
+          )}
+
+          {/* Early completion banner when all steps are done */}
+          {showEarlyCompletionBanner && (
+            <EarlyCompletionBanner
+              onEndEarly={handleEarlyComplete}
+              onDismiss={handleDismissEarlyCompletion}
+            />
           )}
 
           {/* Transition warning - "wrapping up" indicator */}
@@ -487,6 +578,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
             />
           )}
         </View>
+        </View>
 
         <View style={styles.controlsContainer}>
           <TimerControls
@@ -495,7 +587,6 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
             onPause={handlePause}
             onResume={handleResume}
             onReset={isLocked ? undefined : handleReset}
-            onSkip={isLocked ? undefined : handleSkip}
           />
         </View>
       </View>
@@ -621,36 +712,50 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '300',
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  skipHeaderButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  skipHeaderText: {
+    fontSize: 14,
+    fontWeight: '400',
+    letterSpacing: 0.2,
+  },
   content: {
     flex: 1,
-    paddingTop: 16,
   },
-  timerContainer: {
+  mainArea: {
     flex: 1,
     justifyContent: 'center',
+  },
+  timerContainer: {
     alignItems: 'center',
-    paddingHorizontal: 40,
-    minHeight: 0,
+    paddingHorizontal: 24,
   },
   intentContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+    marginTop: 12,
+    paddingHorizontal: 16,
     maxWidth: '100%',
   },
   intentText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '400',
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 22,
     letterSpacing: 0.2,
   },
   progressContainer: {
     width: '100%',
-    marginTop: 40,
+    marginTop: 16,
   },
   controlsContainer: {
-    paddingBottom: 40,
-    paddingTop: 20,
+    paddingBottom: 32,
+    paddingTop: 12,
   },
   modalOverlay: {
     flex: 1,
