@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
@@ -370,6 +371,23 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           <Text style={[styles.settingValue, { color: theme.colors.textSecondary }]}>1.0.0</Text>
         </View>
       </View>
+
+      {/* Feedback Card */}
+      <View style={[styles.feedbackCard, { backgroundColor: theme.colors.surface }]}>
+        <Text style={[styles.feedbackTitle, { color: theme.colors.text }]}>
+          Got thoughts?
+        </Text>
+        <Text style={[styles.feedbackDescription, { color: theme.colors.textSecondary }]}>
+          Ideas, bugs, or anything on your mind — we'd love to hear it.
+        </Text>
+        <TouchableOpacity
+          style={[styles.feedbackButton, { backgroundColor: theme.colors.primary }]}
+          onPress={() => Linking.openURL('https://tally.so/r/Y50Qb5')}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.feedbackButtonText}>Share Feedback</Text>
+        </TouchableOpacity>
+      </View>
       </ScrollView>
     </View>
   );
@@ -497,5 +515,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
+  },
+  feedbackCard: {
+    marginTop: 32,
+    marginBottom: 40,
+    marginHorizontal: 16,
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  feedbackTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  feedbackDescription: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  feedbackButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  feedbackButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
