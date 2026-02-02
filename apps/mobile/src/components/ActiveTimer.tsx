@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Modal, Switch, ScrollView, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Modal, Switch, ScrollView, LayoutAnimation, Platform, UIManager, Pressable } from 'react-native';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -727,14 +727,15 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         animationType={reduceMotion ? 'none' : 'fade'}
         onRequestClose={handleToggleSettings}
       >
-        <TouchableOpacity
-          style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}
-          activeOpacity={1}
-          onPress={handleToggleSettings}
-        >
+        <View style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}>
+          {/* Dismiss overlay - sibling to content so it doesn't block scroll */}
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={handleToggleSettings}
+          />
+          {/* Content container */}
           <View
             style={[styles.modalContent, { backgroundColor: theme.colors.background }]}
-            onStartShouldSetResponder={() => true}
           >
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -773,7 +774,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
               </TouchableOpacity>
             </ScrollView>
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
 
       {/* Session Setup Modal */}

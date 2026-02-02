@@ -610,7 +610,7 @@ class AudioService {
       }
 
       // Reload with new tick sound type
-      this.loadTickSounds();
+      await this.loadTickSounds();
     } else {
       // Just update volume of existing sounds
       if (this.tickSound) {
