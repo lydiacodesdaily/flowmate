@@ -38,9 +38,9 @@
         "track": "internal"
       },
       "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-asc-app-id",
-        "appleTeamId": "your-apple-team-id"
+        "appleId": "hello@lydiastud.io",
+        "ascAppId": "6758559973",
+        "appleTeamId": "T7UWL4K69Z"
       }
     }
   }
