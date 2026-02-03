@@ -12,6 +12,7 @@ import {
   TimerDisplaySettingsProvider,
   TimerVisualProvider,
   CelebrationSettingsProvider,
+  ReviewPromptProvider,
 } from './src/contexts';
 import { FloatingTimerMini } from './src/components/FloatingTimerMini';
 import { hasCompletedOnboarding } from './src/utils/storage';
@@ -79,9 +80,11 @@ export default function App() {
           <TimerDisplaySettingsProvider>
             <TimerVisualProvider>
               <CelebrationSettingsProvider>
-                <TimerProvider>
-                  <AppContent />
-                </TimerProvider>
+                <ReviewPromptProvider>
+                  <TimerProvider>
+                    <AppContent />
+                  </TimerProvider>
+                </ReviewPromptProvider>
               </CelebrationSettingsProvider>
             </TimerVisualProvider>
           </TimerDisplaySettingsProvider>

@@ -556,3 +556,49 @@ export const saveTransitionWarningSettings = async (settings: TransitionWarningS
     console.error('Failed to save transition warning settings:', error);
   }
 };
+
+/**
+ * Review prompt settings storage
+ * Tracks when and whether to show the in-app review prompt
+ */
+
+export interface ReviewPromptSettings {
+  /** Timestamp of first app launch (for "2 days since install" check) */
+  firstLaunchTimestamp: number | null;
+  /** Number of completed focus sessions */
+  completedFocusSessions: number;
+  /** App version when we last showed the prompt */
+  lastPromptedVersion: string | null;
+  /** Timestamp when user last dismissed the prompt */
+  lastDismissedTimestamp: number | null;
+}
+
+const REVIEW_PROMPT_KEY = '@flowmate:review-prompt';
+
+export const getDefaultReviewPromptSettings = (): ReviewPromptSettings => ({
+  firstLaunchTimestamp: null,
+  completedFocusSessions: 0,
+  lastPromptedVersion: null,
+  lastDismissedTimestamp: null,
+});
+
+export const loadReviewPromptSettings = async (): Promise<ReviewPromptSettings> => {
+  try {
+    const stored = await AsyncStorage.getItem(REVIEW_PROMPT_KEY);
+    if (!stored) return getDefaultReviewPromptSettings();
+
+    const settings = JSON.parse(stored) as Partial<ReviewPromptSettings>;
+    return { ...getDefaultReviewPromptSettings(), ...settings };
+  } catch (error) {
+    console.error('Failed to load review prompt settings:', error);
+    return getDefaultReviewPromptSettings();
+  }
+};
+
+export const saveReviewPromptSettings = async (settings: ReviewPromptSettings): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(REVIEW_PROMPT_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save review prompt settings:', error);
+  }
+};

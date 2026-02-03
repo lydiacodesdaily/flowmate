@@ -19,6 +19,7 @@ import {
   useTimerDisplaySettings,
   useTimerVisual,
   useCelebrationSettings,
+  useReviewPrompt,
 } from '../contexts';
 import { TIMER_VISUAL_PRESETS } from '../constants/timerVisuals';
 import { hapticService } from '../services/hapticService';
@@ -37,6 +38,24 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
   const { reduceMotion, hapticsEnabled, skipFocusPrompt, setReduceMotion, setHapticsEnabled, setSkipFocusPrompt } = useAccessibility();
   const { showElapsedTime, setShowElapsedTime } = useTimerDisplaySettings();
   const { selectedStyle: selectedVisual, selectStyle: selectVisual, isLoading: visualLoading } = useTimerVisual();
+  const { forceShowPrompt, getDebugInfo, resetSettings: resetReviewSettings } = useReviewPrompt();
+
+  // Review prompt debug state (development only)
+  const [reviewDebugInfo, setReviewDebugInfo] = useState<{
+    eligible: boolean;
+    reasons: string[];
+    settings: {
+      firstLaunchTimestamp: number | null;
+      completedFocusSessions: number;
+      lastPromptedVersion: string | null;
+      lastDismissedTimestamp: number | null;
+    };
+  } | null>(null);
+
+  const refreshReviewDebugInfo = async () => {
+    const info = await getDebugInfo();
+    setReviewDebugInfo(info);
+  };
 
   const handleVisualSelect = async (visualId: typeof selectedVisual) => {
     await hapticService.selection();
@@ -388,6 +407,80 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           <Text style={styles.feedbackButtonText}>Share Feedback</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Development Debug Section - Only visible in dev builds */}
+      {__DEV__ && (
+        <View style={[styles.section, { backgroundColor: theme.colors.surface, marginBottom: 40 }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.warning }]}>Developer Tools</Text>
+          <Text style={[styles.sectionDescription, { color: theme.colors.textTertiary }]}>
+            These options are only visible in development builds.
+          </Text>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingLabelContainer}>
+              <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Review Prompt Debug</Text>
+              <Text style={[styles.settingDescription, { color: theme.colors.textTertiary }]}>
+                Test the in app review flow
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.debugButton, { backgroundColor: theme.colors.surfaceSecondary }]}
+              onPress={refreshReviewDebugInfo}
+            >
+              <Text style={[styles.debugButtonText, { color: theme.colors.primary }]}>Check</Text>
+            </TouchableOpacity>
+          </View>
+
+          {reviewDebugInfo && (
+            <View style={[styles.debugInfoCard, { backgroundColor: theme.colors.surfaceSecondary }]}>
+              <Text style={[styles.debugInfoTitle, { color: theme.colors.text }]}>
+                Eligible: {reviewDebugInfo.eligible ? '✓ Yes' : '✗ No'}
+              </Text>
+              <Text style={[styles.debugInfoText, { color: theme.colors.textSecondary }]}>
+                Sessions: {reviewDebugInfo.settings.completedFocusSessions}
+              </Text>
+              <Text style={[styles.debugInfoText, { color: theme.colors.textSecondary }]}>
+                First launch: {reviewDebugInfo.settings.firstLaunchTimestamp
+                  ? new Date(reviewDebugInfo.settings.firstLaunchTimestamp).toLocaleDateString()
+                  : 'Not set'}
+              </Text>
+              <Text style={[styles.debugInfoText, { color: theme.colors.textSecondary }]}>
+                Last prompted: {reviewDebugInfo.settings.lastPromptedVersion || 'Never'}
+              </Text>
+              {reviewDebugInfo.reasons.length > 0 && (
+                <View style={styles.debugReasons}>
+                  <Text style={[styles.debugInfoText, { color: theme.colors.warning }]}>
+                    Blocking reasons:
+                  </Text>
+                  {reviewDebugInfo.reasons.map((reason, i) => (
+                    <Text key={i} style={[styles.debugInfoText, { color: theme.colors.textTertiary }]}>
+                      • {reason}
+                    </Text>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+
+          <View style={styles.debugButtonRow}>
+            <TouchableOpacity
+              style={[styles.debugActionButton, { backgroundColor: theme.colors.primary }]}
+              onPress={forceShowPrompt}
+            >
+              <Text style={styles.debugActionButtonText}>Show Prompt</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.debugActionButton, { backgroundColor: theme.colors.error }]}
+              onPress={async () => {
+                await resetReviewSettings();
+                await refreshReviewDebugInfo();
+              }}
+            >
+              <Text style={styles.debugActionButtonText}>Reset Data</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
       </ScrollView>
     </View>
   );
@@ -543,6 +636,55 @@ const styles = StyleSheet.create({
   feedbackButtonText: {
     color: '#FFFFFF',
     fontSize: 15,
+    fontWeight: '600',
+  },
+  debugButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  debugButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  debugInfoCard: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 10,
+  },
+  debugInfoTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  debugInfoText: {
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  debugReasons: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(128, 128, 128, 0.2)',
+  },
+  debugButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginTop: 16,
+    marginBottom: 8,
+    paddingHorizontal: 16,
+  },
+  debugActionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  debugActionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '600',
   },
 });

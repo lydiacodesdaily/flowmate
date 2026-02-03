@@ -7,7 +7,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTimerContext } from '../contexts/TimerContext';
+import { useTimerContext, useReviewPrompt } from '../contexts';
 import { useKeepAwake } from '../hooks/useKeepAwake';
 import { TimerDisplay } from './TimerDisplay';
 import { TimerControls } from './TimerControls';
@@ -117,6 +117,8 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     transitionSecondsRemaining,
   } = useTimerContext();
 
+  const { onFocusSessionComplete } = useReviewPrompt();
+
   // Refs for callback access (to avoid stale closures)
   const sessionDraftRef = useRef(sessionDraft);
   const timerModeRef = useRef(timerMode);
@@ -124,6 +126,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const sessionStartTimeRef = useRef(sessionStartTime);
   const sessionEndTimeRef = useRef(sessionEndTime);
   const totalTimeRef = useRef(totalTime);
+  const onFocusSessionCompleteRef = useRef(onFocusSessionComplete);
 
   // Keep refs in sync with current values
   useEffect(() => {
@@ -133,7 +136,8 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     sessionStartTimeRef.current = sessionStartTime;
     sessionEndTimeRef.current = sessionEndTime;
     totalTimeRef.current = totalTime;
-  }, [sessionDraft, timerMode, timerType, sessionStartTime, sessionEndTime, totalTime]);
+    onFocusSessionCompleteRef.current = onFocusSessionComplete;
+  }, [sessionDraft, timerMode, timerType, sessionStartTime, sessionEndTime, totalTime, onFocusSessionComplete]);
 
   // Check if controls should be locked
   const isLocked = focusLockEnabled && (status === 'running' || status === 'paused');
@@ -250,6 +254,10 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         if (currentType === 'focus' && (hasIntent || hasSteps)) {
           setShowCompleteModal(true);
         } else {
+          // Track focus session completion for review prompt eligibility
+          if (currentType === 'focus') {
+            await onFocusSessionCompleteRef.current();
+          }
           // No intent/steps - just navigate back after a brief moment
           setTimeout(() => {
             setSessionDraft({ intent: '', steps: [] });
@@ -552,6 +560,11 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       }
     }
 
+    // Track focus session completion for review prompt eligibility
+    if (timerType === 'focus' && sessionStatus === 'completed') {
+      await onFocusSessionComplete();
+    }
+
     // Clear session draft for next session
     console.log('handleSessionSave: Clearing sessionDraft and resetting timer');
     setSessionDraft({ intent: '', steps: [] });
@@ -560,9 +573,16 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     navigation.navigate('ModeSelection');
   };
 
-  const handleSessionDismiss = () => {
+  const handleSessionDismiss = async () => {
     // Session is already auto-saved - just close the modal and navigate
     console.log('handleSessionDismiss: Session already saved, closing modal');
+
+    // Track focus session completion for review prompt eligibility
+    // (session was auto-saved as "completed" before showing the modal)
+    if (timerType === 'focus') {
+      await onFocusSessionComplete();
+    }
+
     setAutoSavedRecordId(null);
     setSessionDraft({ intent: '', steps: [] });
     reset(); // Reset timer status to idle
