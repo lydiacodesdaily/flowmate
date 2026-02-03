@@ -1399,6 +1399,8 @@ export default function Home() {
         </div>
         <div className="mt-1">
           <a href="/privacy" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Privacy</a>
+          {' · '}
+          <a href="/terms" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Terms</a>
         </div>
       </footer>
     </main>

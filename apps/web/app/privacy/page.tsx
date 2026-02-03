@@ -179,6 +179,12 @@ export default function PrivacyPage() {
             <span className="font-medium">Open FlowMate</span>
           </Link>
 
+          <div className="text-sm text-slate-500 dark:text-cyan-200/60">
+            <Link href="/terms" className="hover:text-slate-700 dark:hover:text-cyan-300 underline transition-colors">
+              Terms of Service
+            </Link>
+          </div>
+
           <div className="pt-4 border-t border-slate-200/50 dark:border-slate-700/50">
             <div className="text-sm text-slate-500 dark:text-cyan-200/60">
               Made by Liddy

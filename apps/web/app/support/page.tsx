@@ -50,6 +50,16 @@ export default function SupportPage() {
             <span className="font-medium">Open Flowmate</span>
           </Link>
 
+          <div className="text-sm text-slate-500 dark:text-cyan-200/60">
+            <Link href="/privacy" className="hover:text-slate-700 dark:hover:text-cyan-300 underline transition-colors">
+              Privacy
+            </Link>
+            {' · '}
+            <Link href="/terms" className="hover:text-slate-700 dark:hover:text-cyan-300 underline transition-colors">
+              Terms
+            </Link>
+          </div>
+
           <div className="pt-4 border-t border-slate-200/50 dark:border-slate-700/50">
             <div className="text-sm text-slate-500 dark:text-cyan-200/60">
               Made by Liddy
