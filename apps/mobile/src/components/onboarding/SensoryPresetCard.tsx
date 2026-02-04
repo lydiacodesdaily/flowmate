@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { useTheme } from '../../theme';
 import { SensoryPreset } from '../../constants/sensoryPresets';
 import { hapticService } from '../../services/hapticService';
@@ -13,6 +13,16 @@ interface SensoryPresetCardProps {
 
 export function SensoryPresetCard({ preset, isSelected, onSelect }: SensoryPresetCardProps) {
   const { theme } = useTheme();
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  const playVisualPulse = () => {
+    pulseAnim.setValue(1);
+    Animated.timing(pulseAnim, {
+      toValue: 0,
+      duration: 600,
+      useNativeDriver: false,
+    }).start();
+  };
 
   const playPreview = async () => {
     // Play haptic if preset has haptics enabled
@@ -40,12 +50,29 @@ export function SensoryPresetCard({ preset, isSelected, onSelect }: SensoryPrese
           const player = createAudioPlayer(soundFile);
           player.volume = preset.config.tickVolume;
           player.play();
-          // Clean up after playing
           setTimeout(() => player.remove(), 1000);
         }
       } catch (error) {
         console.error('Failed to play preview sound:', error);
       }
+    }
+
+    // Play voice sample for presets that rely on announcements but have no tick
+    if (preset.config.announcements && preset.config.tickSound === 'none') {
+      try {
+        const voiceSample = require('../../../assets/audio/countdown/minutes/m05.mp3');
+        const player = createAudioPlayer(voiceSample);
+        player.volume = preset.config.announcementVolume;
+        player.play();
+        setTimeout(() => player.remove(), 3000);
+      } catch (error) {
+        console.error('Failed to play voice preview:', error);
+      }
+    }
+
+    // Visual pulse for presets with no tick sound and no haptics
+    if (preset.config.tickSound === 'none' && !preset.config.haptics) {
+      playVisualPulse();
     }
   };
 
@@ -53,6 +80,11 @@ export function SensoryPresetCard({ preset, isSelected, onSelect }: SensoryPrese
     playPreview();
     onSelect();
   };
+
+  const pulseBackground = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['transparent', theme.colors.primary + '30'],
+  });
 
   return (
     <TouchableOpacity
@@ -67,6 +99,10 @@ export function SensoryPresetCard({ preset, isSelected, onSelect }: SensoryPrese
         },
       ]}
     >
+      <Animated.View
+        style={[StyleSheet.absoluteFill, styles.pulseOverlay, { backgroundColor: pulseBackground }]}
+        pointerEvents="none"
+      />
       <View style={styles.iconContainer}>
         <Text style={styles.icon}>{preset.icon}</Text>
       </View>
@@ -108,6 +144,10 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
+    overflow: 'hidden' as const,
+  },
+  pulseOverlay: {
+    borderRadius: 12,
   },
   iconContainer: {
     width: 40,

@@ -27,13 +27,13 @@ interface OnboardingNavigatorProps {
 
 export function OnboardingNavigator({ onComplete }: OnboardingNavigatorProps) {
   // Track user selections during onboarding
-  const [selectedPreset, setSelectedPreset] = useState<SensoryPresetId>('full');
+  const [selectedPreset, setSelectedPreset] = useState<SensoryPresetId>('gentle');
   const [selectedVisual, setSelectedVisual] = useState<TimerVisualStyle>('thin');
   const { reduceMotion } = useAccessibility();
 
   const handleSkip = async () => {
     // Apply defaults and complete onboarding
-    await saveSensoryPresetSettings({ selectedPreset: 'full' });
+    await saveSensoryPresetSettings({ selectedPreset: 'gentle' });
     await saveTimerVisualSettings({ selectedStyle: 'thin' });
     await markOnboardingCompleted();
     onComplete();

@@ -11,7 +11,7 @@ import { audioService } from '../services/audioService';
 import { hapticService } from '../services/hapticService';
 
 export function useSensoryPresets() {
-  const [selectedPreset, setSelectedPreset] = useState<SensoryPresetId>('full');
+  const [selectedPreset, setSelectedPreset] = useState<SensoryPresetId>('gentle');
   const [customConfig, setCustomConfig] = useState<CustomSensoryConfig>(getDefaultCustomSensoryConfig());
   const [isLoading, setIsLoading] = useState(true);
 

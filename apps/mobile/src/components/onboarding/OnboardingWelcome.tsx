@@ -42,7 +42,7 @@ export function OnboardingWelcome({ onNext, onSkip }: OnboardingWelcomeProps) {
 
         <Text style={[styles.description, { color: theme.colors.textSecondary }]}>
           Timers designed for how your brain works.{'\n'}
-          Let's personalize your experience.
+          Let's personalize it.
         </Text>
       </View>
 
