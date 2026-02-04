@@ -1,7 +1,6 @@
 "use client";
 
-import { SessionRecord } from "../types";
-import { getTodaysSessions, getTodayStats, getAllTimeTotalMinutes, getAllTimeSavedSessions, formatDuration, formatTime } from "../utils/sessionUtils";
+import { getTodaysSessions, getTodayStats, getAllTimeTotalMinutes, getAllTimeSavedSessions, formatDuration, formatTime, RETENTION_DAYS } from "../utils/sessionUtils";
 import { formatFocusTime } from "../utils/statsUtils";
 
 interface DailySummaryProps {
@@ -179,6 +178,13 @@ export const DailySummary = ({ onClose }: DailySummaryProps) => {
               ))}
             </div>
           )}
+
+          {/* Retention notice */}
+          <div className="mt-6 text-center">
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              Showing last {RETENTION_DAYS} days of sessions
+            </p>
+          </div>
         </div>
       </div>
     </div>

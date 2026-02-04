@@ -13,6 +13,7 @@ interface SessionCompleteProps {
 }
 
 const MAX_NOTE_LENGTH = 140;
+const MIN_PARTIAL_THRESHOLD_MINUTES = 1; // Sessions under 1 minute are "skipped" not "partial"
 
 export const SessionComplete = ({
   completedMinutes,
@@ -21,7 +22,11 @@ export const SessionComplete = ({
   sessionDraft,
   timerType = 'focus',
 }: SessionCompleteProps) => {
-  const [selectedStatus, setSelectedStatus] = useState<SessionStatus | null>(null);
+  // Pre-select "skipped" for very short sessions (< 1 minute)
+  const isTooShortForPartial = completedMinutes < MIN_PARTIAL_THRESHOLD_MINUTES;
+  const [selectedStatus, setSelectedStatus] = useState<SessionStatus | null>(
+    isTooShortForPartial ? 'skipped' : null
+  );
   const [steps, setSteps] = useState<PrepStep[]>([]);
   const [note, setNote] = useState("");
   const [confettiShown, setConfettiShown] = useState(false);
@@ -42,14 +47,15 @@ export const SessionComplete = ({
     // Set a 5-minute timeout for auto-save
     const timeoutId = setTimeout(() => {
       if (!hasAutoSavedRef.current) {
-        // Auto-save as 'partial' if user hasn't explicitly saved
-        onSave('partial', steps.length > 0 ? steps : undefined, note || undefined);
+        // Auto-save as 'skipped' for very short sessions, 'partial' otherwise
+        const autoSaveStatus = isTooShortForPartial ? 'skipped' : 'partial';
+        onSave(autoSaveStatus, steps.length > 0 ? steps : undefined, note || undefined);
         hasAutoSavedRef.current = true;
       }
     }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearTimeout(timeoutId);
-  }, [steps, note, onSave]);
+  }, [steps, note, onSave, isTooShortForPartial]);
 
   const handleToggleStep = (id: string) => {
     setSteps(steps.map(step =>

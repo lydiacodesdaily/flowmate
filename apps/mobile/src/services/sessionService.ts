@@ -15,7 +15,8 @@ const STORAGE_KEYS = {
   HISTORY: '@flowmate:v1:sessionHistory',
 };
 
-const MAX_HISTORY_ITEMS = 30;
+// Retention period in days (time-based, not count-based)
+export const RETENTION_DAYS = 90;
 
 // ===== Draft Management =====
 
@@ -64,13 +65,18 @@ export async function getHistory(): Promise<SessionRecord[]> {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.HISTORY);
     if (data) {
       const history: SessionRecord[] = JSON.parse(data);
-      // Backward compatibility: add timerType if missing
-      return history.map((session: any) => {
-        if (!session.timerType) {
-          return { ...session, timerType: 'focus' as TimerType };
-        }
-        return session;
-      });
+
+      // Filter to retention period and add backward compatibility
+      const cutoffDate = Date.now() - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
+      return history
+        .filter(session => session.startedAt >= cutoffDate)
+        .map((session: any) => {
+          // Backward compatibility: add timerType if missing
+          if (!session.timerType) {
+            return { ...session, timerType: 'focus' as TimerType };
+          }
+          return session;
+        });
     }
   } catch (error) {
     console.error('Error loading history:', error);
@@ -81,7 +87,12 @@ export async function getHistory(): Promise<SessionRecord[]> {
 export async function appendHistory(record: SessionRecord): Promise<void> {
   try {
     const history = await getHistory();
-    const updatedHistory = [record, ...history].slice(0, MAX_HISTORY_ITEMS);
+
+    // Filter to keep only sessions within retention period (time-based)
+    const cutoffDate = Date.now() - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const filteredHistory = history.filter(session => session.startedAt >= cutoffDate);
+
+    const updatedHistory = [record, ...filteredHistory];
     await AsyncStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updatedHistory));
   } catch (error) {
     console.error('Error appending history:', error);

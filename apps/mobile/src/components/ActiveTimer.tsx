@@ -347,17 +347,23 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     setShowEarlyStopModal(false);
   };
 
+  // Minimum seconds required to count as "partial" (otherwise it's "skipped")
+  const MIN_PARTIAL_THRESHOLD_SECONDS = 60;
+
   const handleEarlyStopConfirm = async () => {
     await hapticService.medium();
     audioService.resetAnnouncementTracking();
     setShowEarlyStopModal(false);
     await notificationService.cancelAllNotifications();
 
-    // Auto-save session with "partial" status
+    // Auto-save session - use "skipped" for < 60s, "partial" for meaningful work
     if (sessionStartTime && timerMode && timerType) {
       const endTime = Date.now();
       const completedSeconds = totalTime - timeRemaining;
       const sessionType = currentSession?.type || 'focus';
+
+      // Sessions under 60 seconds are considered "skipped" (false starts)
+      const sessionStatus = completedSeconds < MIN_PARTIAL_THRESHOLD_SECONDS ? 'skipped' : 'partial';
 
       const record = createSessionRecord(
         sessionStartTime,
@@ -367,23 +373,24 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         timerMode,
         timerType,
         sessionType,
-        'partial',
+        sessionStatus,
         sessionDraft
       );
 
       await appendHistory(record);
       setAutoSavedRecordId(record.id);
 
-      // Show enhancement modal for focus sessions with intent or steps
+      // Show enhancement modal for partial focus sessions with intent or steps
+      // Skip the modal for "skipped" sessions (< 60s) - no meaningful work to reflect on
       const hasIntent = sessionDraft?.intent && sessionDraft.intent.trim().length > 0;
       const hasSteps = sessionDraft?.steps && sessionDraft.steps.length > 0;
-      if (timerType === 'focus' && (hasIntent || hasSteps)) {
+      if (sessionStatus === 'partial' && timerType === 'focus' && (hasIntent || hasSteps)) {
         setShowCompleteModal(true);
         return; // Don't navigate yet - modal will handle it
       }
     }
 
-    // No intent/steps - just navigate back
+    // No intent/steps or skipped session - just navigate back
     reset();
     navigation.navigate('ModeSelection');
   };

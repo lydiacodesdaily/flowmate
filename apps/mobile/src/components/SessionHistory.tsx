@@ -7,7 +7,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { DailySummary, SessionRecord } from '@flowmate/shared/types';
-import { formatDuration, formatTime } from '../services/sessionService';
+import { formatDuration, formatTime, RETENTION_DAYS } from '../services/sessionService';
 import { useTheme } from '../theme/ThemeContext';
 
 interface SessionHistoryProps {
@@ -73,25 +73,11 @@ export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
                 </View>
 
                 <View style={styles.dayHeaderRight}>
-                  {/* Status badges */}
-                  {summary.completedCount > 0 && (
-                    <View style={[styles.statusBadge, styles.statusBadgeCompleted]}>
-                      <Text style={styles.statusBadgeText}>
-                        ✓ {summary.completedCount}
-                      </Text>
-                    </View>
-                  )}
-                  {summary.partialCount > 0 && (
-                    <View style={[styles.statusBadge, styles.statusBadgePartial]}>
-                      <Text style={styles.statusBadgeText}>
-                        ◐ {summary.partialCount}
-                      </Text>
-                    </View>
-                  )}
-                  {summary.skippedCount > 0 && (
-                    <View style={[styles.statusBadge, styles.statusBadgeSkipped]}>
-                      <Text style={styles.statusBadgeText}>
-                        ⊘ {summary.skippedCount}
+                  {/* Combined session count - simple and encouraging */}
+                  {(summary.completedCount + summary.partialCount) > 0 && (
+                    <View style={[styles.sessionCountBadge, { backgroundColor: theme.colors.primary }]}>
+                      <Text style={styles.sessionCountText}>
+                        {summary.completedCount + summary.partialCount} {summary.completedCount + summary.partialCount === 1 ? 'session' : 'sessions'}
                       </Text>
                     </View>
                   )}
@@ -118,8 +104,12 @@ export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
         );
       })}
 
-      {/* Bottom padding for last item */}
-      <View style={{ height: 24 }} />
+      {/* Retention notice */}
+      <View style={styles.retentionNotice}>
+        <Text style={[styles.retentionText, { color: theme.colors.textTertiary }]}>
+          Showing last {RETENTION_DAYS} days of sessions
+        </Text>
+      </View>
     </ScrollView>
   );
 }
@@ -172,7 +162,6 @@ function SessionCard({ session, theme }: SessionCardProps) {
   };
 
   const statusColor = getStatusColor();
-  const completedMinutes = Math.floor(session.completedSeconds / 60);
   const isBreakSession = session.timerType === 'break';
 
   return (
@@ -324,26 +313,16 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
   },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    minWidth: 44,
+  sessionCountBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  statusBadgeCompleted: {
-    backgroundColor: '#06b6d4',
-  },
-  statusBadgePartial: {
-    backgroundColor: '#f59e0b',
-  },
-  statusBadgeSkipped: {
-    backgroundColor: '#94a3b8',
-  },
-  statusBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
+  sessionCountText: {
+    fontSize: 13,
+    fontWeight: '600',
     color: '#ffffff',
     letterSpacing: 0.2,
   },
@@ -466,5 +445,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     fontStyle: 'italic',
+  },
+  retentionNotice: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  retentionText: {
+    fontSize: 13,
+    textAlign: 'center',
   },
 });

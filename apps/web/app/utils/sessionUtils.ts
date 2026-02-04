@@ -5,7 +5,8 @@ const STORAGE_KEYS = {
   HISTORY: 'flowmate:v1:sessionHistory',
 } as const;
 
-const MAX_HISTORY_SIZE = 30;
+// Retention period in days (time-based, not count-based)
+export const RETENTION_DAYS = 90;
 
 // ===== Draft Storage =====
 
@@ -48,14 +49,17 @@ export function getHistory(): SessionRecord[] {
     }
     const history = JSON.parse(stored);
 
-    // Migrate old sessions without timerType field (backward compatibility)
-    return history.map((session: any) => {
-      if (!session.timerType) {
-        // Default old sessions to 'focus' type
-        return { ...session, timerType: 'focus' };
-      }
-      return session;
-    });
+    // Filter to retention period and add backward compatibility
+    const cutoffDate = Date.now() - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    return history
+      .filter((session: any) => session.startedAt >= cutoffDate)
+      .map((session: any) => {
+        // Migrate old sessions without timerType field (backward compatibility)
+        if (!session.timerType) {
+          return { ...session, timerType: 'focus' };
+        }
+        return session;
+      });
   } catch (error) {
     console.error('Error loading session history:', error);
     return [];
@@ -65,12 +69,13 @@ export function getHistory(): SessionRecord[] {
 export function appendHistory(record: SessionRecord): void {
   try {
     const history = getHistory();
-    history.unshift(record); // Add to beginning (most recent first)
 
-    // Trim to last 30 sessions
-    const trimmed = history.slice(0, MAX_HISTORY_SIZE);
+    // Filter to keep only sessions within retention period (time-based)
+    const cutoffDate = Date.now() - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const filteredHistory = history.filter(session => session.startedAt >= cutoffDate);
 
-    localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(trimmed));
+    const updatedHistory = [record, ...filteredHistory];
+    localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updatedHistory));
   } catch (error) {
     console.error('Error appending to session history:', error);
   }
