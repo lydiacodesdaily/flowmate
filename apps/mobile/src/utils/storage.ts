@@ -316,7 +316,7 @@ export interface SensoryPresetSettings {
 const SENSORY_PRESET_KEY = '@flowmate:sensory-preset';
 
 export const getDefaultSensoryPresetSettings = (): SensoryPresetSettings => ({
-  selectedPreset: 'full',
+  selectedPreset: 'gentle',
 });
 
 export const loadSensoryPresetSettings = async (): Promise<SensoryPresetSettings> => {

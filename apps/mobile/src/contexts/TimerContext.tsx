@@ -172,9 +172,12 @@ export function TimerProvider({ children }: TimerProviderProps) {
             // Move to next session or complete
             if (currentSessionIndex < sessions.length - 1) {
               const nextIndex = currentSessionIndex + 1;
+              const nextDuration = sessions[nextIndex].durationMinutes * 60;
               setCurrentSessionIndex(nextIndex);
-              setTimeRemaining(sessions[nextIndex].durationMinutes * 60);
-              setStatus('paused');
+              setTimeRemaining(nextDuration);
+              // Auto-start the next session
+              endTimeRef.current = Date.now() + nextDuration * 1000;
+              setStatus('running');
             } else {
               setStatus('completed');
               if (onAllSessionsCompleteRef.current) {
@@ -295,9 +298,12 @@ export function TimerProvider({ children }: TimerProviderProps) {
 
     if (currentSessionIndex < sessions.length - 1) {
       const nextIndex = currentSessionIndex + 1;
+      const nextDuration = sessions[nextIndex].durationMinutes * 60;
       setCurrentSessionIndex(nextIndex);
-      setTimeRemaining(sessions[nextIndex].durationMinutes * 60);
-      setStatus('paused');
+      setTimeRemaining(nextDuration);
+      // Auto-start the next session
+      endTimeRef.current = Date.now() + nextDuration * 1000;
+      setStatus('running');
     } else {
       setStatus('completed');
       if (onAllSessionsCompleteRef.current) {

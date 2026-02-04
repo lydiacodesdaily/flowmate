@@ -838,7 +838,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         position="top"
       />
 
-      {isBreakSession && (
+      {isBreakSession && status === 'running' && (
         <ContextualTip
           tipId="break-purpose"
           message="Breaks help reset focus. Step away if you can!"
