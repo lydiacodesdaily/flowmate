@@ -43,7 +43,19 @@ export function RootNavigator() {
         component={FocusStack}
         options={{
           tabBarLabel: 'Focus',
-          tabBarIcon: () => <Text style={{ fontSize: 24 }}>🕒</Text>,
+          tabBarIcon: () => (
+            <Text
+              style={{
+                fontSize: 24,
+                width: 32,
+                height: 32,
+                lineHeight: 32,
+                textAlign: 'center',
+              }}
+            >
+              🕒
+            </Text>
+          ),
         }}
       />
       <Tab.Screen
@@ -51,7 +63,19 @@ export function RootNavigator() {
         component={StatsScreen}
         options={{
           tabBarLabel: 'Stats',
-          tabBarIcon: () => <Text style={{ fontSize: 24 }}>📊</Text>,
+          tabBarIcon: () => (
+            <Text
+              style={{
+                fontSize: 24,
+                width: 32,
+                height: 32,
+                lineHeight: 32,
+                textAlign: 'center',
+              }}
+            >
+              📊
+            </Text>
+          ),
         }}
       />
       <Tab.Screen
@@ -59,7 +83,19 @@ export function RootNavigator() {
         component={SettingsScreen}
         options={{
           tabBarLabel: 'Settings',
-          tabBarIcon: () => <Text style={{ fontSize: 24 }}>⚙️</Text>,
+          tabBarIcon: () => (
+            <Text
+              style={{
+                fontSize: 24,
+                width: 32,
+                height: 32,
+                lineHeight: 32,
+                textAlign: 'center',
+              }}
+            >
+              ⚙️
+            </Text>
+          ),
         }}
       />
     </Tab.Navigator>
