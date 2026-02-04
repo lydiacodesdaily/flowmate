@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
+import { useResponsive } from '../../hooks/useResponsive';
 import { OnboardingProgressDots } from './OnboardingProgressDots';
 import { hapticService } from '../../services/hapticService';
 
@@ -12,6 +13,7 @@ interface OnboardingWelcomeProps {
 
 export function OnboardingWelcome({ onNext, onSkip }: OnboardingWelcomeProps) {
   const { theme } = useTheme();
+  const { contentStyle } = useResponsive();
 
   const handleNext = () => {
     hapticService.light();
@@ -31,7 +33,7 @@ export function OnboardingWelcome({ onNext, onSkip }: OnboardingWelcomeProps) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.content}>
+      <View style={[styles.content, contentStyle]}>
         <View style={styles.iconContainer}>
           <Text style={styles.icon}>🧠</Text>
           <Text style={styles.timerIcon}>⏱️</Text>
@@ -46,7 +48,7 @@ export function OnboardingWelcome({ onNext, onSkip }: OnboardingWelcomeProps) {
         </Text>
       </View>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, contentStyle]}>
         <OnboardingProgressDots currentStep={1} />
 
         <TouchableOpacity

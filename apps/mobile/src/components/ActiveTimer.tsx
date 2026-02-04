@@ -28,6 +28,7 @@ import { hapticService } from '../services/hapticService';
 import { notificationService } from '../services/notificationService';
 import { useTheme } from '../theme';
 import { useAccessibility } from '../contexts';
+import { useResponsive } from '../hooks/useResponsive';
 import type { ActiveTimerScreenProps } from '../navigation/types';
 import type { Session, SessionStatus, TimerMode } from '@flowmate/shared';
 import { saveLastSession, loadFocusLockSettings, saveFocusLockSettings } from '../utils/storage';
@@ -55,6 +56,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
   const { reduceMotion, skipFocusPrompt } = useAccessibility();
+  const { contentStyle } = useResponsive();
   const audioInitializedRef = useRef(false);
   const timerInitializedRef = useRef(false);
 
@@ -668,6 +670,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     <View style={[styles.container, { backgroundColor: containerBackground }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
+      <View style={[{ flex: 1 }, contentStyle]}>
       {/* Minimal header with back, skip, and settings */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         {isLocked ? (
@@ -783,6 +786,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
             onReset={isLocked ? undefined : handleReset}
           />
         </View>
+      </View>
       </View>
 
       {/* Audio settings modal */}

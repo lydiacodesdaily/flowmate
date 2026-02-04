@@ -5,6 +5,7 @@ import type { Session, TimerType } from '@flowmate/shared';
 import type { CustomSelectionScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
 import { useTimerContext } from '../contexts/TimerContext';
+import { useResponsive } from '../hooks/useResponsive';
 
 const QUICK_PRESETS = [
   { minutes: 5, label: '5 min' },
@@ -16,6 +17,7 @@ const QUICK_PRESETS = [
 export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreenProps) {
   const { theme } = useTheme();
   const { isActive, reset, timerType, setTimerType } = useTimerContext();
+  const { contentStyle } = useResponsive();
   const insets = useSafeAreaInsets();
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
@@ -95,7 +97,7 @@ export function CustomTimerSelectionScreen({ navigation }: CustomSelectionScreen
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={[styles.title, { color: theme.colors.text }]}>your own pace</Text>

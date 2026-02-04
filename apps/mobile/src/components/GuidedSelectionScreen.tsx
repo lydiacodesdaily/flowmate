@@ -6,11 +6,13 @@ import type { GuidedSelectionScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
 import { useTimerContext } from '../contexts/TimerContext';
 import { hapticService } from '../services/hapticService';
+import { useResponsive } from '../hooks/useResponsive';
 import { FOCUS_RECIPES, type FocusRecipe } from '../constants/recipes';
 
 export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps) {
   const { theme } = useTheme();
   const { isActive, reset } = useTimerContext();
+  const { contentStyle } = useResponsive();
   const insets = useSafeAreaInsets();
 
   const handleRecipeSelect = async (recipe: FocusRecipe) => {
@@ -48,7 +50,7 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, contentStyle]}>
         <Text style={[styles.title, { color: theme.colors.text }]}>guided</Text>
         <Text style={[styles.subtitle, { color: theme.colors.textTertiary }]}>pick a focus recipe</Text>
 

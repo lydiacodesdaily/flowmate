@@ -7,12 +7,14 @@ import { useTheme } from '../theme';
 import { loadLastSession, type LastSessionConfig } from '../utils/storage';
 import { useTimerContext } from '../contexts/TimerContext';
 import { hapticService } from '../services/hapticService';
+import { useResponsive } from '../hooks/useResponsive';
 import type { ModeSelectionScreenProps } from '../navigation/types';
 
 export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { isActive, reset } = useTimerContext();
+  const { contentStyle } = useResponsive();
   const [lastSession, setLastSession] = useState<LastSessionConfig | null>(null);
   const [showQuickStartTip, setShowQuickStartTip] = useState(false);
 
@@ -58,7 +60,8 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       contentContainerStyle={[
         styles.contentContainer,
-        { paddingTop: insets.top + 40 }
+        { paddingTop: insets.top + 40 },
+        contentStyle,
       ]}
     >
       <Text style={[styles.title, { color: theme.colors.text }]}>ready when you are</Text>

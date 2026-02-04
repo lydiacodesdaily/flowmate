@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
+import { useResponsive } from '../../hooks/useResponsive';
 import { OnboardingProgressDots } from './OnboardingProgressDots';
 import { TimerVisualPreviewCard } from './TimerVisualPreviewCard';
 import { TIMER_VISUAL_PRESETS } from '../../constants/timerVisuals';
@@ -24,6 +25,7 @@ export function OnboardingTimerVisual({
   onSkip,
 }: OnboardingTimerVisualProps) {
   const { theme } = useTheme();
+  const { contentStyle } = useResponsive();
 
   const handleComplete = async () => {
     await hapticService.success();
@@ -62,7 +64,7 @@ export function OnboardingTimerVisual({
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.grid}>
@@ -77,7 +79,7 @@ export function OnboardingTimerVisual({
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, contentStyle]}>
         <Text style={[styles.footerNote, { color: theme.colors.textTertiary }]}>
           You can change this anytime in Settings
         </Text>

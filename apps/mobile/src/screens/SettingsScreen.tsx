@@ -23,10 +23,12 @@ import {
 } from '../contexts';
 import { TIMER_VISUAL_PRESETS } from '../constants/timerVisuals';
 import { hapticService } from '../services/hapticService';
+import { useResponsive } from '../hooks/useResponsive';
 
 export function SettingsScreen({ navigation }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
   const { theme, themeMode, setThemeMode } = useTheme();
+  const { contentStyle } = useResponsive();
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
     enabled: true,
     sessionComplete: true,
@@ -99,7 +101,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
         <View style={styles.headerButton} />
       </View>
 
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={contentStyle}>
         <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
           <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Appearance</Text>
 

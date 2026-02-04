@@ -8,6 +8,7 @@ import {
 import { DailySummary } from '@flowmate/shared/types';
 import { RETENTION_DAYS, formatFocusTime } from '../services/sessionService';
 import { useTheme } from '../theme/ThemeContext';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface SessionHistoryProps {
   dailySummaries: DailySummary[];
@@ -15,6 +16,7 @@ interface SessionHistoryProps {
 
 export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
   const { theme } = useTheme();
+  const { contentStyle } = useResponsive();
 
   if (dailySummaries.length === 0) {
     return (
@@ -33,7 +35,7 @@ export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
-      contentContainerStyle={styles.contentContainer}
+      contentContainerStyle={[styles.contentContainer, contentStyle]}
       showsVerticalScrollIndicator={false}
     >
       {dailySummaries.map((summary) => (

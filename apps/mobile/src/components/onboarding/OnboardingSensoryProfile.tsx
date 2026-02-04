@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
+import { useResponsive } from '../../hooks/useResponsive';
 import { OnboardingProgressDots } from './OnboardingProgressDots';
 import { SensoryPresetCard } from './SensoryPresetCard';
 import { SENSORY_PRESETS } from '../../constants/sensoryPresets';
@@ -24,6 +25,7 @@ export function OnboardingSensoryProfile({
   onSkip,
 }: OnboardingSensoryProfileProps) {
   const { theme } = useTheme();
+  const { contentStyle } = useResponsive();
 
   // Filter out 'custom' preset for onboarding - keep it simple
   const displayPresets = SENSORY_PRESETS.filter(preset => preset.id !== 'custom');
@@ -65,7 +67,7 @@ export function OnboardingSensoryProfile({
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
       >
         {displayPresets.map(preset => (
@@ -78,7 +80,7 @@ export function OnboardingSensoryProfile({
         ))}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, contentStyle]}>
         <Text style={[styles.footerNote, { color: theme.colors.textTertiary }]}>
           You can change this anytime in Settings
         </Text>

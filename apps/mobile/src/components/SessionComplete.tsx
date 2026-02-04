@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SessionDraft, PrepStep, SessionStatus, TimerType } from '@flowmate/shared/types';
 import { useTheme } from '../theme/ThemeContext';
+import { useResponsive } from '../hooks/useResponsive';
 import { useAccessibility } from '../contexts';
 import { ConfettiCelebration } from './ConfettiCelebration';
 import { ContextualTip } from './tips';
@@ -48,6 +49,7 @@ export function SessionComplete({
   onDiscard,
 }: SessionCompleteProps) {
   const { theme } = useTheme();
+  const { sheetStyle } = useResponsive();
   const { reduceMotion } = useAccessibility();
   const [status, setStatus] = useState<SessionStatus>('completed');
   const [steps, setSteps] = useState<PrepStep[]>([]);
@@ -168,7 +170,7 @@ export function SessionComplete({
           <View style={styles.backdropOverlay} />
         </Pressable>
 
-        <View style={[styles.bottomSheet, { backgroundColor: theme.colors.surface }]}>
+        <View style={[styles.bottomSheet, { backgroundColor: theme.colors.surface }, sheetStyle]}>
           {/* Handle Bar */}
           <View style={styles.handleBar}>
             <View style={[styles.handle, { backgroundColor: theme.colors.border }]} />

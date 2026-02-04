@@ -9,6 +9,7 @@ import {
   Pressable,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { useResponsive } from '../hooks/useResponsive';
 import { useAccessibility } from '../contexts';
 
 interface EarlyStopModalProps {
@@ -19,6 +20,7 @@ interface EarlyStopModalProps {
 
 export function EarlyStopModal({ visible, onContinue, onStop }: EarlyStopModalProps) {
   const { theme } = useTheme();
+  const { isTablet } = useResponsive();
   const { reduceMotion } = useAccessibility();
 
   return (
@@ -33,7 +35,7 @@ export function EarlyStopModal({ visible, onContinue, onStop }: EarlyStopModalPr
       </Pressable>
 
       <View style={styles.centeredContainer}>
-        <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+        <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }, isTablet && { maxWidth: 400 }]}>
           {/* Warning Icon */}
           <Text style={styles.emoji}>⏸️</Text>
 

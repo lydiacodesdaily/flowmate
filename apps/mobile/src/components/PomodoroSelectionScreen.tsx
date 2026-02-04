@@ -6,6 +6,7 @@ import { POMODORO_CONFIGS } from '@flowmate/shared';
 import type { PomodoroSelectionScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
 import { useTimerContext } from '../contexts/TimerContext';
+import { useResponsive } from '../hooks/useResponsive';
 
 const POMODORO_OPTIONS: Array<{ type: PomodoroType; title: string; description: string }> = [
   { type: '1pom', title: '1 Pomodoro', description: '25 minutes of focused work' },
@@ -17,6 +18,7 @@ const POMODORO_OPTIONS: Array<{ type: PomodoroType; title: string; description: 
 export function PomodoroSelectionScreen({ navigation }: PomodoroSelectionScreenProps) {
   const { theme } = useTheme();
   const { isActive, reset } = useTimerContext();
+  const { contentStyle } = useResponsive();
   const insets = useSafeAreaInsets();
 
   const handleSessionSelect = (pomodoroType: PomodoroType) => {
@@ -54,7 +56,7 @@ export function PomodoroSelectionScreen({ navigation }: PomodoroSelectionScreenP
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, contentStyle]}>
         <Text style={[styles.title, { color: theme.colors.text }]}>pomodoro</Text>
         <Text style={[styles.subtitle, { color: theme.colors.textTertiary }]}>25-minute focus sessions</Text>
 

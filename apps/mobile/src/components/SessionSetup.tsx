@@ -14,6 +14,7 @@ import {
 import { SessionDraft, PrepStep } from '@flowmate/shared/types';
 import { createPrepStep } from '../services/sessionService';
 import { useTheme } from '../theme/ThemeContext';
+import { useResponsive } from '../hooks/useResponsive';
 
 interface SessionSetupProps {
   visible: boolean;
@@ -28,6 +29,7 @@ const MAX_STEPS = 5;
 
 export function SessionSetup({ visible, onStart, onSkip, initialDraft }: SessionSetupProps) {
   const { theme } = useTheme();
+  const { sheetStyle } = useResponsive();
   const [intent, setIntent] = useState('');
   const [steps, setSteps] = useState<PrepStep[]>([]);
   const [newStepText, setNewStepText] = useState('');
@@ -98,7 +100,7 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
           <View style={styles.backdropOverlay} />
         </Pressable>
 
-        <View style={[styles.bottomSheet, { backgroundColor: theme.colors.surface }]}>
+        <View style={[styles.bottomSheet, { backgroundColor: theme.colors.surface }, sheetStyle]}>
           {/* Handle Bar */}
           <View style={styles.handleBar}>
             <View style={[styles.handle, { backgroundColor: theme.colors.border }]} />

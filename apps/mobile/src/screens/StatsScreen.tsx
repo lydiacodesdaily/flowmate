@@ -8,6 +8,7 @@ import { WeeklyChart } from '../components/WeeklyChart';
 import { SessionHistory } from '../components/SessionHistory';
 import type { StatsScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
+import { useResponsive } from '../hooks/useResponsive';
 import {
   groupSessionsByDay,
   getTodayStats,
@@ -20,6 +21,7 @@ type TabView = 'stats' | 'history';
 
 export function StatsScreen({ navigation }: StatsScreenProps) {
   const { theme } = useTheme();
+  const { contentStyle } = useResponsive();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabView>('stats');
   const [isLoaded, setIsLoaded] = useState(false);
@@ -82,6 +84,7 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={[styles.backButtonText, { color: theme.colors.textSecondary }]}>← back</Text>
         </TouchableOpacity>
+        <View style={contentStyle}>
         <Text style={[styles.title, { color: theme.colors.text }]}>your progress</Text>
 
         {/* Tab Switcher */}
@@ -123,12 +126,13 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
             </Text>
           </TouchableOpacity>
         </View>
+        </View>
       </View>
 
       {activeTab === 'stats' ? (
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.contentContainer}
+          contentContainerStyle={[styles.contentContainer, contentStyle]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
@@ -184,7 +188,7 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
       </View>
         </ScrollView>
       ) : (
-        <View style={styles.scrollView}>
+        <View style={[styles.scrollView, contentStyle]}>
           <SessionHistory dailySummaries={dailySummaries} />
         </View>
       )}
