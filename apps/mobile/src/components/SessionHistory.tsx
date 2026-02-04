@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   ScrollView,
   StyleSheet,
 } from 'react-native';
-import { DailySummary, SessionRecord } from '@flowmate/shared/types';
-import { formatDuration, formatTime, RETENTION_DAYS } from '../services/sessionService';
+import { DailySummary } from '@flowmate/shared/types';
+import { RETENTION_DAYS, formatFocusTime } from '../services/sessionService';
 import { useTheme } from '../theme/ThemeContext';
 
 interface SessionHistoryProps {
@@ -16,20 +15,6 @@ interface SessionHistoryProps {
 
 export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
   const { theme } = useTheme();
-  const [expandedDates, setExpandedDates] = useState<Set<string>>(
-    // Auto-expand today by default
-    dailySummaries.length > 0 ? new Set([dailySummaries[0].date]) : new Set()
-  );
-
-  const toggleExpand = (date: string) => {
-    const newExpanded = new Set(expandedDates);
-    if (newExpanded.has(date)) {
-      newExpanded.delete(date);
-    } else {
-      newExpanded.add(date);
-    }
-    setExpandedDates(newExpanded);
-  };
 
   if (dailySummaries.length === 0) {
     return (
@@ -51,58 +36,9 @@ export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      {dailySummaries.map((summary) => {
-        const isExpanded = expandedDates.has(summary.date);
-        return (
-          <View key={summary.date} style={styles.daySection}>
-            {/* Day Header - Expandable */}
-            <TouchableOpacity
-              onPress={() => toggleExpand(summary.date)}
-              style={[styles.dayHeader, { backgroundColor: theme.colors.surface }]}
-              activeOpacity={0.7}
-            >
-              <View style={styles.dayHeaderContent}>
-                <View style={styles.dayHeaderLeft}>
-                  <Text style={[styles.dayDate, { color: theme.colors.text }]}>
-                    {summary.displayDate}
-                  </Text>
-                  <Text style={[styles.dayStats, { color: theme.colors.textSecondary }]}>
-                    {summary.totalMinutes > 0 && `${summary.totalMinutes}m focus`}
-                    {summary.breakMinutes > 0 && ` • ${summary.breakMinutes}m break`}
-                  </Text>
-                </View>
-
-                <View style={styles.dayHeaderRight}>
-                  {/* Combined session count - simple and encouraging */}
-                  {(summary.completedCount + summary.partialCount) > 0 && (
-                    <View style={[styles.sessionCountBadge, { backgroundColor: theme.colors.primary }]}>
-                      <Text style={styles.sessionCountText}>
-                        {summary.completedCount + summary.partialCount} {summary.completedCount + summary.partialCount === 1 ? 'session' : 'sessions'}
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Expand/collapse icon */}
-                  <View style={styles.expandIconContainer}>
-                    <Text style={[styles.expandIcon, { color: theme.colors.textTertiary }]}>
-                      {isExpanded ? '▼' : '▶'}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Session Cards - Expanded View */}
-            {isExpanded && (
-              <View style={styles.sessionsContainer}>
-                {summary.sessions.map((session) => (
-                  <SessionCard key={session.id} session={session} theme={theme} />
-                ))}
-              </View>
-            )}
-          </View>
-        );
-      })}
+      {dailySummaries.map((summary) => (
+        <DailySummaryCard key={summary.date} summary={summary} theme={theme} />
+      ))}
 
       {/* Retention notice */}
       <View style={styles.retentionNotice}>
@@ -114,134 +50,56 @@ export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
   );
 }
 
-interface SessionCardProps {
-  session: SessionRecord;
+interface DailySummaryCardProps {
+  summary: DailySummary;
   theme: any;
 }
 
-function SessionCard({ session, theme }: SessionCardProps) {
-  const getStatusIcon = () => {
-    if (session.timerType === 'break') return '☕';
-    switch (session.status) {
-      case 'completed':
-        return '✓';
-      case 'partial':
-        return '◐';
-      case 'skipped':
-        return '⊘';
-      default:
-        return '•';
-    }
-  };
-
-  const getStatusColor = () => {
-    if (session.timerType === 'break') return '#10b981';
-    switch (session.status) {
-      case 'completed':
-        return '#06b6d4';
-      case 'partial':
-        return '#f59e0b';
-      case 'skipped':
-        return '#94a3b8';
-      default:
-        return '#64748b';
-    }
-  };
-
-  const getModeLabel = () => {
-    switch (session.mode) {
-      case 'pomodoro':
-        return 'Pomodoro';
-      case 'guided':
-        return 'Guided';
-      case 'custom':
-        return 'Custom';
-      default:
-        return '';
-    }
-  };
-
-  const statusColor = getStatusColor();
-  const isBreakSession = session.timerType === 'break';
+function DailySummaryCard({ summary, theme }: DailySummaryCardProps) {
+  const sessionCount = summary.completedCount + summary.partialCount;
+  const hasBreaks = summary.breakMinutes > 0;
 
   return (
-    <View style={[
-      styles.sessionCard,
-      {
-        backgroundColor: theme.colors.surface,
-        borderLeftColor: statusColor,
-      }
-    ]}>
-      {/* Header Row */}
-      <View style={styles.sessionHeader}>
-        <View style={styles.sessionHeaderLeft}>
-          <View style={[styles.statusIconCircle, { backgroundColor: statusColor }]}>
-            <Text style={styles.statusIconText}>{getStatusIcon()}</Text>
-          </View>
-          <View style={styles.sessionMeta}>
-            <View style={styles.sessionMetaRow}>
-              <Text style={[styles.sessionTime, { color: theme.colors.text }]}>
-                {formatTime(session.startedAt)}
-              </Text>
-              {!isBreakSession && (
-                <>
-                  <Text style={[styles.sessionDivider, { color: theme.colors.textTertiary }]}>
-                    •
-                  </Text>
-                  <Text style={[styles.sessionMode, { color: theme.colors.textSecondary }]}>
-                    {getModeLabel()}
-                  </Text>
-                </>
-              )}
-            </View>
-          </View>
+    <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+      {/* Date Header */}
+      <Text style={[styles.dateText, { color: theme.colors.text }]}>
+        {summary.displayDate}
+      </Text>
+
+      {/* Stats Row */}
+      <View style={styles.statsRow}>
+        {/* Focus Time */}
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: theme.colors.text }]}>
+            {formatFocusTime(summary.totalMinutes)}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.colors.textTertiary }]}>
+            focus
+          </Text>
         </View>
-        <View style={[styles.durationBadge, { backgroundColor: theme.colors.surfaceSecondary }]}>
-          <Text style={[styles.sessionDuration, { color: theme.colors.text }]}>
-            {formatDuration(session.completedSeconds)}
+
+        {/* Break Time (if any) */}
+        {hasBreaks && (
+          <View style={styles.statItem}>
+            <Text style={[styles.statValue, { color: theme.colors.textSecondary }]}>
+              {formatFocusTime(summary.breakMinutes)}
+            </Text>
+            <Text style={[styles.statLabel, { color: theme.colors.textTertiary }]}>
+              breaks
+            </Text>
+          </View>
+        )}
+
+        {/* Session Count */}
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: theme.colors.text }]}>
+            {sessionCount}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.colors.textTertiary }]}>
+            {sessionCount === 1 ? 'session' : 'sessions'}
           </Text>
         </View>
       </View>
-
-      {/* Intent */}
-      {session.intent && (
-        <Text style={[styles.sessionIntent, { color: theme.colors.text }]} numberOfLines={2}>
-          {session.intent}
-        </Text>
-      )}
-
-      {/* Steps Progress */}
-      {session.steps && session.steps.total > 0 && (
-        <View style={styles.stepsProgress}>
-          <View style={[styles.stepsProgressBar, { backgroundColor: theme.colors.surfaceSecondary }]}>
-            <View
-              style={[
-                styles.stepsProgressFill,
-                {
-                  backgroundColor: theme.colors.primary,
-                  width: `${(session.steps.done / session.steps.total) * 100}%`,
-                },
-              ]}
-            />
-          </View>
-          <Text style={[styles.stepsText, { color: theme.colors.textSecondary }]}>
-            {session.steps.done}/{session.steps.total} steps
-          </Text>
-        </View>
-      )}
-
-      {/* Reflection Note */}
-      {session.note && (
-        <View style={[styles.noteContainer, { borderTopColor: theme.colors.border }]}>
-          <Text style={[styles.noteIcon, { color: theme.colors.textTertiary }]}>💭</Text>
-          <Text
-            style={[styles.sessionNote, { color: theme.colors.textSecondary }]}
-            numberOfLines={3}
-          >
-            {session.note}
-          </Text>
-        </View>
-      )}
     </View>
   );
 }
@@ -253,6 +111,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 16,
     paddingTop: 12,
+    paddingBottom: 20,
   },
   emptyState: {
     flex: 1,
@@ -274,177 +133,41 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
-  daySection: {
-    marginBottom: 20,
-  },
-  dayHeader: {
+  card: {
     borderRadius: 16,
+    padding: 18,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,
   },
-  dayHeaderContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    minHeight: 72,
-  },
-  dayHeaderLeft: {
-    flex: 1,
-    marginRight: 12,
-  },
-  dayDate: {
+  dateText: {
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 6,
+    marginBottom: 14,
     letterSpacing: -0.3,
   },
-  dayStats: {
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  dayHeaderRight: {
+  statsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
+    justifyContent: 'flex-start',
+    gap: 32,
   },
-  sessionCountBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sessionCountText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#ffffff',
-    letterSpacing: 0.2,
-  },
-  expandIconContainer: {
-    marginLeft: 4,
-    padding: 4,
-  },
-  expandIcon: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  sessionsContainer: {
-    marginTop: 12,
-    gap: 12,
-  },
-  sessionCard: {
-    borderRadius: 16,
-    padding: 18,
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  sessionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  statItem: {
     alignItems: 'flex-start',
-    marginBottom: 12,
   },
-  sessionHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    flex: 1,
-    marginRight: 12,
+  statValue: {
+    fontSize: 24,
+    fontWeight: '300',
+    letterSpacing: -0.5,
+    marginBottom: 2,
   },
-  statusIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  statusIconText: {
-    fontSize: 16,
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  sessionMeta: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  sessionMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  sessionTime: {
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-  },
-  sessionDivider: {
+  statLabel: {
     fontSize: 12,
-  },
-  sessionMode: {
-    fontSize: 14,
     fontWeight: '500',
-  },
-  durationBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  sessionDuration: {
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  sessionIntent: {
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 12,
-    fontWeight: '500',
-  },
-  stepsProgress: {
-    marginBottom: 12,
-  },
-  stepsProgressBar: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 6,
-  },
-  stepsProgressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  stepsText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  noteContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingTop: 12,
-    marginTop: 8,
-    borderTopWidth: 1,
-    gap: 8,
-  },
-  noteIcon: {
-    fontSize: 16,
-    marginTop: 2,
-  },
-  sessionNote: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
-    fontStyle: 'italic',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   retentionNotice: {
     paddingVertical: 24,

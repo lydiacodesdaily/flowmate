@@ -2,14 +2,19 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { statsService } from '../services/statsService';
-import { formatFocusTime, getThisWeekStats } from '@flowmate/shared';
-import type { UserStats, DailyStat, DailySummary } from '@flowmate/shared';
+import { formatFocusTime } from '@flowmate/shared';
+import type { DailyStat, DailySummary } from '@flowmate/shared';
 import { WeeklyChart } from '../components/WeeklyChart';
 import { SessionHistory } from '../components/SessionHistory';
 import type { StatsScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
-import { groupSessionsByDay } from '../services/sessionService';
+import {
+  groupSessionsByDay,
+  getTodayStats,
+  getWeekStats,
+  getThisWeekSummary,
+  getAllTimeStats,
+} from '../services/sessionService';
 
 type TabView = 'stats' | 'history';
 
@@ -17,31 +22,36 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabView>('stats');
-  const [stats, setStats] = useState<UserStats | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [todayStats, setTodayStats] = useState<DailyStat | null>(null);
   const [weekStats, setWeekStats] = useState<DailyStat[]>([]);
+  const [thisWeekStats, setThisWeekStats] = useState({ daysActive: 0, totalMinutes: 0, totalSessions: 0 });
+  const [allTimeStats, setAllTimeStats] = useState({ totalFocusTime: 0, totalSessions: 0, daysActive: 0 });
+  const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // New session-based stats
-  const [dailySummaries, setDailySummaries] = useState<DailySummary[]>([]);
-  const [thisWeekStats, setThisWeekStats] = useState({ daysActive: 0, totalMinutes: 0, totalSessions: 0 });
-
   const loadStats = useCallback(async () => {
-    // Load old stats for backwards compatibility
-    const allStats = await statsService.getStats();
-    const today = await statsService.getTodayStats();
-    const week = await statsService.getWeekStats();
-
-    setStats(allStats);
-    setTodayStats(today);
-    setWeekStats(week);
-
-    // Load new session-based stats
+    // Load all stats from sessionService (unified source)
+    const todayData = await getTodayStats();
+    const weekData = await getWeekStats();
+    const thisWeekData = await getThisWeekSummary();
+    const allTimeData = await getAllTimeStats();
     const summaries = await groupSessionsByDay();
-    setDailySummaries(summaries);
 
-    // Calculate this week's stats
-    setThisWeekStats(getThisWeekStats(allStats));
+    // Convert today's data to DailyStat format for display
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    setTodayStats({
+      date: todayStr,
+      focusTimeMinutes: todayData.totalMinutes,
+      sessionsCompleted: todayData.completedCount + todayData.partialCount,
+    });
+
+    setWeekStats(weekData);
+    setThisWeekStats(thisWeekData);
+    setAllTimeStats(allTimeData);
+    setDailySummaries(summaries);
+    setIsLoaded(true);
   }, []);
 
   const onRefresh = useCallback(async () => {
@@ -57,7 +67,7 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
     }, [loadStats])
   );
 
-  if (!stats) {
+  if (!isLoaded) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Text style={[styles.loadingText, { color: theme.colors.textTertiary }]}>loading stats...</Text>
@@ -158,16 +168,16 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
         <View style={styles.allTimeRow}>
           <View style={[styles.allTimeBlock, { backgroundColor: theme.colors.surface }]}>
             <Text style={[styles.allTimeValue, { color: theme.colors.text }]}>
-              {formatFocusTime(stats.totalFocusTime)}
+              {formatFocusTime(allTimeStats.totalFocusTime)}
             </Text>
             <Text style={[styles.allTimeLabel, { color: theme.colors.textTertiary }]}>focus time</Text>
           </View>
           <View style={[styles.allTimeBlock, { backgroundColor: theme.colors.surface }]}>
-            <Text style={[styles.allTimeValue, { color: theme.colors.text }]}>{stats.totalSessions}</Text>
+            <Text style={[styles.allTimeValue, { color: theme.colors.text }]}>{allTimeStats.totalSessions}</Text>
             <Text style={[styles.allTimeLabel, { color: theme.colors.textTertiary }]}>sessions</Text>
           </View>
           <View style={[styles.allTimeBlock, { backgroundColor: theme.colors.surface }]}>
-            <Text style={[styles.allTimeValue, { color: theme.colors.text }]}>{stats.dailyStats.length}</Text>
+            <Text style={[styles.allTimeValue, { color: theme.colors.text }]}>{allTimeStats.daysActive}</Text>
             <Text style={[styles.allTimeLabel, { color: theme.colors.textTertiary }]}>days</Text>
           </View>
         </View>

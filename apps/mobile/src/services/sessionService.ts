@@ -8,6 +8,7 @@ import type {
   SessionType,
   SessionStatus,
   DailySummary,
+  DailyStat,
 } from '@flowmate/shared/types';
 
 const STORAGE_KEYS = {
@@ -242,10 +243,10 @@ export async function groupSessionsByDay(): Promise<DailySummary[]> {
   const history = await getHistory();
   const grouped = new Map<string, SessionRecord[]>();
 
-  // Group sessions by date
+  // Group sessions by date (using local timezone)
   history.forEach((session) => {
     const date = new Date(session.startedAt);
-    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     if (!grouped.has(dateStr)) {
       grouped.set(dateStr, []);
     }
@@ -344,22 +345,129 @@ export async function getAllTimeSavedBreaks(): Promise<number> {
   return history.filter((s) => s.timerType === 'break').length;
 }
 
+// ===== Week Stats (for WeeklyChart) =====
+
+export async function getWeekStats(): Promise<DailyStat[]> {
+  const history = await getHistory();
+
+  // Get date range for last 7 days
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+
+  // Group sessions by date and calculate stats
+  const statsMap = new Map<string, DailyStat>();
+
+  for (const session of history) {
+    const sessionDate = new Date(session.startedAt);
+    sessionDate.setHours(0, 0, 0, 0);
+
+    // Skip sessions older than 7 days
+    if (sessionDate < weekAgo) continue;
+
+    const dateStr = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, '0')}-${String(sessionDate.getDate()).padStart(2, '0')}`;
+
+    if (!statsMap.has(dateStr)) {
+      statsMap.set(dateStr, {
+        date: dateStr,
+        focusTimeMinutes: 0,
+        sessionsCompleted: 0,
+      });
+    }
+
+    const stat = statsMap.get(dateStr)!;
+
+    // Only count focus sessions that were completed or partial
+    if (
+      session.timerType === 'focus' &&
+      (session.status === 'completed' || session.status === 'partial')
+    ) {
+      stat.focusTimeMinutes += Math.floor(session.completedSeconds / 60);
+      stat.sessionsCompleted += 1;
+    }
+  }
+
+  return Array.from(statsMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// ===== This Week Summary (Mon-Sun) =====
+
+export async function getThisWeekSummary(): Promise<{
+  daysActive: number;
+  totalMinutes: number;
+  totalSessions: number;
+}> {
+  const weekStats = await getWeekStats();
+
+  // Calculate Monday of current week
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Sunday = 0, so offset is 6
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - mondayOffset);
+  monday.setHours(0, 0, 0, 0);
+  const mondayStr = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+
+  // Filter to this week (Mon-Sun)
+  const thisWeek = weekStats.filter((s) => s.date >= mondayStr);
+
+  return {
+    daysActive: thisWeek.filter((s) => s.sessionsCompleted > 0).length,
+    totalMinutes: thisWeek.reduce((sum, s) => sum + s.focusTimeMinutes, 0),
+    totalSessions: thisWeek.reduce((sum, s) => sum + s.sessionsCompleted, 0),
+  };
+}
+
+// ===== All-Time Stats (Combined) =====
+
+export async function getAllTimeStats(): Promise<{
+  totalFocusTime: number;
+  totalSessions: number;
+  daysActive: number;
+}> {
+  const history = await getHistory();
+  const uniqueDays = new Set<string>();
+
+  let totalFocusTime = 0;
+  let totalSessions = 0;
+
+  for (const session of history) {
+    if (session.timerType === 'focus') {
+      const sessionDate = new Date(session.startedAt);
+      const dateStr = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, '0')}-${String(sessionDate.getDate()).padStart(2, '0')}`;
+      uniqueDays.add(dateStr);
+
+      if (session.status === 'completed' || session.status === 'partial') {
+        totalFocusTime += Math.floor(session.completedSeconds / 60);
+      }
+      totalSessions += 1;
+    }
+  }
+
+  return {
+    totalFocusTime,
+    totalSessions,
+    daysActive: uniqueDays.size,
+  };
+}
+
 // ===== Formatting Helpers =====
 
 function formatDisplayDate(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00');
+  // Parse YYYY-MM-DD explicitly to avoid timezone issues
+  const [yearNum, monthNum, dayNum] = dateStr.split('-').map(Number);
+  const date = new Date(yearNum, monthNum - 1, dayNum); // month is 0-indexed
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  const inputDate = new Date(date);
-  inputDate.setHours(0, 0, 0, 0);
-
-  if (inputDate.getTime() === today.getTime()) {
+  if (date.getTime() === today.getTime()) {
     return 'Today';
   }
-  if (inputDate.getTime() === yesterday.getTime()) {
+  if (date.getTime() === yesterday.getTime()) {
     return 'Yesterday';
   }
 

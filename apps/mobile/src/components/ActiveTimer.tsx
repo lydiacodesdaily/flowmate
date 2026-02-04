@@ -23,7 +23,6 @@ import { ActiveSteps } from './ActiveSteps';
 import { EarlyCompletionBanner } from './EarlyCompletionBanner';
 import { ContextualTip } from './tips';
 import { audioService } from '../services/audioService';
-import { statsService } from '../services/statsService';
 import { createSessionRecord, appendHistory, updateHistoryRecord } from '../services/sessionService';
 import { hapticService } from '../services/hapticService';
 import { notificationService } from '../services/notificationService';
@@ -111,6 +110,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     removePomodoros,
     setSessionCompleteCallback,
     setAllSessionsCompleteCallback,
+    setSessionSkipCallback,
     setSessionDraft,
     updateSessionDraft,
     isInTransitionZone,
@@ -193,8 +193,36 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   // Set up callbacks for session completion
   useEffect(() => {
     setSessionCompleteCallback(async (session, sessionIndex) => {
-      // Record session stats (legacy)
-      await statsService.recordSession(session);
+      // Calculate timing for THIS individual session
+      const sessionEndTime = Date.now();
+      const sessionDurationSeconds = session.durationMinutes * 60;
+      // Approximate start time based on duration (session ran to completion)
+      const sessionStartTime = sessionEndTime - (sessionDurationSeconds * 1000);
+
+      // Determine timerType based on session.type (breaks vs focus/settle/wrap)
+      const sessionTimerType = session.type === 'break' ? 'break' : 'focus';
+
+      // Get current values from refs
+      const currentMode = timerModeRef.current;
+      const currentDraft = sessionDraftRef.current;
+
+      // Create SessionRecord for this individual session
+      if (currentMode) {
+        const record = createSessionRecord(
+          sessionStartTime,
+          sessionEndTime,
+          sessionDurationSeconds,       // plannedSeconds
+          sessionDurationSeconds,       // completedSeconds (ran to completion)
+          currentMode,
+          sessionTimerType,             // 'focus' or 'break'
+          session.type,                 // 'settle', 'focus', 'break', 'wrap'
+          'completed',
+          sessionTimerType === 'focus' ? currentDraft : undefined  // Only attach draft to focus sessions
+        );
+
+        await appendHistory(record);
+        setAutoSavedRecordId(record.id);
+      }
 
       // Haptic feedback
       await hapticService.success();
@@ -222,52 +250,62 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       await audioService.announceAllComplete();
       audioService.resetAnnouncementTracking();
 
-      // Read current values from refs (avoids stale closure)
-      const currentSessionStart = sessionStartTimeRef.current;
-      const currentSessionEnd = sessionEndTimeRef.current || Date.now();
-      const currentTotalTime = totalTimeRef.current;
+      // The last session was already recorded in setSessionCompleteCallback
+      // Just handle the enhancement modal flow and navigation
+
       const currentDraft = sessionDraftRef.current;
-      const currentMode = timerModeRef.current;
       const currentType = timerTypeRef.current;
 
-      // Auto-save session immediately with "completed" status
-      if (currentSessionStart && currentMode && currentType) {
-        const sessionType = currentSession?.type || 'focus';
-        const record = createSessionRecord(
-          currentSessionStart,
-          currentSessionEnd,
-          currentTotalTime,
-          currentTotalTime, // completedSeconds = totalTime when timer finishes naturally
-          currentMode,
-          currentType,
-          sessionType,
-          'completed',
-          currentDraft
-        );
-
-        await appendHistory(record);
-        setAutoSavedRecordId(record.id);
-
-        // Show enhancement modal for focus sessions with intent or steps
-        const hasIntent = currentDraft?.intent && currentDraft.intent.trim().length > 0;
-        const hasSteps = currentDraft?.steps && currentDraft.steps.length > 0;
-        if (currentType === 'focus' && (hasIntent || hasSteps)) {
-          setShowCompleteModal(true);
-        } else {
-          // Track focus session completion for review prompt eligibility
-          if (currentType === 'focus') {
-            await onFocusSessionCompleteRef.current();
-          }
-          // No intent/steps - just navigate back after a brief moment
-          setTimeout(() => {
-            setSessionDraft({ intent: '', steps: [] });
-            reset();
-            navigation.navigate('ModeSelection');
-          }, 500);
+      // Show enhancement modal for focus sessions with intent or steps
+      const hasIntent = currentDraft?.intent && currentDraft.intent.trim().length > 0;
+      const hasSteps = currentDraft?.steps && currentDraft.steps.length > 0;
+      if (currentType === 'focus' && (hasIntent || hasSteps)) {
+        setShowCompleteModal(true);
+      } else {
+        // Track focus session completion for review prompt eligibility
+        if (currentType === 'focus') {
+          await onFocusSessionCompleteRef.current();
         }
+        // No intent/steps - just navigate back after a brief moment
+        setTimeout(() => {
+          setSessionDraft({ intent: '', steps: [] });
+          reset();
+          navigation.navigate('ModeSelection');
+        }, 500);
       }
     });
-  }, [sessions, currentSession, setSessionCompleteCallback, setAllSessionsCompleteCallback, setSessionDraft, reset, navigation]);
+
+    // Handle skipped sessions - record them with 'skipped' status
+    setSessionSkipCallback(async (session, elapsedSeconds) => {
+      const currentMode = timerModeRef.current;
+      if (!currentMode) return;
+
+      // Calculate timing for the skipped session
+      const sessionEndTime = Date.now();
+      const sessionDurationSeconds = session.durationMinutes * 60;
+      const sessionStartTime = sessionEndTime - (elapsedSeconds * 1000);
+
+      // Determine timerType based on session.type
+      const sessionTimerType = session.type === 'break' ? 'break' : 'focus';
+
+      // Determine status: skipped if < 60s, partial if >= 60s
+      const sessionStatus = elapsedSeconds < 60 ? 'skipped' : 'partial';
+
+      const record = createSessionRecord(
+        sessionStartTime,
+        sessionEndTime,
+        sessionDurationSeconds,       // plannedSeconds
+        elapsedSeconds,               // completedSeconds (actual elapsed)
+        currentMode,
+        sessionTimerType,
+        session.type,
+        sessionStatus,
+        sessionTimerType === 'focus' ? sessionDraftRef.current : undefined
+      );
+
+      await appendHistory(record);
+    });
+  }, [sessions, currentSession, setSessionCompleteCallback, setAllSessionsCompleteCallback, setSessionSkipCallback, setSessionDraft, reset, navigation]);
 
   // Keep screen awake when timer is running
   useKeepAwake(status === 'running');

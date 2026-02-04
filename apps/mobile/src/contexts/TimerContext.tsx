@@ -50,8 +50,10 @@ interface TimerContextValue {
   // Callbacks
   onSessionComplete?: (session: Session, sessionIndex: number) => void;
   onAllSessionsComplete?: () => void;
+  onSessionSkip?: (session: Session, elapsedSeconds: number) => void;
   setSessionCompleteCallback: (callback: (session: Session, sessionIndex: number) => void) => void;
   setAllSessionsCompleteCallback: (callback: () => void) => void;
+  setSessionSkipCallback: (callback: (session: Session, elapsedSeconds: number) => void) => void;
 }
 
 const TimerContext = createContext<TimerContextValue | undefined>(undefined);
@@ -78,6 +80,7 @@ export function TimerProvider({ children }: TimerProviderProps) {
   // Callbacks stored in refs to avoid re-renders
   const onSessionCompleteRef = useRef<((session: Session, sessionIndex: number) => void) | undefined>(undefined);
   const onAllSessionsCompleteRef = useRef<(() => void) | undefined>(undefined);
+  const onSessionSkipRef = useRef<((session: Session, elapsedSeconds: number) => void) | undefined>(undefined);
 
   const currentSession = sessions[currentSessionIndex] || null;
   const totalTime = currentSession ? currentSession.durationMinutes * 60 : 0;
@@ -296,6 +299,14 @@ export function TimerProvider({ children }: TimerProviderProps) {
     // Reset audio announcement tracking for fresh session
     audioService.resetAnnouncementTracking();
 
+    // Calculate elapsed time for the skipped session
+    const currentSession = sessions[currentSessionIndex];
+    if (currentSession && onSessionSkipRef.current) {
+      const totalSeconds = currentSession.durationMinutes * 60;
+      const elapsedSeconds = totalSeconds - timeRemaining;
+      onSessionSkipRef.current(currentSession, elapsedSeconds);
+    }
+
     if (currentSessionIndex < sessions.length - 1) {
       const nextIndex = currentSessionIndex + 1;
       const nextDuration = sessions[nextIndex].durationMinutes * 60;
@@ -310,7 +321,7 @@ export function TimerProvider({ children }: TimerProviderProps) {
         onAllSessionsCompleteRef.current();
       }
     }
-  }, [currentSessionIndex, sessions]);
+  }, [currentSessionIndex, sessions, timeRemaining]);
 
   const addTime = useCallback((seconds: number) => {
     setTimeRemaining((prev) => prev + seconds);
@@ -371,6 +382,10 @@ export function TimerProvider({ children }: TimerProviderProps) {
     onAllSessionsCompleteRef.current = callback;
   }, []);
 
+  const setSessionSkipCallback = useCallback((callback: (session: Session, elapsedSeconds: number) => void) => {
+    onSessionSkipRef.current = callback;
+  }, []);
+
   const updateSessionDraft = useCallback((draft: SessionDraft) => {
     setSessionDraft(draft);
   }, []);
@@ -407,8 +422,10 @@ export function TimerProvider({ children }: TimerProviderProps) {
     transitionSecondsRemaining,
     onSessionComplete: onSessionCompleteRef.current,
     onAllSessionsComplete: onAllSessionsCompleteRef.current,
+    onSessionSkip: onSessionSkipRef.current,
     setSessionCompleteCallback,
     setAllSessionsCompleteCallback,
+    setSessionSkipCallback,
   }), [
     sessions,
     currentSessionIndex,
@@ -438,6 +455,7 @@ export function TimerProvider({ children }: TimerProviderProps) {
     transitionSecondsRemaining,
     setSessionCompleteCallback,
     setAllSessionsCompleteCallback,
+    setSessionSkipCallback,
     updateSessionDraft,
   ]);
 
