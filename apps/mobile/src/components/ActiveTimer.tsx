@@ -56,7 +56,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
   const { reduceMotion, skipFocusPrompt } = useAccessibility();
-  const { contentStyle } = useResponsive();
+  const { contentStyle, sheetStyle } = useResponsive();
   const audioInitializedRef = useRef(false);
   const timerInitializedRef = useRef(false);
 
@@ -670,7 +670,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     <View style={[styles.container, { backgroundColor: containerBackground }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
-      <View style={[{ flex: 1 }, contentStyle]}>
+      <View style={{ flex: 1 }}>
       {/* Minimal header with back, skip, and settings */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         {isLocked ? (
@@ -699,7 +699,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       </View>
 
       {/* Main content - no scroll, everything fits on screen */}
-      <View style={styles.content}>
+      <View style={[styles.content, contentStyle]}>
         <View style={styles.mainArea}>
           <SessionIndicators
             sessions={sessions}
@@ -797,14 +797,11 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         onRequestClose={handleToggleSettings}
       >
         <View style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}>
-          {/* Dismiss overlay - sibling to content so it doesn't block scroll */}
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={handleToggleSettings}
-          />
+          {/* Backdrop tap to dismiss - flex fills space above sheet */}
+          <Pressable style={styles.modalBackdrop} onPress={handleToggleSettings} />
           {/* Content container */}
           <View
-            style={[styles.modalContent, { backgroundColor: theme.colors.background }]}
+            style={[styles.modalContent, { backgroundColor: theme.colors.background }, sheetStyle]}
           >
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -959,7 +956,9 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    flex: 1,
   },
   modalContent: {
     borderTopLeftRadius: 24,

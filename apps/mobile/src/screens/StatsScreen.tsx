@@ -188,7 +188,7 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
       </View>
         </ScrollView>
       ) : (
-        <View style={[styles.scrollView, contentStyle]}>
+        <View style={styles.scrollView}>
           <SessionHistory dailySummaries={dailySummaries} />
         </View>
       )}
