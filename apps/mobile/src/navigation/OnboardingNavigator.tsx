@@ -8,10 +8,9 @@ import {
 import {
   markOnboardingCompleted,
   saveSensoryPresetSettings,
-  saveTimerVisualSettings,
 } from '../utils/storage';
 import type { SensoryPresetId, TimerVisualStyle } from '../utils/storage';
-import { useAccessibility } from '../contexts';
+import { useAccessibility, useTimerVisual } from '../contexts';
 
 type OnboardingStackParamList = {
   Welcome: undefined;
@@ -30,11 +29,12 @@ export function OnboardingNavigator({ onComplete }: OnboardingNavigatorProps) {
   const [selectedPreset, setSelectedPreset] = useState<SensoryPresetId>('gentle');
   const [selectedVisual, setSelectedVisual] = useState<TimerVisualStyle>('thin');
   const { reduceMotion } = useAccessibility();
+  const { selectStyle } = useTimerVisual();
 
   const handleSkip = async () => {
     // Apply defaults and complete onboarding
     await saveSensoryPresetSettings({ selectedPreset: 'gentle' });
-    await saveTimerVisualSettings({ selectedStyle: 'thin' });
+    await selectStyle('thin');
     await markOnboardingCompleted();
     onComplete();
   };
@@ -42,7 +42,7 @@ export function OnboardingNavigator({ onComplete }: OnboardingNavigatorProps) {
   const handleComplete = async () => {
     // Save user's selections
     await saveSensoryPresetSettings({ selectedPreset });
-    await saveTimerVisualSettings({ selectedStyle: selectedVisual });
+    await selectStyle(selectedVisual);
     await markOnboardingCompleted();
     onComplete();
   };
