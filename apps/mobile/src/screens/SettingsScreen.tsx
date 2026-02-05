@@ -95,7 +95,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
       {/* Header with back button */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
-          <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>←</Text>
+          <Text allowFontScaling={false} style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>←</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Settings</Text>
         <View style={styles.headerButton} />

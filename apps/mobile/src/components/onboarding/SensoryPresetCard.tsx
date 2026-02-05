@@ -130,7 +130,7 @@ export function SensoryPresetCard({ preset, isSelected, onSelect }: SensoryPrese
       </View>
       {isSelected && (
         <View style={[styles.checkmark, { backgroundColor: theme.colors.primary }]}>
-          <Text style={styles.checkmarkText}>✓</Text>
+          <Text allowFontScaling={false} style={styles.checkmarkText}>✓</Text>
         </View>
       )}
     </TouchableOpacity>

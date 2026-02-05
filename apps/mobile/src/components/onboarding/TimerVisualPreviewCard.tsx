@@ -88,7 +88,7 @@ export function TimerVisualPreviewCard({ preset, isSelected, onSelect }: TimerVi
       </Text>
       {isSelected && (
         <View style={[styles.checkmark, { backgroundColor: theme.colors.primary }]}>
-          <Text style={styles.checkmarkText}>✓</Text>
+          <Text allowFontScaling={false} style={styles.checkmarkText}>✓</Text>
         </View>
       )}
     </TouchableOpacity>

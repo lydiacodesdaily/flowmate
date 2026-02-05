@@ -44,7 +44,7 @@ export function ActiveSteps({ steps, onToggleStep }: ActiveStepsProps) {
         <View style={styles.headerContent}>
           {allDone ? (
             <>
-              <Text style={[styles.checkIcon, { color: theme.colors.success }]}>✓</Text>
+              <Text allowFontScaling={false} style={[styles.checkIcon, { color: theme.colors.success }]}>✓</Text>
               <Text style={[styles.headerText, { color: theme.colors.success }]}>
                 All done
               </Text>
@@ -54,7 +54,7 @@ export function ActiveSteps({ steps, onToggleStep }: ActiveStepsProps) {
               {completedCount}/{steps.length} steps
             </Text>
           )}
-          <Text style={[styles.chevron, { color: theme.colors.textTertiary }]}>
+          <Text allowFontScaling={false} style={[styles.chevron, { color: theme.colors.textTertiary }]}>
             {isExpanded ? '▴' : '▾'}
           </Text>
         </View>
@@ -80,7 +80,7 @@ export function ActiveSteps({ steps, onToggleStep }: ActiveStepsProps) {
                   },
                 ]}
               >
-                {step.done && <Text style={styles.checkmark}>✓</Text>}
+                {step.done && <Text allowFontScaling={false} style={styles.checkmark}>✓</Text>}
               </View>
               <Text
                 style={[

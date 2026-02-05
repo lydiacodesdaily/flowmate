@@ -21,7 +21,7 @@ export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
   if (dailySummaries.length === 0) {
     return (
       <View style={styles.emptyState}>
-        <Text style={styles.emptyStateEmoji}>📊</Text>
+        <Text allowFontScaling={false} style={styles.emptyStateEmoji}>📊</Text>
         <Text style={[styles.emptyStateText, { color: theme.colors.text }]}>
           No sessions yet
         </Text>

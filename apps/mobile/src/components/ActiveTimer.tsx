@@ -675,11 +675,11 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         {isLocked ? (
           <View style={styles.headerButton}>
-            <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>🔒</Text>
+            <Text allowFontScaling={false} style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>🔒</Text>
           </View>
         ) : (
           <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
-            <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>←</Text>
+            <Text allowFontScaling={false} style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>←</Text>
           </TouchableOpacity>
         )}
 
@@ -687,13 +687,13 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         <View style={styles.headerRight}>
           {!isLocked && status !== 'idle' && status !== 'completed' && (
             <TouchableOpacity onPress={handleSkip} style={styles.skipHeaderButton}>
-              <Text style={[styles.skipHeaderText, { color: theme.colors.textTertiary }]}>
+              <Text allowFontScaling={false} style={[styles.skipHeaderText, { color: theme.colors.textTertiary }]}>
                 Skip →
               </Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity onPress={handleToggleSettings} style={styles.headerButton}>
-            <Text style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>⋯</Text>
+            <Text allowFontScaling={false} style={[styles.headerButtonText, { color: theme.colors.textTertiary }]}>⋯</Text>
           </TouchableOpacity>
         </View>
       </View>

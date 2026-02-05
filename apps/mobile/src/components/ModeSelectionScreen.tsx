@@ -74,7 +74,7 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
           activeOpacity={0.85}
         >
           <View style={styles.quickStartContent}>
-            <Text style={styles.quickStartIcon}>⚡</Text>
+            <Text allowFontScaling={false} style={styles.quickStartIcon}>⚡</Text>
             <View style={styles.quickStartText}>
               <Text style={[styles.quickStartTitle, { color: theme.colors.primary }]}>Quick Start</Text>
               <Text style={[styles.quickStartLabel, { color: theme.colors.textSecondary }]}>{lastSession.label}</Text>

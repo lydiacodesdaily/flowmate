@@ -151,7 +151,7 @@ export function FloatingTimerMini() {
         activeOpacity={0.7}
       >
         <View style={styles.leftSection}>
-          <Text style={styles.icon}>{phaseDisplay.icon}</Text>
+          <Text allowFontScaling={false} style={styles.icon}>{phaseDisplay.icon}</Text>
           <Text style={[styles.phaseLabel, { color: theme.colors.textSecondary }]}>
             {phaseDisplay.label}
           </Text>
@@ -173,7 +173,7 @@ export function FloatingTimerMini() {
         style={[styles.controlButton, { borderColor: theme.colors.border }]}
         activeOpacity={0.6}
       >
-        <Text style={styles.controlIcon}>{isPaused ? '▶️' : '⏸'}</Text>
+        <Text allowFontScaling={false} style={styles.controlIcon}>{isPaused ? '▶️' : '⏸'}</Text>
       </TouchableOpacity>
     </Animated.View>
   );

@@ -113,7 +113,7 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
           >
             {/* Header */}
             <View style={styles.header}>
-              <Text style={[styles.emoji, { fontSize: 48 }]}>🎯</Text>
+              <Text allowFontScaling={false} style={[styles.emoji, { fontSize: 48 }]}>🎯</Text>
               <Text style={[styles.title, { color: theme.colors.text }]}>Let's focus</Text>
               <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
                 What matters most right now?
@@ -185,7 +185,7 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
                         step.done && { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
                       ]}
                     >
-                      {step.done && <Text style={styles.checkmark}>✓</Text>}
+                      {step.done && <Text allowFontScaling={false} style={styles.checkmark}>✓</Text>}
                     </View>
                   </TouchableOpacity>
                   <Text style={[

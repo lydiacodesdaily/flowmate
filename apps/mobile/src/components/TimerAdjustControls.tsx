@@ -27,7 +27,7 @@ export function TimerAdjustControls({
         disabled={disabled}
         activeOpacity={0.7}
       >
-        <Text style={[styles.adjustIcon, { color: theme.colors.primary }, disabled && { color: theme.colors.textTertiary }]}>−</Text>
+        <Text allowFontScaling={false} style={[styles.adjustIcon, { color: theme.colors.primary }, disabled && { color: theme.colors.textTertiary }]}>−</Text>
         <Text style={[styles.adjustLabel, { color: theme.colors.primary }, disabled && { color: theme.colors.textTertiary }]}>5 min</Text>
       </TouchableOpacity>
 
@@ -41,7 +41,7 @@ export function TimerAdjustControls({
         disabled={disabled}
         activeOpacity={0.7}
       >
-        <Text style={[styles.adjustIcon, { color: theme.colors.primary }, disabled && { color: theme.colors.textTertiary }]}>+</Text>
+        <Text allowFontScaling={false} style={[styles.adjustIcon, { color: theme.colors.primary }, disabled && { color: theme.colors.textTertiary }]}>+</Text>
         <Text style={[styles.adjustLabel, { color: theme.colors.primary }, disabled && { color: theme.colors.textTertiary }]}>5 min</Text>
       </TouchableOpacity>
     </View>

@@ -45,6 +45,7 @@ export function RootNavigator() {
           tabBarLabel: 'Focus',
           tabBarIcon: () => (
             <Text
+              allowFontScaling={false}
               style={{
                 fontSize: 24,
                 width: 32,
@@ -65,6 +66,7 @@ export function RootNavigator() {
           tabBarLabel: 'Stats',
           tabBarIcon: () => (
             <Text
+              allowFontScaling={false}
               style={{
                 fontSize: 24,
                 width: 32,
@@ -85,6 +87,7 @@ export function RootNavigator() {
           tabBarLabel: 'Settings',
           tabBarIcon: () => (
             <Text
+              allowFontScaling={false}
               style={{
                 fontSize: 24,
                 width: 32,

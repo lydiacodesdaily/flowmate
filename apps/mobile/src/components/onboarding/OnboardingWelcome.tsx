@@ -35,8 +35,8 @@ export function OnboardingWelcome({ onNext, onSkip }: OnboardingWelcomeProps) {
 
       <View style={[styles.content, contentStyle]}>
         <View style={styles.iconContainer}>
-          <Text style={styles.icon}>🧠</Text>
-          <Text style={styles.timerIcon}>⏱️</Text>
+          <Text allowFontScaling={false} style={styles.icon}>🧠</Text>
+          <Text allowFontScaling={false} style={styles.timerIcon}>⏱️</Text>
         </View>
 
         <Text style={[styles.title, { color: theme.colors.text }]}>FlowMate</Text>

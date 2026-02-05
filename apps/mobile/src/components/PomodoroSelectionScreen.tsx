@@ -52,7 +52,7 @@ export function PomodoroSelectionScreen({ navigation }: PomodoroSelectionScreenP
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={[styles.backText, { color: theme.colors.textSecondary }]}>←</Text>
+          <Text allowFontScaling={false} style={[styles.backText, { color: theme.colors.textSecondary }]}>←</Text>
         </TouchableOpacity>
       </View>
 

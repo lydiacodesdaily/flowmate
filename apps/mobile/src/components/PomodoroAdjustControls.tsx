@@ -36,7 +36,7 @@ export function PomodoroAdjustControls({
           ]}
           activeOpacity={0.7}
         >
-          <Text style={[styles.buttonText, { color: theme.colors.text }]}>−</Text>
+          <Text allowFontScaling={false} style={[styles.buttonText, { color: theme.colors.text }]}>−</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -52,7 +52,7 @@ export function PomodoroAdjustControls({
           ]}
           activeOpacity={0.7}
         >
-          <Text style={[styles.buttonText, { color: theme.colors.text }]}>+</Text>
+          <Text allowFontScaling={false} style={[styles.buttonText, { color: theme.colors.text }]}>+</Text>
         </TouchableOpacity>
       </View>
     </View>

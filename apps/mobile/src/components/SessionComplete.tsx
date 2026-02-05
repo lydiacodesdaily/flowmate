@@ -123,7 +123,7 @@ export function SessionComplete({
           </Pressable>
 
           <View style={[styles.celebrationCard, { backgroundColor: theme.colors.surface }]}>
-            <Text style={styles.celebrationEmoji}>☕</Text>
+            <Text allowFontScaling={false} style={styles.celebrationEmoji}>☕</Text>
             <Text style={[styles.celebrationTitle, { color: theme.colors.text }]}>
               Break Complete!
             </Text>
@@ -136,7 +136,7 @@ export function SessionComplete({
                 onPress={handleDiscard}
                 style={[styles.breakButtonPrimary, { backgroundColor: theme.colors.primary }]}
               >
-                <Text style={styles.breakButtonPrimaryText}>⚡ Ready to Focus</Text>
+                <Text allowFontScaling={false} style={styles.breakButtonPrimaryText}>⚡ Ready to Focus</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDiscard}
@@ -183,7 +183,7 @@ export function SessionComplete({
           >
             {/* Header */}
             <View style={styles.header}>
-              <Text style={styles.emoji}>✨</Text>
+              <Text allowFontScaling={false} style={styles.emoji}>✨</Text>
               <Text style={[styles.title, { color: theme.colors.text }]}>Session Complete</Text>
               <View style={[styles.timeBadge, { backgroundColor: theme.colors.primaryLight }]}>
                 <Text style={[styles.timeText, { color: theme.colors.primary }]}>
@@ -238,7 +238,7 @@ export function SessionComplete({
                         styles.statusIconCircle,
                         { backgroundColor: status === option.value ? option.color : theme.colors.border }
                       ]}>
-                        <Text style={styles.statusIcon}>{option.icon}</Text>
+                        <Text allowFontScaling={false} style={styles.statusIcon}>{option.icon}</Text>
                       </View>
                       <View style={styles.statusCardText}>
                         <Text style={[
@@ -251,7 +251,7 @@ export function SessionComplete({
                       </View>
                       {status === option.value && (
                         <View style={[styles.selectedIndicator, { backgroundColor: theme.colors.primary }]}>
-                          <Text style={styles.selectedCheck}>✓</Text>
+                          <Text allowFontScaling={false} style={styles.selectedCheck}>✓</Text>
                         </View>
                       )}
                     </View>
@@ -283,7 +283,7 @@ export function SessionComplete({
                           step.done && { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
                         ]}
                       >
-                        {step.done && <Text style={styles.stepCheckmark}>✓</Text>}
+                        {step.done && <Text allowFontScaling={false} style={styles.stepCheckmark}>✓</Text>}
                       </View>
                       <Text
                         style={[

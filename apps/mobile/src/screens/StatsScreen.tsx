@@ -82,7 +82,7 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={[styles.backButtonText, { color: theme.colors.textSecondary }]}>← back</Text>
+          <Text allowFontScaling={false} style={[styles.backButtonText, { color: theme.colors.textSecondary }]}>← back</Text>
         </TouchableOpacity>
         <View style={contentStyle}>
         <Text style={[styles.title, { color: theme.colors.text }]}>your progress</Text>

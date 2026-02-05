@@ -37,7 +37,7 @@ export function EarlyStopModal({ visible, onContinue, onStop }: EarlyStopModalPr
       <View style={styles.centeredContainer}>
         <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }, isTablet && { maxWidth: 400 }]}>
           {/* Warning Icon */}
-          <Text style={styles.emoji}>⏸️</Text>
+          <Text allowFontScaling={false} style={styles.emoji}>⏸️</Text>
 
           {/* Title */}
           <Text style={[styles.title, { color: theme.colors.text }]}>
