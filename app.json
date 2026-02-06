@@ -3,6 +3,14 @@
     "package": "com.hellolydiastudio.flowmatemonorepo"
   },
   "ios": {
-    "bundleIdentifier": "com.hellolydiastudio.flowmatemonorepo"
+    "bundleIdentifier": "com.hellolydiastudio.flowmatemonorepo",
+    "infoPlist": {
+      "ITSAppUsesNonExemptEncryption": false
+    }
+  },
+  "extra": {
+    "eas": {
+      "projectId": "1cee7dad-496a-4bab-9e47-23884186dfdf"
+    }
   }
 }

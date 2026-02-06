@@ -1,10 +1,38 @@
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
-import type { AudioPlayer } from 'expo-audio';
+import type { AudioPlayer, InterruptionMode } from 'expo-audio';
 import type { AudioSettings, SessionType } from '@flowmate/shared';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import type { AppStateStatus } from 'react-native';
 import { loadAudioSettings, saveAudioSettings } from '../utils/storage';
-import type { AudioSettingsStorage } from '../utils/storage';
+
+/**
+ * Helper to set audio mode with platform-specific handling for interruptionMode.
+ * Works around expo-audio bug on Android where interruptionMode string causes crash.
+ * See: https://github.com/expo/expo/issues/34025
+ */
+async function setAudioModeWithInterruption(
+  options: {
+    playsInSilentMode?: boolean;
+    shouldPlayInBackground?: boolean;
+    interruptionMode: InterruptionMode;
+  }
+) {
+  const baseOptions = {
+    playsInSilentMode: options.playsInSilentMode,
+    shouldPlayInBackground: options.shouldPlayInBackground,
+  };
+
+  if (Platform.OS === 'ios') {
+    await setAudioModeAsync({
+      ...baseOptions,
+      interruptionMode: options.interruptionMode,
+    });
+  } else {
+    // Android: interruptionMode causes a crash due to enum casting bug
+    // Only pass the supported options
+    await setAudioModeAsync(baseOptions);
+  }
+}
 
 /**
  * Callbacks for tick loop - uses getters to read current values without React dependencies
@@ -73,7 +101,7 @@ class AudioService {
       };
 
       // Set audio mode for background playback and mixing with other apps
-      await setAudioModeAsync({
+      await setAudioModeWithInterruption({
         playsInSilentMode: true,
         // Allow audio to continue playing in background
         shouldPlayInBackground: true,
@@ -91,7 +119,7 @@ class AudioService {
   private handleAppStateChange = async (nextAppState: AppStateStatus) => {
     // Reactivate audio session for both foreground and background states
     try {
-      await setAudioModeAsync({
+      await setAudioModeWithInterruption({
         playsInSilentMode: true,
         shouldPlayInBackground: true,
         interruptionMode: 'duckOthers',
@@ -256,7 +284,7 @@ class AudioService {
 
     try {
       // Use mixWithOthers for ticks - no ducking, just overlay on music
-      await setAudioModeAsync({
+      await setAudioModeWithInterruption({
         playsInSilentMode: true,
         shouldPlayInBackground: true,
         interruptionMode: 'mixWithOthers',
@@ -435,7 +463,7 @@ class AudioService {
     if (announcement) {
       try {
         // Use duckOthers for voice announcements - briefly lower music volume
-        await setAudioModeAsync({
+        await setAudioModeWithInterruption({
           playsInSilentMode: true,
           shouldPlayInBackground: true,
           interruptionMode: 'duckOthers',
@@ -458,7 +486,7 @@ class AudioService {
     if (announcement) {
       try {
         // Use duckOthers for voice announcements - briefly lower music volume
-        await setAudioModeAsync({
+        await setAudioModeWithInterruption({
           playsInSilentMode: true,
           shouldPlayInBackground: true,
           interruptionMode: 'duckOthers',
@@ -480,7 +508,7 @@ class AudioService {
     if (sound) {
       try {
         // Use duckOthers for transition announcements
-        await setAudioModeAsync({
+        await setAudioModeWithInterruption({
           playsInSilentMode: true,
           shouldPlayInBackground: true,
           interruptionMode: 'duckOthers',
@@ -499,7 +527,7 @@ class AudioService {
     if (this.dingSound) {
       try {
         // Use duckOthers for completion sounds
-        await setAudioModeAsync({
+        await setAudioModeWithInterruption({
           playsInSilentMode: true,
           shouldPlayInBackground: true,
           interruptionMode: 'duckOthers',
@@ -519,7 +547,7 @@ class AudioService {
     if (sound) {
       try {
         // Use duckOthers for completion sounds
-        await setAudioModeAsync({
+        await setAudioModeWithInterruption({
           playsInSilentMode: true,
           shouldPlayInBackground: true,
           interruptionMode: 'duckOthers',
@@ -563,7 +591,7 @@ class AudioService {
 
     if (this.transitionChimeSound) {
       try {
-        await setAudioModeAsync({
+        await setAudioModeWithInterruption({
           playsInSilentMode: true,
           shouldPlayInBackground: true,
           interruptionMode: 'duckOthers',
