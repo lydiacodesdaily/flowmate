@@ -16,7 +16,6 @@
       "supportsTablet": true,
       "infoPlist": {
         "UIBackgroundModes": [
-          "audio",
           "audio"
         ],
         "ITSAppUsesNonExemptEncryption": false
@@ -44,7 +43,8 @@
         {
           "recordAudioAndroid": false
         }
-      ]
+      ],
+      "./plugins/withDisableNotificationsBootActions"
     ],
     "extra": {
       "eas": {
