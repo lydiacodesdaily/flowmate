@@ -100,13 +100,15 @@ class AudioService {
         transitionChimeEnabled: false, // Default disabled (seconds countdown handles audio)
       };
 
-      // Set audio mode for background playback and mixing with other apps
+      // Set audio mode for background playback and mixing with other apps.
+      // Use mixWithOthers so ticks overlay music without ducking it. Announcements
+      // will temporarily switch to duckOthers on their own calls (they are rare).
       await setAudioModeWithInterruption({
         playsInSilentMode: true,
         // Allow audio to continue playing in background
         shouldPlayInBackground: true,
-        // Mix with other apps (like music players) - announcements will briefly lower their volume
-        interruptionMode: 'duckOthers',
+        // Mix with other apps (like music players) without ducking
+        interruptionMode: 'mixWithOthers',
       });
 
       // Listen for app state changes to handle background/foreground transitions
@@ -122,7 +124,7 @@ class AudioService {
       await setAudioModeWithInterruption({
         playsInSilentMode: true,
         shouldPlayInBackground: true,
-        interruptionMode: 'duckOthers',
+        interruptionMode: 'mixWithOthers',
       });
       console.log(`Audio session reactivated (state: ${nextAppState})`);
     } catch (error) {
@@ -283,12 +285,11 @@ class AudioService {
     if (this.settings.muteDuringBreaks && sessionType === 'break') return;
 
     try {
-      // Use mixWithOthers for ticks - no ducking, just overlay on music
-      await setAudioModeWithInterruption({
-        playsInSilentMode: true,
-        shouldPlayInBackground: true,
-        interruptionMode: 'mixWithOthers',
-      });
+      // NOTE: Do NOT call setAudioModeAsync here. Switching audio modes on every
+      // tick (fire-and-forget, 1Hz) causes concurrent iOS AVAudioSession calls that
+      // corrupt the session after many sessions, silently dropping all ticks.
+      // The session is already configured correctly by initialize().
+
       // Handle alternating sounds
       // Reuses the same player instances - no new allocations per tick
       if (this.settings.tickSound === 'alternating' && this.alternateTickSound && this.tickSound) {
