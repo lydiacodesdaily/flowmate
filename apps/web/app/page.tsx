@@ -68,6 +68,7 @@ export default function Home() {
   const timeRemainingRef = useRef<number>(0);
   const currentSessionIndexRef = useRef<number>(0);
   const sessionsRef = useRef<TimerBlock[]>([]);
+  const sessionDraftRef = useRef<SessionDraft>({ intent: '', steps: [] });
   const endTimeRef = useRef<number>(0);
   const sessionStartTimeRef = useRef<number>(0);
   const totalPausedTimeRef = useRef<number>(0);
@@ -83,7 +84,8 @@ export default function Home() {
     muteBreakRef.current = muteBreak;
     minuteAnnouncementIntervalRef.current = minuteAnnouncementInterval;
     announcementVolumeRef.current = announcementVolume;
-  }, [isPaused, timeRemaining, currentSessionIndex, sessions, muteAll, muteBreak, minuteAnnouncementInterval, announcementVolume]);
+    sessionDraftRef.current = sessionDraft;
+  }, [isPaused, timeRemaining, currentSessionIndex, sessions, muteAll, muteBreak, minuteAnnouncementInterval, announcementVolume, sessionDraft]);
 
   const openPiP = async () => {
     if (!('documentPictureInPicture' in window)) {
@@ -100,7 +102,7 @@ export default function Home() {
       // Open PiP window
       const pipWindow = await (window as any).documentPictureInPicture.requestWindow({
         width: 300,
-        height: 200,
+        height: 250,
       });
 
       pipWindowRef.current = pipWindow;
@@ -142,49 +144,51 @@ export default function Home() {
       const currentSession = sessions[currentSessionIndex];
       const sessionType = currentSession?.type === "focus" ? "🎯 Focus Time" : "☕ Break Time";
       const sessionColor = currentSession?.type === "focus" ? "#FFFFFF" : "#A5F3E3";
+      const initialIntent = sessionDraft.intent || '';
+      const initialStep = sessionDraft.steps?.find(s => !s.done)?.text || '';
+
+      const btnStyle = `
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid white;
+        color: white;
+        padding: 8px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+      `;
 
       container.innerHTML = `
-        <div style="text-align: center;">
-          <div id="pip-session-type" style="font-size: 18px; font-weight: 600; margin-bottom: 10px; color: ${sessionColor};">
+        <div style="text-align: center; width: 100%;">
+          <div id="pip-session-type" style="font-size: 16px; font-weight: 600; margin-bottom: 6px; color: ${sessionColor};">
             ${sessionType}
           </div>
-          <div id="pip-timer" style="font-size: 48px; font-weight: bold; font-family: 'SF Mono', 'Monaco', monospace; margin-bottom: 15px;">
+          <div id="pip-intent" style="font-size: 11px; color: rgba(255,255,255,0.75); margin-bottom: 4px; padding: 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: ${initialIntent ? 'block' : 'none'};">
+            ${initialIntent}
+          </div>
+          <div id="pip-step-row" style="display: ${initialStep ? 'flex' : 'none'}; align-items: center; gap: 6px; margin: 0 0 8px; padding: 5px 6px 5px 10px; background: rgba(255,255,255,0.1); border-radius: 6px; text-align: left;">
+            <span id="pip-step" style="flex: 1; font-size: 11px; color: rgba(255,255,255,0.95); font-weight: 500; line-height: 1.3;">→ ${initialStep}</span>
+            <button id="pip-step-btn" style="flex-shrink: 0; background: rgba(34,211,238,0.35); border: 1.5px solid rgba(34,211,238,0.85); color: white; width: 26px; height: 26px; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 700; line-height: 1;">✓</button>
+          </div>
+          <div id="pip-timer" style="font-size: 46px; font-weight: bold; font-family: 'SF Mono', 'Monaco', monospace; margin-bottom: 12px; line-height: 1;">
             ${formatTime(timeRemaining)}
           </div>
-          <div style="display: flex; gap: 10px; justify-content: center;">
-            <button id="pip-pause-btn" style="
-              background: rgba(255, 255, 255, 0.2);
-              border: 2px solid white;
-              color: white;
-              padding: 8px 16px;
-              border-radius: 8px;
-              cursor: pointer;
-              font-weight: 600;
-              font-size: 14px;
-            ">
-              ${isPaused ? '▶️ Resume' : '⏸️ Pause'}
-            </button>
-            <button id="pip-mute-btn" style="
-              background: rgba(255, 255, 255, 0.2);
-              border: 2px solid white;
-              color: white;
-              padding: 8px 16px;
-              border-radius: 8px;
-              cursor: pointer;
-              font-weight: 600;
-              font-size: 14px;
-            ">
-              ${muteAll ? '🔊 Unmute' : '🔇 Mute'}
-            </button>
+          <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            <button id="pip-pause-btn" style="${btnStyle}">${isPaused ? '▶️ Resume' : '⏸️ Pause'}</button>
+            <button id="pip-mute-btn" style="${btnStyle}">${muteAll ? '🔊 Unmute' : '🔇 Mute'}</button>
           </div>
         </div>
       `;
 
       // Get references to elements
       const sessionTypeEl = pipWindow.document.getElementById('pip-session-type');
+      const pipIntentEl = pipWindow.document.getElementById('pip-intent');
+      const pipStepRow = pipWindow.document.getElementById('pip-step-row');
+      const pipStepEl = pipWindow.document.getElementById('pip-step');
       const timerEl = pipWindow.document.getElementById('pip-timer');
       const pauseBtn = pipWindow.document.getElementById('pip-pause-btn');
       const muteBtn = pipWindow.document.getElementById('pip-mute-btn');
+      const pipStepBtn = pipWindow.document.getElementById('pip-step-btn');
 
       // Add event listeners ONCE
       if (pauseBtn) {
@@ -202,6 +206,16 @@ export default function Home() {
         });
       }
 
+      if (pipStepBtn) {
+        pipStepBtn.addEventListener('click', () => {
+          const currentSteps = sessionDraftRef.current?.steps || [];
+          const nextUndone = currentSteps.find(s => !s.done);
+          if (nextUndone) {
+            handleToggleStep(nextUndone.id);
+          }
+        });
+      }
+
       // Update PiP content (only updates text, not the whole DOM)
       const updatePiPContent = () => {
         if (!pipWindow || pipWindow.closed) return;
@@ -209,11 +223,25 @@ export default function Home() {
         const currentSession = sessionsRef.current[currentSessionIndexRef.current];
         const sessionType = currentSession?.type === "focus" ? "🎯 Focus Time" : "☕ Break Time";
         const sessionColor = currentSession?.type === "focus" ? "#FFFFFF" : "#A5F3E3";
+        const isFocus = currentSession?.type === "focus";
+        const draft = sessionDraftRef.current;
+        const activeStep = isFocus ? draft?.steps?.find(s => !s.done) : null;
+        const intent = isFocus ? (draft?.intent || '') : '';
 
         // Update only the text content, not the entire structure
         if (sessionTypeEl) {
           sessionTypeEl.textContent = sessionType;
           sessionTypeEl.style.color = sessionColor;
+        }
+        if (pipIntentEl) {
+          pipIntentEl.textContent = intent;
+          pipIntentEl.style.display = intent ? 'block' : 'none';
+        }
+        if (pipStepRow) {
+          pipStepRow.style.display = activeStep ? 'flex' : 'none';
+        }
+        if (pipStepEl) {
+          pipStepEl.textContent = activeStep ? `→ ${activeStep.text}` : '';
         }
         if (timerEl) {
           timerEl.textContent = formatTime(timeRemainingRef.current);
@@ -481,6 +509,18 @@ export default function Home() {
     const updatedDraft = { ...sessionDraft, intent: newIntent };
     setSessionDraft(updatedDraft);
     saveDraft(updatedDraft);
+  };
+
+  // Toggle a step done/undone during focus mode
+  const handleToggleStep = (stepId: string) => {
+    setSessionDraft(prev => {
+      const updatedSteps = prev.steps.map(step =>
+        step.id === stepId ? { ...step, done: !step.done } : step
+      );
+      const updatedDraft = { ...prev, steps: updatedSteps };
+      saveDraft(updatedDraft);
+      return updatedDraft;
+    });
   };
 
   // Handle early stop (user clicks pause/stop before timer completes)
@@ -1383,6 +1423,7 @@ export default function Home() {
             openPiP={openPiP}
             sessionDraft={sessionDraft}
             onUpdateIntent={handleUpdateIntent}
+            onToggleStep={handleToggleStep}
           />
         )}
       </div>

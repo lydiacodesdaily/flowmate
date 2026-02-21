@@ -25,6 +25,7 @@ interface TimerDisplayProps {
   openPiP: () => void;
   sessionDraft?: SessionDraft;
   onUpdateIntent?: (intent: string) => void;
+  onToggleStep?: (stepId: string) => void;
 }
 
 export const TimerDisplay = ({
@@ -47,8 +48,8 @@ export const TimerDisplay = ({
   openPiP,
   sessionDraft,
   onUpdateIntent,
+  onToggleStep,
 }: TimerDisplayProps) => {
-  const [stepsExpanded, setStepsExpanded] = useState(false);
   const [isEditingIntent, setIsEditingIntent] = useState(false);
   const [editedIntent, setEditedIntent] = useState("");
 
@@ -164,34 +165,52 @@ export const TimerDisplay = ({
           {/* Steps Section */}
           {sessionDraft.steps && sessionDraft.steps.length > 0 && (
             <div>
-              <button
-                onClick={() => setStepsExpanded(!stepsExpanded)}
-                className="w-full flex items-center justify-between mb-2 px-2 py-1 rounded-lg hover:bg-white/30 dark:hover:bg-slate-700/30 transition-all"
-              >
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                  {sessionDraft.steps.length} {sessionDraft.steps.length === 1 ? 'step' : 'steps'} to work through
+              <div className="flex items-center justify-between mb-2 px-1">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  {sessionDraft.steps.filter(s => s.done).length} / {sessionDraft.steps.length} steps
                 </span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className={`w-4 h-4 text-slate-500 transition-transform ${stepsExpanded ? 'rotate-180' : ''}`}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
-              </button>
-              {stepsExpanded && (
-                <div className="space-y-2 pt-2">
-                  {sessionDraft.steps.map((step) => (
-                    <div key={step.id} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-300 bg-white/40 dark:bg-slate-700/30 rounded-lg px-3 py-2">
-                      <div className="flex-shrink-0 w-4 h-4 rounded border-2 border-slate-400 dark:border-slate-500 bg-white/50 dark:bg-slate-700/50 mt-0.5"></div>
-                      <span className="flex-1">{step.text}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              </div>
+              <div className="space-y-1.5">
+                {sessionDraft.steps.map((step, index) => {
+                  const isActive = !step.done && sessionDraft.steps.slice(0, index).every(s => s.done);
+                  return (
+                    <button
+                      key={step.id}
+                      onClick={() => onToggleStep?.(step.id)}
+                      className={`w-full flex items-start gap-2.5 text-sm text-left rounded-lg px-3 py-2 transition-all duration-200 ${
+                        step.done
+                          ? 'opacity-50'
+                          : isActive
+                          ? 'bg-cyan-100/70 dark:bg-cyan-900/25 border border-cyan-300/60 dark:border-cyan-500/40'
+                          : 'bg-white/40 dark:bg-slate-700/30'
+                      }`}
+                    >
+                      <div className={`flex-shrink-0 w-4 h-4 rounded border-2 mt-0.5 flex items-center justify-center transition-all ${
+                        step.done
+                          ? 'border-green-500 bg-green-500 dark:border-green-400 dark:bg-green-400'
+                          : isActive
+                          ? 'border-cyan-500 dark:border-cyan-400'
+                          : 'border-slate-400 dark:border-slate-500 bg-white/50 dark:bg-slate-700/50'
+                      }`}>
+                        {step.done && (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="white" className="w-3 h-3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`flex-1 leading-snug ${
+                        step.done
+                          ? 'line-through text-slate-400 dark:text-slate-500'
+                          : isActive
+                          ? 'font-medium text-slate-700 dark:text-slate-100'
+                          : 'text-slate-600 dark:text-slate-300'
+                      }`}>
+                        {step.text}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
