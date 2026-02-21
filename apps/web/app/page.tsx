@@ -102,7 +102,7 @@ export default function Home() {
       // Open PiP window
       const pipWindow = await (window as any).documentPictureInPicture.requestWindow({
         width: 300,
-        height: 250,
+        height: 240,
       });
 
       pipWindowRef.current = pipWindow;
@@ -129,60 +129,55 @@ export default function Home() {
       container.style.cssText = `
         display: flex;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
         height: 100vh;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #1e293b;
         color: white;
         font-family: system-ui, -apple-system, sans-serif;
-        padding: 20px;
+        padding: 14px 16px 12px;
+        box-sizing: border-box;
       `;
       container.id = 'pip-container';
+      pipWindow.document.body.style.margin = '0';
       pipWindow.document.body.appendChild(container);
 
       // Create initial HTML structure with IDs for elements
       const currentSession = sessions[currentSessionIndex];
-      const sessionType = currentSession?.type === "focus" ? "🎯 Focus Time" : "☕ Break Time";
-      const sessionColor = currentSession?.type === "focus" ? "#FFFFFF" : "#A5F3E3";
+      const isFocusInit = currentSession?.type === "focus";
+      const sessionType = isFocusInit ? "🎯 Focus" : "☕ Break";
+      const sessionColor = isFocusInit ? "#22d3ee" : "#2FC6A5";
+      const timerColor = isFocusInit ? "white" : "#2FC6A5";
+      const timerGlow = isFocusInit ? "0 0 30px rgba(34,211,238,0.6)" : "0 0 30px rgba(47,198,165,0.5)";
       const initialIntent = sessionDraft.intent || '';
       const initialStep = sessionDraft.steps?.find(s => !s.done)?.text || '';
 
-      const btnStyle = `
-        background: rgba(255, 255, 255, 0.2);
-        border: 2px solid white;
-        color: white;
-        padding: 8px 14px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 13px;
-      `;
-
       container.innerHTML = `
-        <div style="text-align: center; width: 100%;">
-          <div id="pip-session-type" style="font-size: 16px; font-weight: 600; margin-bottom: 6px; color: ${sessionColor};">
-            ${sessionType}
-          </div>
-          <div id="pip-intent" style="font-size: 11px; color: rgba(255,255,255,0.75); margin-bottom: 4px; padding: 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: ${initialIntent ? 'block' : 'none'};">
-            ${initialIntent}
-          </div>
-          <div id="pip-step-row" style="display: ${initialStep ? 'flex' : 'none'}; align-items: center; gap: 6px; margin: 0 0 8px; padding: 5px 6px 5px 10px; background: rgba(255,255,255,0.1); border-radius: 6px; text-align: left;">
-            <span id="pip-step" style="flex: 1; font-size: 11px; color: rgba(255,255,255,0.95); font-weight: 500; line-height: 1.3;">→ ${initialStep}</span>
-            <button id="pip-step-btn" style="flex-shrink: 0; background: rgba(34,211,238,0.35); border: 1.5px solid rgba(34,211,238,0.85); color: white; width: 26px; height: 26px; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 700; line-height: 1;">✓</button>
-          </div>
-          <div id="pip-timer" style="font-size: 46px; font-weight: bold; font-family: 'SF Mono', 'Monaco', monospace; margin-bottom: 12px; line-height: 1;">
+        <div style="display:flex;align-items:center;gap:5px;overflow:hidden;flex-shrink:0;margin-bottom:2px;">
+          <span id="pip-session-type" style="font-size:11px;font-weight:600;color:${sessionColor};white-space:nowrap;flex-shrink:0;">${sessionType}</span>
+          <span id="pip-intent-sep" style="color:rgba(255,255,255,0.2);font-size:11px;flex-shrink:0;display:${initialIntent ? 'inline' : 'none'};">·</span>
+          <span id="pip-intent" style="font-size:11px;color:rgba(255,255,255,0.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:${initialIntent ? 'block' : 'none'};">${initialIntent}</span>
+        </div>
+
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+          <div id="pip-timer" style="font-size:54px;font-weight:700;font-family:'SF Mono','Monaco','Menlo',monospace;color:${timerColor};text-shadow:${timerGlow};line-height:1;letter-spacing:-1px;">
             ${formatTime(timeRemaining)}
           </div>
-          <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-            <button id="pip-pause-btn" style="${btnStyle}">${isPaused ? '▶️ Resume' : '⏸️ Pause'}</button>
-            <button id="pip-mute-btn" style="${btnStyle}">${muteAll ? '🔊 Unmute' : '🔇 Mute'}</button>
-          </div>
+        </div>
+
+        <div id="pip-step-row" style="display:${initialStep ? 'flex' : 'none'};align-items:center;gap:8px;margin-bottom:8px;padding:5px 8px 5px 10px;background:rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;">
+          <span id="pip-step" style="flex:1;font-size:11px;color:rgba(255,255,255,0.75);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${initialStep}</span>
+          <button id="pip-step-btn" style="flex-shrink:0;background:rgba(34,211,238,0.15);border:1px solid rgba(34,211,238,0.5);color:rgba(34,211,238,0.9);min-width:22px;height:22px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:700;padding:0 6px;">✓</button>
+        </div>
+
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button id="pip-pause-btn" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);color:white;padding:7px 10px;border-radius:8px;cursor:pointer;font-weight:600;font-size:12px;">${isPaused ? '▶ Resume' : '⏸ Pause'}</button>
+          <button id="pip-mute-btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);color:white;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;">${muteAll ? '🔊' : '🔇'}</button>
         </div>
       `;
 
       // Get references to elements
       const sessionTypeEl = pipWindow.document.getElementById('pip-session-type');
       const pipIntentEl = pipWindow.document.getElementById('pip-intent');
+      const pipIntentSepEl = pipWindow.document.getElementById('pip-intent-sep');
       const pipStepRow = pipWindow.document.getElementById('pip-step-row');
       const pipStepEl = pipWindow.document.getElementById('pip-step');
       const timerEl = pipWindow.document.getElementById('pip-timer');
@@ -221,36 +216,40 @@ export default function Home() {
         if (!pipWindow || pipWindow.closed) return;
 
         const currentSession = sessionsRef.current[currentSessionIndexRef.current];
-        const sessionType = currentSession?.type === "focus" ? "🎯 Focus Time" : "☕ Break Time";
-        const sessionColor = currentSession?.type === "focus" ? "#FFFFFF" : "#A5F3E3";
         const isFocus = currentSession?.type === "focus";
         const draft = sessionDraftRef.current;
         const activeStep = isFocus ? draft?.steps?.find(s => !s.done) : null;
         const intent = isFocus ? (draft?.intent || '') : '';
 
         // Update only the text content, not the entire structure
+        const pipColor = isFocus ? "#22d3ee" : "#2FC6A5";
         if (sessionTypeEl) {
-          sessionTypeEl.textContent = sessionType;
-          sessionTypeEl.style.color = sessionColor;
+          sessionTypeEl.textContent = isFocus ? "🎯 Focus" : "☕ Break";
+          sessionTypeEl.style.color = pipColor;
         }
         if (pipIntentEl) {
           pipIntentEl.textContent = intent;
           pipIntentEl.style.display = intent ? 'block' : 'none';
         }
+        if (pipIntentSepEl) {
+          pipIntentSepEl.style.display = intent ? 'inline' : 'none';
+        }
         if (pipStepRow) {
           pipStepRow.style.display = activeStep ? 'flex' : 'none';
         }
         if (pipStepEl) {
-          pipStepEl.textContent = activeStep ? `→ ${activeStep.text}` : '';
+          pipStepEl.textContent = activeStep ? activeStep.text : '';
         }
         if (timerEl) {
           timerEl.textContent = formatTime(timeRemainingRef.current);
+          timerEl.style.color = isFocus ? 'white' : '#2FC6A5';
+          timerEl.style.textShadow = isFocus ? '0 0 30px rgba(34,211,238,0.6)' : '0 0 30px rgba(47,198,165,0.5)';
         }
         if (pauseBtn) {
-          pauseBtn.textContent = isPausedRef.current ? '▶️ Resume' : '⏸️ Pause';
+          pauseBtn.textContent = isPausedRef.current ? '▶ Resume' : '⏸ Pause';
         }
         if (muteBtn) {
-          muteBtn.textContent = muteAllRef.current ? '🔊 Unmute' : '🔇 Mute';
+          muteBtn.textContent = muteAllRef.current ? '🔊' : '🔇';
         }
       };
 
