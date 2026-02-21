@@ -111,7 +111,6 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
       {/* Intent */}
       {session.intent && (
         <div className="mb-2 flex items-start gap-2">
-          <span className="text-cyan-600 dark:text-cyan-400 text-xs mt-0.5">→</span>
           <p className="flex-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
             {session.intent}
           </p>
