@@ -9,11 +9,10 @@ node_modules
 /dist
 /build
 
-# Mobile app
+# Mobile app and native build artifacts
 apps/mobile
-
-# Other packages (exclude everything except web)
-packages/*
+android/
+ios/
 
 # Testing
 coverage
