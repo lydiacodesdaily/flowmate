@@ -366,11 +366,13 @@ export function groupSessionsByDay(): DailySummary[] {
   const history = getHistory();
   const grouped = new Map<string, SessionRecord[]>();
 
-  // Group sessions by date
+  // Group sessions by date (use local date components to avoid UTC offset issues)
   history.forEach(session => {
     const date = new Date(session.startedAt);
-    date.setHours(0, 0, 0, 0);
-    const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateKey = `${year}-${month}-${day}`;
 
     if (!grouped.has(dateKey)) {
       grouped.set(dateKey, []);
@@ -386,8 +388,9 @@ export function groupSessionsByDay(): DailySummary[] {
   yesterday.setDate(yesterday.getDate() - 1);
 
   grouped.forEach((sessions, dateKey) => {
-    const date = new Date(dateKey);
-    date.setHours(0, 0, 0, 0);
+    // Parse as local midnight to avoid UTC offset shifting the date
+    const [y, mo, d] = dateKey.split('-').map(Number);
+    const date = new Date(y, mo - 1, d);
 
     // Calculate stats
     const totalMinutes = sessions.reduce((sum, session) => {
