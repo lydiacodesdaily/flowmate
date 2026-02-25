@@ -425,7 +425,7 @@ export const TimerDisplay = ({
                           {/* Toggle checkbox */}
                           <button
                             onClick={() => onToggleStep?.(step.id)}
-                            className={`flex-shrink-0 w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all ${
+                            className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
                               step.done
                                 ? 'border-green-500 bg-green-500 dark:border-green-400 dark:bg-green-400'
                                 : isActive
@@ -435,7 +435,7 @@ export const TimerDisplay = ({
                             aria-label={step.done ? "Mark as not done" : "Mark as done"}
                           >
                             {step.done && (
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="white" className="w-2.5 h-2.5">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="white" className="w-3 h-3">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                               </svg>
                             )}
@@ -453,12 +453,12 @@ export const TimerDisplay = ({
                                 if (e.key === 'Escape') { e.preventDefault(); handleCancelEditStep(); }
                               }}
                               autoFocus
-                              className="flex-1 bg-transparent text-xs text-slate-700 dark:text-slate-200 focus:outline-none border-b border-slate-300 dark:border-slate-500 pb-0.5"
+                              className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-200 focus:outline-none border-b border-slate-300 dark:border-slate-500 pb-0.5"
                             />
                           ) : (
                             <span
                               onClick={() => handleStartEditStep(step.id, step.text)}
-                              className={`flex-1 leading-snug text-xs cursor-text ${
+                              className={`flex-1 leading-snug text-sm cursor-text ${
                                 step.done
                                   ? 'line-through text-slate-400 dark:text-slate-500'
                                   : isActive
@@ -490,7 +490,7 @@ export const TimerDisplay = ({
                   {sessionDraft.steps.length < MAX_STEPS && (
                     isAddingStep ? (
                       <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg border border-dashed border-slate-200 dark:border-slate-600">
-                        <div className="flex-shrink-0 w-3.5 h-3.5 rounded border-2 border-slate-200 dark:border-slate-600" />
+                        <div className="flex-shrink-0 w-4 h-4 rounded border-2 border-slate-200 dark:border-slate-600" />
                         <input
                           type="text"
                           value={newStepText}
@@ -502,13 +502,13 @@ export const TimerDisplay = ({
                           }}
                           autoFocus
                           placeholder="Add a step..."
-                          className="flex-1 bg-transparent text-xs text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400"
+                          className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400"
                         />
                       </div>
                     ) : (
                       <button
                         onClick={() => setIsAddingStep(true)}
-                        className="w-full text-left px-2 py-1.5 text-xs text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 transition-all"
+                        className="w-full text-left px-2 py-1.5 text-sm text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 transition-all"
                       >
                         + add a step
                       </button>
@@ -539,7 +539,7 @@ export const TimerDisplay = ({
             ) : (
               <button
                 onClick={() => setIsAddingStep(true)}
-                className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 transition-all"
+                className="text-sm text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 transition-all"
               >
                 + add a step
               </button>
