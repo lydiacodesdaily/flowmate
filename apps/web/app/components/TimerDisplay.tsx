@@ -5,6 +5,9 @@ import { TimerBlock, TimerMode, SessionDraft } from "../types";
 import { ProgressBar } from "./ProgressBar";
 import { TomatoIcon } from "./TomatoIcon";
 
+const MAX_STEPS = 5;
+const MAX_STEP_LENGTH = 60;
+
 interface TimerDisplayProps {
   sessions: TimerBlock[];
   currentSessionIndex: number;
@@ -26,6 +29,9 @@ interface TimerDisplayProps {
   sessionDraft?: SessionDraft;
   onUpdateIntent?: (intent: string) => void;
   onToggleStep?: (stepId: string) => void;
+  onAddStep?: (text: string) => void;
+  onEditStep?: (stepId: string, newText: string) => void;
+  onRemoveStep?: (stepId: string) => void;
 }
 
 export const TimerDisplay = ({
@@ -49,10 +55,17 @@ export const TimerDisplay = ({
   sessionDraft,
   onUpdateIntent,
   onToggleStep,
+  onAddStep,
+  onEditStep,
+  onRemoveStep,
 }: TimerDisplayProps) => {
   const [isEditingIntent, setIsEditingIntent] = useState(false);
   const [editedIntent, setEditedIntent] = useState("");
   const [stepsExpanded, setStepsExpanded] = useState(true);
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const [editingStepText, setEditingStepText] = useState("");
+  const [isAddingStep, setIsAddingStep] = useState(false);
+  const [newStepText, setNewStepText] = useState("");
 
   // Calculate if we can remove cycles
   // We can remove if there are at least 2 sessions after the current session
@@ -73,6 +86,40 @@ export const TimerDisplay = ({
 
   const handleCancelEdit = () => {
     setIsEditingIntent(false);
+  };
+
+  const handleStartEditStep = (id: string, text: string) => {
+    setEditingStepId(id);
+    setEditingStepText(text);
+  };
+
+  const handleSaveEditStep = () => {
+    if (editingStepId && editingStepText.trim()) {
+      onEditStep?.(editingStepId, editingStepText.trim());
+    }
+    setEditingStepId(null);
+    setEditingStepText("");
+  };
+
+  const handleCancelEditStep = () => {
+    setEditingStepId(null);
+    setEditingStepText("");
+  };
+
+  const handleRemoveStep = (stepId: string) => {
+    if (editingStepId === stepId) {
+      setEditingStepId(null);
+      setEditingStepText("");
+    }
+    onRemoveStep?.(stepId);
+  };
+
+  const handleSubmitNewStep = () => {
+    if (newStepText.trim()) {
+      onAddStep?.(newStepText.trim());
+    }
+    setNewStepText("");
+    setIsAddingStep(false);
   };
 
   return (
@@ -339,66 +386,164 @@ export const TimerDisplay = ({
       </div>
 
       {/* Steps — collapsible, below all controls */}
-      {currentSessionType === "focus" && sessionDraft?.steps && sessionDraft.steps.length > 0 && (
+      {currentSessionType === "focus" && sessionDraft && (
         <div className="mt-6 pt-5 border-t border-slate-200/70 dark:border-slate-700/70">
-          <button
-            onClick={() => setStepsExpanded(!stepsExpanded)}
-            className="w-full flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-all"
-          >
-            <span className="font-medium">
-              {sessionDraft.steps.filter(s => s.done).length} / {sessionDraft.steps.length} steps
-            </span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-              className={`w-3.5 h-3.5 transition-transform duration-200 ${stepsExpanded ? 'rotate-180' : ''}`}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
-          </button>
+          {sessionDraft.steps.length > 0 ? (
+            <>
+              <button
+                onClick={() => setStepsExpanded(!stepsExpanded)}
+                className="w-full flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-all"
+              >
+                <span className="font-medium">
+                  {sessionDraft.steps.filter(s => s.done).length} / {sessionDraft.steps.length} steps
+                </span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${stepsExpanded ? 'rotate-180' : ''}`}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
 
-          {stepsExpanded && (
-            <div className="mt-2 space-y-0.5 max-h-40 overflow-y-auto">
-              {[...sessionDraft.steps]
-                .sort((a, b) => (a.done === b.done ? 0 : a.done ? 1 : -1))
-                .map((step) => {
-                  const originalIdx = sessionDraft.steps!.findIndex(s => s.id === step.id);
-                  const isActive = !step.done && sessionDraft.steps!.slice(0, originalIdx).every(s => s.done);
-                  return (
-                    <button
-                      key={step.id}
-                      onClick={() => onToggleStep?.(step.id)}
-                      className={`w-full flex items-center gap-2.5 text-left px-2 py-1.5 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 ${step.done ? 'opacity-30' : ''}`}
-                    >
-                      <div className={`flex-shrink-0 w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all ${
-                        step.done
-                          ? 'border-green-500 bg-green-500 dark:border-green-400 dark:bg-green-400'
-                          : isActive
-                          ? 'border-cyan-500 dark:border-cyan-400'
-                          : 'border-slate-300 dark:border-slate-500'
-                      }`}>
-                        {step.done && (
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="white" className="w-2.5 h-2.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        )}
+              {stepsExpanded && (
+                <div className="mt-2 space-y-0.5 max-h-48 overflow-y-auto">
+                  {[...sessionDraft.steps]
+                    .sort((a, b) => (a.done === b.done ? 0 : a.done ? 1 : -1))
+                    .map((step) => {
+                      const originalIdx = sessionDraft.steps!.findIndex(s => s.id === step.id);
+                      const isActive = !step.done && sessionDraft.steps!.slice(0, originalIdx).every(s => s.done);
+                      const isEditing = editingStepId === step.id;
+                      return (
+                        <div
+                          key={step.id}
+                          className={`group w-full flex items-center gap-2.5 text-left px-2 py-1.5 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 ${step.done && !isEditing ? 'opacity-30' : ''}`}
+                        >
+                          {/* Toggle checkbox */}
+                          <button
+                            onClick={() => onToggleStep?.(step.id)}
+                            className={`flex-shrink-0 w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all ${
+                              step.done
+                                ? 'border-green-500 bg-green-500 dark:border-green-400 dark:bg-green-400'
+                                : isActive
+                                ? 'border-cyan-500 dark:border-cyan-400'
+                                : 'border-slate-300 dark:border-slate-500'
+                            }`}
+                            aria-label={step.done ? "Mark as not done" : "Mark as done"}
+                          >
+                            {step.done && (
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="white" className="w-2.5 h-2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                              </svg>
+                            )}
+                          </button>
+
+                          {/* Editable step text */}
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editingStepText}
+                              onChange={(e) => setEditingStepText(e.target.value.slice(0, MAX_STEP_LENGTH))}
+                              onBlur={handleSaveEditStep}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') { e.preventDefault(); handleSaveEditStep(); }
+                                if (e.key === 'Escape') { e.preventDefault(); handleCancelEditStep(); }
+                              }}
+                              autoFocus
+                              className="flex-1 bg-transparent text-xs text-slate-700 dark:text-slate-200 focus:outline-none border-b border-slate-300 dark:border-slate-500 pb-0.5"
+                            />
+                          ) : (
+                            <span
+                              onClick={() => handleStartEditStep(step.id, step.text)}
+                              className={`flex-1 leading-snug text-xs cursor-text ${
+                                step.done
+                                  ? 'line-through text-slate-400 dark:text-slate-500'
+                                  : isActive
+                                  ? 'font-semibold text-slate-700 dark:text-slate-100'
+                                  : 'text-slate-500 dark:text-slate-400'
+                              }`}
+                            >
+                              {step.text}
+                            </span>
+                          )}
+
+                          {/* Remove button */}
+                          {!isEditing && (
+                            <button
+                              onClick={() => handleRemoveStep(step.id)}
+                              className="flex-shrink-0 p-0.5 rounded text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 transition-all opacity-0 group-hover:opacity-100"
+                              aria-label="Remove step"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                  {/* Add step input / button */}
+                  {sessionDraft.steps.length < MAX_STEPS && (
+                    isAddingStep ? (
+                      <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg border border-dashed border-slate-200 dark:border-slate-600">
+                        <div className="flex-shrink-0 w-3.5 h-3.5 rounded border-2 border-slate-200 dark:border-slate-600" />
+                        <input
+                          type="text"
+                          value={newStepText}
+                          onChange={(e) => setNewStepText(e.target.value.slice(0, MAX_STEP_LENGTH))}
+                          onBlur={handleSubmitNewStep}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') { e.preventDefault(); handleSubmitNewStep(); }
+                            if (e.key === 'Escape') { e.preventDefault(); setIsAddingStep(false); setNewStepText(""); }
+                          }}
+                          autoFocus
+                          placeholder="Add a step..."
+                          className="flex-1 bg-transparent text-xs text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400"
+                        />
                       </div>
-                      <span className={`flex-1 leading-snug text-xs ${
-                        step.done
-                          ? 'line-through text-slate-400 dark:text-slate-500'
-                          : isActive
-                          ? 'font-semibold text-slate-700 dark:text-slate-100'
-                          : 'text-slate-500 dark:text-slate-400'
-                      }`}>
-                        {step.text}
-                      </span>
-                    </button>
-                  );
-                })}
-            </div>
+                    ) : (
+                      <button
+                        onClick={() => setIsAddingStep(true)}
+                        className="w-full text-left px-2 py-1.5 text-xs text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 transition-all"
+                      >
+                        + add a step
+                      </button>
+                    )
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            /* No steps yet */
+            isAddingStep ? (
+              <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg border border-dashed border-slate-200 dark:border-slate-600">
+                <div className="flex-shrink-0 w-3.5 h-3.5 rounded border-2 border-slate-200 dark:border-slate-600" />
+                <input
+                  type="text"
+                  value={newStepText}
+                  onChange={(e) => setNewStepText(e.target.value.slice(0, MAX_STEP_LENGTH))}
+                  onBlur={handleSubmitNewStep}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); handleSubmitNewStep(); }
+                    if (e.key === 'Escape') { e.preventDefault(); setIsAddingStep(false); setNewStepText(""); }
+                  }}
+                  autoFocus
+                  placeholder="Add a step..."
+                  className="flex-1 bg-transparent text-xs text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400"
+                />
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsAddingStep(true)}
+                className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 transition-all"
+              >
+                + add a step
+              </button>
+            )
           )}
         </div>
       )}

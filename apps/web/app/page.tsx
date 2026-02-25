@@ -14,7 +14,7 @@ import { SessionComplete } from "./components/SessionComplete";
 import { EarlyStopModal } from "./components/EarlyStopModal";
 import { ProgressModal } from "./components/ProgressModal";
 import { loadStats, saveStats, addFocusSession } from "./utils/statsUtils";
-import { getDraft, saveDraft, clearDraft, createSessionRecord, appendHistory } from "./utils/sessionUtils";
+import { getDraft, saveDraft, clearDraft, createSessionRecord, appendHistory, createPrepStep } from "./utils/sessionUtils";
 
 export default function Home() {
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
@@ -517,6 +517,38 @@ export default function Home() {
         step.id === stepId ? { ...step, done: !step.done } : step
       );
       const updatedDraft = { ...prev, steps: updatedSteps };
+      saveDraft(updatedDraft);
+      return updatedDraft;
+    });
+  };
+
+  // Add a new step during an active session
+  const handleAddStep = (text: string) => {
+    setSessionDraft(prev => {
+      if (prev.steps.length >= 5) return prev;
+      const newStep = createPrepStep(text);
+      const updatedDraft = { ...prev, steps: [...prev.steps, newStep] };
+      saveDraft(updatedDraft);
+      return updatedDraft;
+    });
+  };
+
+  // Edit a step's text during an active session
+  const handleEditStep = (stepId: string, newText: string) => {
+    setSessionDraft(prev => {
+      const updatedSteps = prev.steps.map(step =>
+        step.id === stepId ? { ...step, text: newText } : step
+      );
+      const updatedDraft = { ...prev, steps: updatedSteps };
+      saveDraft(updatedDraft);
+      return updatedDraft;
+    });
+  };
+
+  // Remove a step during an active session
+  const handleRemoveStep = (stepId: string) => {
+    setSessionDraft(prev => {
+      const updatedDraft = { ...prev, steps: prev.steps.filter(s => s.id !== stepId) };
       saveDraft(updatedDraft);
       return updatedDraft;
     });
@@ -1423,6 +1455,9 @@ export default function Home() {
             sessionDraft={sessionDraft}
             onUpdateIntent={handleUpdateIntent}
             onToggleStep={handleToggleStep}
+            onAddStep={handleAddStep}
+            onEditStep={handleEditStep}
+            onRemoveStep={handleRemoveStep}
           />
         )}
       </div>
