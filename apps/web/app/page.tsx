@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
-import { SessionDuration, TimerMode, TimerType, TimerBlock, FOCUS_DURATION, BREAK_DURATION, UserStats, SessionDraft, SessionStatus, PrepStep } from "./types";
+import { SessionDuration, TimerMode, TimerType, TimerBlock, FOCUS_DURATION, BREAK_DURATION, UserStats, SessionDraft, SessionStatus, PrepStep, SessionRecord, ActiveSession } from "./types";
 import { SettingsModal } from "./components/SettingsModal";
 import { TimerSelection } from "./components/TimerSelection";
 import { TimerDisplay } from "./components/TimerDisplay";
@@ -14,7 +14,7 @@ import { SessionComplete } from "./components/SessionComplete";
 import { EarlyStopModal } from "./components/EarlyStopModal";
 import { ProgressModal } from "./components/ProgressModal";
 import { loadStats, saveStats, addFocusSession } from "./utils/statsUtils";
-import { getDraft, saveDraft, clearDraft, createSessionRecord, appendHistory, createPrepStep } from "./utils/sessionUtils";
+import { getDraft, saveDraft, clearDraft, createSessionRecord, appendHistory, createPrepStep, getActiveSession, setActiveSession, clearActiveSession, isResumable, sessionToDraft } from "./utils/sessionUtils";
 
 export default function Home() {
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
@@ -53,6 +53,10 @@ export default function Home() {
   const [sessionDraft, setSessionDraft] = useState<SessionDraft>({ intent: '', steps: [] });
   const [sessionStartTime, setSessionStartTime] = useState<number>(0);
   const [sessionEndTime, setSessionEndTime] = useState<number>(0);
+
+  // Resume / Continue Today state
+  const [resumingFromId, setResumingFromId] = useState<string | null>(null);
+  const [crashRecovery, setCrashRecovery] = useState<ActiveSession | null>(null);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -483,7 +487,9 @@ export default function Home() {
     setIsPaused(false);
     lastMinuteAnnouncedRef.current = -1;
     setShowSessionSetup(false);
-    setSessionStartTime(Date.now());
+    const now = Date.now();
+    setSessionStartTime(now);
+    setActiveSession({ startedAt: now, plannedSeconds: selectedDuration * 60, draft: latestDraft });
 
     // Initialize audio on user interaction (required for mobile browsers)
     initializeAudio();
@@ -501,6 +507,51 @@ export default function Home() {
     clearDraft();
     setSessionDraft({ intent: '', steps: [] });
     handleStartTimer();
+  };
+
+  // Resume a partial session — starts timer with remaining time, no setup modal
+  const handleResume = (session: SessionRecord) => {
+    const remainingSeconds = session.plannedSeconds - session.completedSeconds;
+    if (remainingSeconds <= 0) return;
+
+    const draft = sessionToDraft(session);
+    saveDraft(draft);
+    setSessionDraft(draft);
+    setResumingFromId(session.id);
+    setTimerType('focus');
+    setTimerMode(session.mode as TimerMode);
+    setSelectedDuration(Math.ceil(remainingSeconds / 60) as SessionDuration);
+
+    const resumeBlock: TimerBlock = { type: 'focus', duration: remainingSeconds };
+    setSessions([resumeBlock]);
+    setCurrentSessionIndex(0);
+    setTimeRemaining(remainingSeconds);
+    setIsRunning(true);
+    setIsPaused(false);
+    lastMinuteAnnouncedRef.current = -1;
+    const now = Date.now();
+    setSessionStartTime(now);
+    setActiveSession({ startedAt: now, plannedSeconds: remainingSeconds, draft });
+    setShowProgress(false);
+    setCrashRecovery(null);
+    initializeAudio();
+  };
+
+  // Continue Today / Repeat — copies intent + steps to draft, returns to home screen
+  const handleContinueToday = (session: SessionRecord) => {
+    const draft = sessionToDraft(session);
+    saveDraft(draft);
+    setSessionDraft(draft);
+    setTimerType('focus');
+    setShowProgress(false);
+    setCrashRecovery(null);
+    // User picks duration on the home screen; SessionSetup will load the pre-filled draft
+  };
+
+  // Dismiss crash recovery banner without resuming
+  const handleDismissCrashRecovery = () => {
+    clearActiveSession();
+    setCrashRecovery(null);
   };
 
   // Update intent during timer
@@ -604,7 +655,8 @@ export default function Home() {
       'focus',
       status,
       finalDraft,
-      note
+      note,
+      resumingFromId ?? undefined
     );
     appendHistory(record);
 
@@ -615,7 +667,9 @@ export default function Home() {
       saveStats(updatedStats);
     }
 
-    // Clear draft and reset
+    // Clear active session tracking and draft, then reset
+    clearActiveSession();
+    setResumingFromId(null);
     clearDraft();
     setShowSessionComplete(false);
     reset();
@@ -623,6 +677,8 @@ export default function Home() {
 
   // Handle session discard
   const handleSessionDiscard = () => {
+    clearActiveSession();
+    setResumingFromId(null);
     setShowSessionComplete(false);
     reset();
   };
@@ -643,6 +699,8 @@ export default function Home() {
 
   // Handle early stop - discard
   const handleEarlyStopDiscard = () => {
+    clearActiveSession();
+    setResumingFromId(null);
     setShowEarlyStop(false);
     reset();
   };
@@ -892,6 +950,18 @@ export default function Home() {
   useEffect(() => {
     const stats = loadStats();
     setUserStats(stats);
+  }, []);
+
+  // Crash recovery: check for an interrupted active session on mount
+  useEffect(() => {
+    const active = getActiveSession();
+    if (!active) return;
+    const ageMs = Date.now() - active.startedAt;
+    if (ageMs < 24 * 60 * 60 * 1000) {
+      setCrashRecovery(active);
+    } else {
+      clearActiveSession();
+    }
   }, []);
 
   // Initialize theme and audio settings from localStorage
@@ -1376,7 +1446,11 @@ export default function Home() {
 
       {/* Progress Modal - combines Daily Summary and Stats */}
       {showProgress && (
-        <ProgressModal onClose={() => setShowProgress(false)} />
+        <ProgressModal
+          onClose={() => setShowProgress(false)}
+          onResume={handleResume}
+          onContinueToday={handleContinueToday}
+        />
       )}
 
       {/* Session Layer Modals */}
@@ -1403,6 +1477,49 @@ export default function Home() {
         <p className="text-center text-slate-600 dark:text-cyan-200/80 mb-6 sm:mb-8 text-sm sm:text-base">
           Focus Timer with Audio Announcements
         </p>
+
+        {/* Crash recovery banner — shown when the app restarted mid-session */}
+        {crashRecovery && !isRunning && (
+          <div className="mb-4 rounded-2xl border border-yellow-300 dark:border-yellow-600/50 bg-yellow-50 dark:bg-yellow-900/20 p-4 flex items-center gap-3">
+            <span className="text-yellow-500 dark:text-yellow-400 text-xl flex-shrink-0">⚡</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300">
+                Unfinished session found
+              </p>
+              {crashRecovery.draft.intent && (
+                <p className="text-xs text-yellow-700 dark:text-yellow-400 truncate mt-0.5">
+                  {crashRecovery.draft.intent}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => handleResume({
+                  id: '',
+                  startedAt: crashRecovery.startedAt,
+                  endedAt: crashRecovery.startedAt,
+                  plannedSeconds: crashRecovery.plannedSeconds,
+                  completedSeconds: 0,
+                  mode: timerMode,
+                  timerType: 'focus',
+                  type: 'focus',
+                  status: 'partial',
+                  intent: crashRecovery.draft.intent,
+                  stepsDetail: crashRecovery.draft.steps,
+                })}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-white transition-colors"
+              >
+                Resume
+              </button>
+              <button
+                onClick={handleDismissCrashRecovery}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-yellow-100 dark:bg-yellow-900/40 hover:bg-yellow-200 dark:hover:bg-yellow-800/40 text-yellow-700 dark:text-yellow-400 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
 
         {showSessionComplete ? (
           <SessionComplete

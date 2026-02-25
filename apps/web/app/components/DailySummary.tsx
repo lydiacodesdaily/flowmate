@@ -1,17 +1,21 @@
 "use client";
 
-import { getTodaysSessions, getTodayStats, getAllTimeTotalMinutes, getAllTimeSavedSessions, formatDuration, formatTime, RETENTION_DAYS } from "../utils/sessionUtils";
+import { getTodaysSessions, getTodayStats, getAllTimeTotalMinutes, getAllTimeSavedSessions, formatDuration, formatTime, RETENTION_DAYS, getResumableSession, isResumable } from "../utils/sessionUtils";
 import { formatFocusTime } from "../utils/statsUtils";
+import { SessionRecord } from "../types";
 
 interface DailySummaryProps {
   onClose: () => void;
+  onResume?: (session: SessionRecord) => void;
+  onContinueToday?: (session: SessionRecord) => void;
 }
 
-export const DailySummary = ({ onClose }: DailySummaryProps) => {
+export const DailySummary = ({ onClose, onResume, onContinueToday }: DailySummaryProps) => {
   const todaySessions = getTodaysSessions();
   const todayStats = getTodayStats();
   const allTimeMinutes = getAllTimeTotalMinutes();
   const allTimeSessions = getAllTimeSavedSessions();
+  const resumableSession = getResumableSession();
 
   const getModeLabel = (mode: string) => {
     switch (mode) {
@@ -61,6 +65,40 @@ export const DailySummary = ({ onClose }: DailySummaryProps) => {
             </svg>
           </button>
         </div>
+
+        {/* Resume / Continue Today banner for most recent unfinished session */}
+        {resumableSession && (
+          <div className="mb-6 rounded-2xl border border-cyan-300 dark:border-cyan-600/50 bg-cyan-50 dark:bg-cyan-900/20 p-4 flex items-center gap-3">
+            <span className="text-cyan-500 dark:text-cyan-400 text-xl flex-shrink-0">◐</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-cyan-800 dark:text-cyan-300">
+                {Math.floor((resumableSession.plannedSeconds - resumableSession.completedSeconds) / 60)}m left
+              </p>
+              {resumableSession.intent && (
+                <p className="text-xs text-cyan-700 dark:text-cyan-400 truncate mt-0.5">
+                  {resumableSession.intent}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              {isResumable(resumableSession) ? (
+                <button
+                  onClick={() => { onResume?.(resumableSession); onClose(); }}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-white transition-colors"
+                >
+                  Resume
+                </button>
+              ) : (
+                <button
+                  onClick={() => { onContinueToday?.(resumableSession); onClose(); }}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 transition-colors"
+                >
+                  Continue Today
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Today's Stats */}
         <div className="mb-6 grid grid-cols-2 gap-4">

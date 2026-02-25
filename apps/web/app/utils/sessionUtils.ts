@@ -1,9 +1,12 @@
-import { SessionDraft, SessionRecord, PrepStep, TimerMode, SessionType, TimerType, SessionStatus } from '../types';
+import { SessionDraft, SessionRecord, PrepStep, TimerMode, SessionType, TimerType, SessionStatus, ActiveSession } from '../types';
 
 const STORAGE_KEYS = {
   DRAFT: 'flowmate:v1:sessionDraft',
   HISTORY: 'flowmate:v1:sessionHistory',
+  ACTIVE_SESSION: 'flowmate:v1:activeSession',
 } as const;
+
+const RESUME_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // Retention period in days (time-based, not count-based)
 export const RETENTION_DAYS = 90;
@@ -109,10 +112,11 @@ export function createSessionRecord(
   type: SessionType,
   status: SessionStatus,
   draft?: SessionDraft,
-  note?: string
+  note?: string,
+  resumedFromId?: string
 ): SessionRecord {
   const record: SessionRecord = {
-    id: `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
     startedAt,
     endedAt,
     plannedSeconds,
@@ -132,6 +136,7 @@ export function createSessionRecord(
         total: draft.steps.length,
         done: draft.steps.filter(s => s.done).length,
       };
+      record.stepsDetail = draft.steps;
     }
   }
 
@@ -139,7 +144,65 @@ export function createSessionRecord(
     record.note = note;
   }
 
+  if (resumedFromId) {
+    record.resumedFromId = resumedFromId;
+  }
+
   return record;
+}
+
+// ===== Active Session (crash recovery) =====
+
+export function getActiveSession(): ActiveSession | null {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.ACTIVE_SESSION);
+    if (!stored) return null;
+    return JSON.parse(stored) as ActiveSession;
+  } catch {
+    return null;
+  }
+}
+
+export function setActiveSession(session: ActiveSession): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.ACTIVE_SESSION, JSON.stringify(session));
+  } catch (error) {
+    console.error('Error saving active session:', error);
+  }
+}
+
+export function clearActiveSession(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSION);
+  } catch (error) {
+    console.error('Error clearing active session:', error);
+  }
+}
+
+// ===== Resume Helpers =====
+
+export function isResumable(session: SessionRecord): boolean {
+  return (
+    session.timerType === 'focus' &&
+    session.status === 'partial' &&
+    Date.now() - session.endedAt < RESUME_WINDOW_MS
+  );
+}
+
+// Returns the most recent partial focus session within the 24-hour resume window.
+export function getResumableSession(): SessionRecord | null {
+  const history = getHistory();
+  return history.find(s => isResumable(s)) ?? null;
+}
+
+// Builds a fresh SessionDraft from a session record (steps reset to undone).
+export function sessionToDraft(session: SessionRecord): SessionDraft {
+  return {
+    intent: session.intent ?? '',
+    steps: session.stepsDetail
+      ? session.stepsDetail.map(s => ({ ...s, done: false }))
+      : [],
+  };
 }
 
 // ===== Today's Summary Helpers =====

@@ -57,5 +57,15 @@ export interface SessionRecord {
     total: number;
     done: number;
   };
+  stepsDetail?: PrepStep[]; // Full step list, used for Continue Today / Repeat
   note?: string;
+  resumedFromId?: string; // ID of the partial session this continues (lineage only)
+}
+
+// Active session written to storage when timer starts; cleared on normal completion.
+// Used to detect app crashes so the user can be offered a resume.
+export interface ActiveSession {
+  startedAt: number;
+  plannedSeconds: number;
+  draft: SessionDraft;
 }

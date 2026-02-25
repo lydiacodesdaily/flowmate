@@ -13,17 +13,20 @@ import {
   formatTime,
   formatDate,
   groupSessionsByDay,
+  isResumable,
   DailySummary
 } from "../utils/sessionUtils";
 import { formatFocusTime } from "../utils/statsUtils";
 
 interface ProgressModalProps {
   onClose: () => void;
+  onResume?: (session: SessionRecord) => void;
+  onContinueToday?: (session: SessionRecord) => void;
 }
 
 type ViewMode = "today" | "history";
 
-export const ProgressModal = ({ onClose }: ProgressModalProps) => {
+export const ProgressModal = ({ onClose, onResume, onContinueToday }: ProgressModalProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("today");
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
 
@@ -131,8 +134,8 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
         </div>
       )}
 
-      {/* Status Badge */}
-      <div className="mt-2">
+      {/* Status Badge + Action Button */}
+      <div className="mt-2 flex items-center justify-between gap-2">
         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${
           session.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
           session.status === 'partial' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
@@ -140,6 +143,32 @@ export const ProgressModal = ({ onClose }: ProgressModalProps) => {
         }`}>
           {session.status}
         </span>
+
+        {/* Resume / Continue Today / Repeat — only for focus sessions */}
+        {session.timerType === 'focus' && session.status !== 'skipped' && (
+          session.status === 'partial' && isResumable(session) ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onResume?.(session); }}
+              className="text-xs font-semibold px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-white transition-colors"
+            >
+              Resume
+            </button>
+          ) : session.status === 'partial' ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onContinueToday?.(session); }}
+              className="text-xs font-semibold px-3 py-1 rounded-lg bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 transition-colors"
+            >
+              Continue Today
+            </button>
+          ) : session.status === 'completed' ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onContinueToday?.(session); }}
+              className="text-xs font-semibold px-3 py-1 rounded-lg bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 transition-colors"
+            >
+              Repeat
+            </button>
+          ) : null
+        )}
       </div>
     </div>
     );
