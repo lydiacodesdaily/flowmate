@@ -514,7 +514,7 @@ export default function Home() {
     const remainingSeconds = session.plannedSeconds - session.completedSeconds;
     if (remainingSeconds <= 0) return;
 
-    const draft = sessionToDraft(session);
+    const draft = sessionToDraft(session, true);
     saveDraft(draft);
     setSessionDraft(draft);
     setResumingFromId(session.id);
