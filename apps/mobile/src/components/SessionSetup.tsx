@@ -10,11 +10,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Alert,
 } from 'react-native';
 import { SessionDraft, PrepStep } from '@flowmate/shared/types';
 import { createPrepStep } from '../services/sessionService';
 import { useTheme } from '../theme/ThemeContext';
 import { useResponsive } from '../hooks/useResponsive';
+
+const WEB_BASE_URL =
+  process.env.EXPO_PUBLIC_WEB_BASE_URL ?? 'https://flowmate.club';
 
 interface SessionSetupProps {
   visible: boolean;
@@ -33,10 +37,13 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
   const [intent, setIntent] = useState('');
   const [steps, setSteps] = useState<PrepStep[]>([]);
   const [newStepText, setNewStepText] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [hasGenerated, setHasGenerated] = useState(false);
 
   useEffect(() => {
     if (visible) {
       console.log('SessionSetup visible, initialDraft:', JSON.stringify(initialDraft));
+      setHasGenerated(false);
       // Only populate with initialDraft if it has meaningful content
       if (initialDraft && (initialDraft.intent || initialDraft.steps.length > 0)) {
         console.log('Populating with existing draft');
@@ -50,6 +57,37 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
       }
     }
   }, [visible, initialDraft]);
+
+  const generateSteps = async () => {
+    if (!intent.trim() || isGenerating) return;
+    setIsGenerating(true);
+    try {
+      const res = await fetch(`${WEB_BASE_URL}/api/ai/steps`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intent: intent.trim(), tone: 'gentle' }),
+      });
+      const data: { steps?: string[]; error?: string } = await res.json();
+      if (!res.ok) {
+        Alert.alert('Could not generate steps', data.error ?? 'Please try again.');
+        return;
+      }
+      const newSteps = data.steps ?? [];
+      setSteps((prev) => {
+        const filled = prev.filter((s) => s.text.trim());
+        const emptySlots = MAX_STEPS - filled.length;
+        const toAdd = newSteps
+          .slice(0, emptySlots)
+          .map((text) => createPrepStep(text));
+        return [...filled, ...toAdd];
+      });
+      setHasGenerated(true);
+    } catch {
+      Alert.alert('Could not generate steps', 'Network error. Please check your connection.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleAddStep = () => {
     if (newStepText.trim() && steps.length < MAX_STEPS) {
@@ -151,6 +189,17 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
                 textAlignVertical="top"
                 autoFocus={false}
               />
+              {intent.trim().length >= 3 && steps.length < MAX_STEPS && (
+                <TouchableOpacity
+                  onPress={generateSteps}
+                  disabled={isGenerating}
+                  style={styles.generateButton}
+                >
+                  <Text style={[styles.generateButtonText, { color: theme.colors.primary, opacity: isGenerating ? 0.5 : 1 }]}>
+                    {isGenerating ? 'Generating…' : hasGenerated ? '↻ Regenerate' : '✨ Generate steps'}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Steps Section */}
@@ -455,5 +504,14 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 17,
     fontWeight: '600',
+  },
+  generateButton: {
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    paddingVertical: 4,
+  },
+  generateButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

@@ -41,6 +41,7 @@ export default function PrivacyPage() {
                 <li>We do not require an account or collect personal information.</li>
                 <li>We do not use ads or sell your data.</li>
                 <li>Feedback you submit through our form is voluntary and handled by a trusted third party.</li>
+                <li>If you use &ldquo;✨ Generate steps&rdquo;, your focus intent text is sent to an AI service to create step suggestions. It is not stored on our servers or used for ads.</li>
               </ul>
             </section>
 
@@ -102,6 +103,20 @@ export default function PrivacyPage() {
               <ul className="text-slate-700 dark:text-slate-300 text-sm space-y-1 mb-0 list-disc list-inside">
                 <li>Our feedback form is hosted by Tally.so. When you submit feedback, Tally processes that submission according to their privacy policy.</li>
                 <li>The web app is hosted on Vercel. Standard web server logs may include your IP address and browser type for security and performance purposes.</li>
+                <li>
+                  <strong className="text-slate-800 dark:text-white">AI step generation:</strong>{" "}
+                  When you tap &ldquo;✨ Generate steps&rdquo;, your focus intent text is sent to OpenAI to
+                  generate step suggestions. OpenAI processes this data according to their{" "}
+                  <a
+                    href="https://openai.com/policies/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-cyan-400 hover:underline"
+                  >
+                    privacy policy
+                  </a>
+                  . We do not store your intent text on our servers.
+                </li>
               </ul>
             </section>
 

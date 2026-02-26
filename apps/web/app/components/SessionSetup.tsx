@@ -17,6 +17,9 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
   const [intent, setIntent] = useState("");
   const [steps, setSteps] = useState<PrepStep[]>([]);
   const [newStepText, setNewStepText] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [hasGenerated, setHasGenerated] = useState(false);
 
   // Load draft on mount
   useEffect(() => {
@@ -46,6 +49,38 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
     setSteps(steps.map(step =>
       step.id === id ? { ...step, text: newText } : step
     ));
+  };
+
+  const generateSteps = async () => {
+    if (!intent.trim() || isGenerating) return;
+    setIsGenerating(true);
+    setGenerateError(null);
+    try {
+      const res = await fetch("/api/ai/steps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intent: intent.trim(), tone: "gentle" }),
+      });
+      const data: { steps?: string[]; error?: string } = await res.json();
+      if (!res.ok) {
+        setGenerateError(data.error ?? "Could not generate steps.");
+        return;
+      }
+      const newSteps = data.steps ?? [];
+      setSteps((prev) => {
+        const filled = prev.filter((s) => s.text.trim());
+        const emptySlots = MAX_STEPS - filled.length;
+        const toAdd = newSteps
+          .slice(0, emptySlots)
+          .map((text) => createPrepStep(text));
+        return [...filled, ...toAdd];
+      });
+      setHasGenerated(true);
+    } catch {
+      setGenerateError("Network error. Please check your connection.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -101,6 +136,18 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
             <div className="text-xs text-slate-400 mt-1.5 text-right">
               {MAX_INTENT_LENGTH - intent.length} characters remaining
             </div>
+          )}
+          {intent.trim().length >= 3 && steps.length < MAX_STEPS && (
+            <button
+              onClick={generateSteps}
+              disabled={isGenerating}
+              className="mt-2 text-xs text-cyan-600 dark:text-cyan-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGenerating ? "Generating…" : hasGenerated ? "↻ Regenerate" : "✨ Generate steps"}
+            </button>
+          )}
+          {generateError && (
+            <p className="text-xs text-red-400 mt-1">{generateError}</p>
           )}
         </div>
 
