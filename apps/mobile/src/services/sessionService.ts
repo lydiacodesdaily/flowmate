@@ -226,12 +226,13 @@ export async function getResumableSession(): Promise<SessionRecord | null> {
   return history.find((s) => isResumable(s)) ?? null;
 }
 
-// Builds a fresh SessionDraft from a session record (steps reset to undone).
-export function sessionToDraft(session: SessionRecord): SessionDraft {
+// Builds a SessionDraft from a session record.
+// Pass preserveDone=true to keep existing step completion state (e.g. for Resume).
+export function sessionToDraft(session: SessionRecord, preserveDone = false): SessionDraft {
   return {
     intent: session.intent ?? '',
     steps: session.stepsDetail
-      ? session.stepsDetail.map((s) => ({ ...s, done: false }))
+      ? session.stepsDetail.map((s) => ({ ...s, done: preserveDone ? s.done : false }))
       : [],
   };
 }

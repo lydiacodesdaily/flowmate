@@ -40,6 +40,33 @@ export const MobileLandingPage = () => {
               </div>
             </div>
 
+            <a
+              href="https://play.google.com/store/apps/details?id=club.flowmate.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-6 border border-green-200 dark:border-green-500/30 hover:border-green-400 dark:hover:border-green-400/60 transition-colors"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                  {/* Android icon */}
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
+                    <path d="M17.523 15.341a.75.75 0 0 1-.75.75H7.227a.75.75 0 0 1-.75-.75V9.114c0-.414.336-.75.75-.75h9.546c.414 0 .75.336.75.75v6.227ZM4.5 9.864a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm15 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM8.182 3.44l-1.09-1.94a.375.375 0 0 0-.65.375l1.1 1.96A6.787 6.787 0 0 0 5.25 7.5h13.5a6.787 6.787 0 0 0-2.292-3.665l1.1-1.96a.375.375 0 0 0-.65-.375l-1.09 1.94A6.71 6.71 0 0 0 12 3c-1.38 0-2.666.414-3.818 1.44ZM9.75 6a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm4.5 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="font-semibold text-slate-800 dark:text-white">
+                      Available on Android
+                    </h2>
+                    <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-medium">New</span>
+                  </div>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Download the app on Google Play →
+                  </p>
+                </div>
+              </div>
+            </a>
+
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-500/30">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
@@ -49,10 +76,10 @@ export const MobileLandingPage = () => {
                 </div>
                 <div>
                   <h2 className="font-semibold text-slate-800 dark:text-white mb-1">
-                    Mobile Apps Coming Soon
+                    iOS Coming Soon
                   </h2>
                   <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                    Native iOS and Android apps are in development and will be available soon!
+                    The iPhone app is on its way — stay tuned!
                   </p>
                 </div>
               </div>
