@@ -20,6 +20,7 @@ interface TimerDisplayProps {
   addMoreCycles: (count: number) => void;
   removeCycles: (count: number) => void;
   skipToNext: () => void;
+  onFinishSession: () => void;
   muteAll: boolean;
   setMuteAll: (mute: boolean) => void;
   muteBreak: boolean;
@@ -46,6 +47,7 @@ export const TimerDisplay = ({
   addMoreCycles,
   removeCycles,
   skipToNext,
+  onFinishSession,
   muteAll,
   setMuteAll,
   muteBreak,
@@ -291,6 +293,15 @@ export const TimerDisplay = ({
             </svg>
           </button>
         </div>
+
+        {/* Finish Session */}
+        <button
+          onClick={onFinishSession}
+          className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+          title="End session and save your focus time"
+        >
+          Finish Session
+        </button>
 
         {/* Secondary Controls Row */}
         <div className="flex flex-wrap gap-2 items-center justify-center text-sm">

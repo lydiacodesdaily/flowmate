@@ -77,6 +77,7 @@ export default function Home() {
   const sessionStartTimeRef = useRef<number>(0);
   const totalPausedTimeRef = useRef<number>(0);
   const pauseStartTimeRef = useRef<number>(0);
+  const totalFocusMinutesRef = useRef<number>(0);
 
   // Update refs for PiP
   useEffect(() => {
@@ -719,6 +720,7 @@ export default function Home() {
     sessionStartTimeRef.current = 0;
     totalPausedTimeRef.current = 0;
     pauseStartTimeRef.current = 0;
+    totalFocusMinutesRef.current = 0;
   };
 
   // Toggle pause
@@ -832,7 +834,8 @@ export default function Home() {
         const totalElapsedMs = Date.now() - sessionStartTimeRef.current;
         const activeTimeMs = totalElapsedMs - totalPausedTimeRef.current;
         const focusTimeMinutes = Math.round(activeTimeMs / 1000 / 60);
-        setCompletedFocusMinutes(focusTimeMinutes);
+        totalFocusMinutesRef.current += focusTimeMinutes;
+        setCompletedFocusMinutes(totalFocusMinutesRef.current);
 
         // Update old stats system for backward compatibility
         const updatedStats = addFocusSession(userStats, focusTimeMinutes);
@@ -856,16 +859,36 @@ export default function Home() {
       setIsRunning(false);
       setSessionEndTime(Date.now());
 
-      // Calculate completed time for display
+      // Accumulate any remaining focus time from current block, then show total
       if (currentSession?.type === "focus" && sessionStartTimeRef.current > 0) {
         const totalElapsedMs = Date.now() - sessionStartTimeRef.current;
         const activeTimeMs = totalElapsedMs - totalPausedTimeRef.current;
         const focusTimeMinutes = Math.round(activeTimeMs / 1000 / 60);
-        setCompletedFocusMinutes(focusTimeMinutes);
+        totalFocusMinutesRef.current += focusTimeMinutes;
       }
+      setCompletedFocusMinutes(totalFocusMinutesRef.current);
 
       setShowSessionComplete(true);
     }
+  };
+
+  // End session early (user is done with their tasks)
+  const handleFinishSession = () => {
+    const currentSession = sessions[currentSessionIndex];
+    speak("Done.");
+    setIsRunning(false);
+    setSessionEndTime(Date.now());
+
+    // Accumulate any elapsed focus time from the current block
+    if (currentSession?.type === "focus" && sessionStartTimeRef.current > 0) {
+      const totalElapsedMs = Date.now() - sessionStartTimeRef.current;
+      const activeTimeMs = totalElapsedMs - totalPausedTimeRef.current;
+      const focusTimeMinutes = Math.round(activeTimeMs / 1000 / 60);
+      totalFocusMinutesRef.current += focusTimeMinutes;
+    }
+    setCompletedFocusMinutes(totalFocusMinutesRef.current);
+
+    setShowSessionComplete(true);
   };
 
   // Speak text using audio files
@@ -1281,8 +1304,9 @@ export default function Home() {
             totalPausedTime: totalPausedTimeRef.current
           });
 
-          // Store the actual completed time for display
-          setCompletedFocusMinutes(focusTimeMinutes);
+          // Accumulate focus time across all blocks for display
+          totalFocusMinutesRef.current += focusTimeMinutes;
+          setCompletedFocusMinutes(totalFocusMinutesRef.current);
         }
 
         // Reset session timing for next session
@@ -1563,6 +1587,7 @@ export default function Home() {
             addMoreCycles={addMoreCycles}
             removeCycles={removeCycles}
             skipToNext={skipToNext}
+            onFinishSession={handleFinishSession}
             muteAll={muteAll}
             setMuteAll={setMuteAll}
             muteBreak={muteBreak}

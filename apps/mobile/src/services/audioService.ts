@@ -17,21 +17,20 @@ async function setAudioModeWithInterruption(
     interruptionMode: InterruptionMode;
   }
 ) {
-  const baseOptions = {
+  // Android: skip setAudioModeAsync entirely for per-announcement calls.
+  // Calling it repeatedly (fire-and-forget from the tick loop) corrupts the
+  // Android audio session after multiple sessions, silently breaking all
+  // announcements while ticks keep playing. The mode is already set correctly
+  // in initialize() and needs no further changes. On Android the
+  // interruptionMode enum also causes a crash (expo-audio bug #34025), so
+  // there is nothing useful this call could do anyway.
+  if (Platform.OS !== 'ios') return;
+
+  await setAudioModeAsync({
     playsInSilentMode: options.playsInSilentMode,
     shouldPlayInBackground: options.shouldPlayInBackground,
-  };
-
-  if (Platform.OS === 'ios') {
-    await setAudioModeAsync({
-      ...baseOptions,
-      interruptionMode: options.interruptionMode,
-    });
-  } else {
-    // Android: interruptionMode causes a crash due to enum casting bug
-    // Only pass the supported options
-    await setAudioModeAsync(baseOptions);
-  }
+    interruptionMode: options.interruptionMode,
+  });
 }
 
 /**
