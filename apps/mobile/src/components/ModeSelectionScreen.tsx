@@ -86,6 +86,7 @@ export function ModeSelectionScreen({ navigation }: ModeSelectionScreenProps) {
       <View style={styles.cardsContainer}>
         <ModeCard
           icon="🍅"
+          image={require('../../assets/flowmato.png')}
           title="Pomodoro"
           description="25-minute focus with short breaks"
           color="#8E8E93"

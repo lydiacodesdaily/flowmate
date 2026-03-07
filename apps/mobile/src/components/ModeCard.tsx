@@ -1,16 +1,17 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ImageSourcePropType } from 'react-native';
 import { useTheme } from '../theme';
 
 interface ModeCardProps {
   title: string;
   description: string;
   icon: string;
+  image?: ImageSourcePropType;
   color: string;
   onPress: () => void;
 }
 
-export function ModeCard({ title, description, icon, onPress }: ModeCardProps) {
+export function ModeCard({ title, description, icon, image, onPress }: ModeCardProps) {
   const { theme } = useTheme();
 
   return (
@@ -20,7 +21,11 @@ export function ModeCard({ title, description, icon, onPress }: ModeCardProps) {
       activeOpacity={0.85}
     >
       <View style={styles.content}>
-        <Text style={styles.icon}>{icon}</Text>
+        {image ? (
+          <Image source={image} style={styles.image} resizeMode="contain" />
+        ) : (
+          <Text style={styles.icon}>{icon}</Text>
+        )}
         <View style={styles.textContainer}>
           <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
           <Text style={[styles.description, { color: theme.colors.textTertiary }]}>{description}</Text>
@@ -44,6 +49,11 @@ const styles = StyleSheet.create({
     fontSize: 32,
     marginRight: 20,
     opacity: 0.8,
+  },
+  image: {
+    width: 40,
+    height: 40,
+    marginRight: 20,
   },
   textContainer: {
     flex: 1,
