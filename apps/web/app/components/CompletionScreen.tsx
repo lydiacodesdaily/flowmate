@@ -41,7 +41,12 @@ export const CompletionScreen = ({
           {/* Stats or Encouragement */}
           <div className="bg-blue-50 dark:bg-cyan-900/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-blue-200 dark:border-cyan-700">
             <p className="text-slate-700 dark:text-slate-300 text-base sm:text-lg">
-              {timerMode === "pomodoro" && "🍅 One pomodoro down."}
+              {timerMode === "pomodoro" && (
+                <span className="flex items-center justify-center gap-2">
+                  <img src="/flowmato.png" alt="Flowmato" className="w-6 h-6 inline-block" />
+                  One pomodoro down.
+                </span>
+              )}
               {timerMode === "guided" && "✅ Nice flow."}
               {timerMode === "custom" && "✅ You're done."}
             </p>

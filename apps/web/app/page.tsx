@@ -1495,6 +1495,9 @@ export default function Home() {
       )}
 
       <div className="w-full max-w-2xl px-2 sm:px-0">
+        <div className="flex justify-center mb-3">
+          <img src="/flowmato.png" alt="Flowmato" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md" />
+        </div>
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2 text-slate-800 dark:text-white drop-shadow-lg dark:drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] transition-all duration-500">
           Flowmate
         </h1>

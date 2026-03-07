@@ -7,10 +7,8 @@ export const MobileLandingPage = () => {
         <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20 dark:border-slate-700">
           {/* Logo/Icon */}
           <div className="text-center mb-6">
-            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 dark:from-cyan-500 dark:to-blue-600 rounded-2xl flex items-center justify-center shadow-lg mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-10 h-10">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className="w-24 h-24 mx-auto mb-4">
+              <img src="/flowmato.png" alt="Flowmato" className="w-full h-full object-contain drop-shadow-lg" />
             </div>
             <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">
               Flowmate
