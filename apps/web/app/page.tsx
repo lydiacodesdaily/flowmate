@@ -1495,15 +1495,12 @@ export default function Home() {
       )}
 
       <div className="w-full max-w-2xl px-2 sm:px-0">
-        <div className="flex justify-center mb-3">
-          <img src="/flowmato.png" alt="Flowmato" className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md" />
+        <div className="flex items-center justify-center gap-2.5 mb-5">
+          <img src="/flowmato.png" alt="Flowmato" className="w-9 h-9 object-contain drop-shadow-md" />
+          <h1 className="text-xl font-bold text-slate-700 dark:text-white tracking-tight dark:drop-shadow-[0_0_12px_rgba(34,211,238,0.4)] transition-all duration-500">
+            Flowmate
+          </h1>
         </div>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-2 text-slate-800 dark:text-white drop-shadow-lg dark:drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] transition-all duration-500">
-          Flowmate
-        </h1>
-        <p className="text-center text-slate-600 dark:text-cyan-200/80 mb-6 sm:mb-8 text-sm sm:text-base">
-          Focus Timer with Audio Announcements
-        </p>
 
         {/* Crash recovery banner — shown when the app restarted mid-session */}
         {crashRecovery && !isRunning && (
