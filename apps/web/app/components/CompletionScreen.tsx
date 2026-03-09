@@ -23,9 +23,13 @@ export const CompletionScreen = ({
       {/* Completion Card */}
       <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-10 border border-white/20 dark:border-cyan-500/20">
         <div className="text-center">
-          {/* Celebration Icon */}
-          <div className="text-6xl sm:text-7xl md:text-8xl mb-4 sm:mb-6 animate-bounce">
-            🎉
+          {/* Flomato celebration */}
+          <div className="flex flex-col items-center mb-4 sm:mb-6">
+            <img
+              src="/flomato/progress/6_happy.png"
+              alt="Flomato celebrating"
+              className="w-24 h-24 sm:w-32 sm:h-32 drop-shadow-lg animate-bounce"
+            />
           </div>
 
           {/* Completion Message */}
@@ -43,7 +47,7 @@ export const CompletionScreen = ({
             <p className="text-slate-700 dark:text-slate-300 text-base sm:text-lg">
               {timerMode === "pomodoro" && (
                 <span className="flex items-center justify-center gap-2">
-                  <img src="/flowmato.png" alt="Flowmato" className="w-6 h-6 inline-block" />
+                  <img src="/flomato/6_happy.png" alt="Happy Flomato" className="w-6 h-6 inline-block" />
                   One pomodoro down.
                 </span>
               )}

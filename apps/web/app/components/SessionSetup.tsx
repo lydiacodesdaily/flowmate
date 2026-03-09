@@ -103,6 +103,11 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
       >
         {/* Header with gentle prompt */}
         <div className="text-center mb-8">
+          <img
+            src="/flomato/state/flomato_daydreaming.png"
+            alt="Flomato"
+            className="w-16 h-16 mx-auto mb-3 drop-shadow-sm"
+          />
           <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">
             Let's focus
           </h2>
