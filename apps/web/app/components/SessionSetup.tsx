@@ -67,14 +67,7 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
         return;
       }
       const newSteps = data.steps ?? [];
-      setSteps((prev) => {
-        const filled = prev.filter((s) => s.text.trim());
-        const emptySlots = MAX_STEPS - filled.length;
-        const toAdd = newSteps
-          .slice(0, emptySlots)
-          .map((text) => createPrepStep(text));
-        return [...filled, ...toAdd];
-      });
+      setSteps(newSteps.slice(0, MAX_STEPS).map((text) => createPrepStep(text)));
       setHasGenerated(true);
     } catch {
       setGenerateError("Network error. Please check your connection.");
