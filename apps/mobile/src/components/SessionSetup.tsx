@@ -145,6 +145,7 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
           </View>
 
           <ScrollView
+            style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -352,6 +353,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 24,

@@ -99,8 +99,9 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
       className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
     >
       <div
-        className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-lg w-full mx-4 border border-slate-200 dark:border-slate-700 animate-scaleIn"
+        className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-lg w-full mx-4 border border-slate-200 dark:border-slate-700 animate-scaleIn flex flex-col max-h-[90vh]"
       >
+        <div className="overflow-y-auto flex-1 p-8">
         {/* Header with gentle prompt */}
         <div className="text-center mb-8">
           <img
@@ -223,8 +224,10 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+        </div>{/* end scrollable content */}
+
+        {/* Action Buttons - fixed outside scroll */}
+        <div className="flex gap-3 px-8 py-6 border-t border-slate-200 dark:border-slate-700 flex-shrink-0">
           <button
             onClick={onSkipSetup}
             className="px-6 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all duration-200 font-medium"
