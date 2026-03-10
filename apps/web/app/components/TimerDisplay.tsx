@@ -238,7 +238,7 @@ export const TimerDisplay = ({
           <img
             src={getFlomatoSrc()}
             alt="Flomato"
-            className="w-14 h-14 sm:w-16 sm:h-16 mx-auto drop-shadow-md transition-all duration-700"
+            className="w-20 h-20 sm:w-24 sm:h-24 mx-auto drop-shadow-md transition-all duration-700"
           />
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{getFlomatoLabel()}</p>
         </div>

@@ -26,7 +26,7 @@ export const CompletionScreen = ({
           {/* Flomato celebration */}
           <div className="flex flex-col items-center mb-4 sm:mb-6">
             <img
-              src="/flomato/progress/6_happy.png"
+              src="/flomato/state/flomato_celebrating.png"
               alt="Flomato celebrating"
               className="w-24 h-24 sm:w-32 sm:h-32 drop-shadow-lg animate-bounce"
             />
@@ -47,7 +47,7 @@ export const CompletionScreen = ({
             <p className="text-slate-700 dark:text-slate-300 text-base sm:text-lg">
               {timerMode === "pomodoro" && (
                 <span className="flex items-center justify-center gap-2">
-                  <img src="/flomato/6_happy.png" alt="Happy Flomato" className="w-6 h-6 inline-block" />
+                  <img src="/flomato/state/flomato_celebrating.png" alt="Flomato celebrating" className="w-6 h-6 inline-block" />
                   One pomodoro down.
                 </span>
               )}

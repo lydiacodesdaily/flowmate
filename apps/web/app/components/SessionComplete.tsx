@@ -138,8 +138,18 @@ export const SessionComplete = ({
   return (
     <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 md:p-10 border border-white/20 dark:border-cyan-500/20">
       <div className="text-center mb-8">
-        <div className="text-7xl mb-6">
-          {selectedStatus === 'completed' ? '🎉' : selectedStatus === 'partial' ? '👍' : selectedStatus === 'skipped' ? '⏭️' : '✨'}
+        <div className="mb-6 flex justify-center">
+          {selectedStatus === 'completed' ? (
+            <img
+              src="/flomato/state/flomato_celebrating.png"
+              alt="Flomato celebrating"
+              className="w-24 h-24 drop-shadow-lg animate-bounce"
+            />
+          ) : (
+            <div className="text-7xl">
+              {selectedStatus === 'partial' ? '👍' : selectedStatus === 'skipped' ? '⏭️' : '✨'}
+            </div>
+          )}
         </div>
         <h2 className="text-4xl font-bold text-slate-800 dark:text-white mb-3">
           Session Complete
