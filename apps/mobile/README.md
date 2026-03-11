@@ -1,6 +1,6 @@
-# FlowMate Mobile
+# Flowmato Mobile
 
-React Native mobile app for FlowMate focus timer, built with Expo.
+React Native mobile app for Flowmato focus timer, built with Expo.
 
 ## Getting Started
 
@@ -57,7 +57,7 @@ src/
 
 ## Shared Code
 
-This app uses the `@flowmate/shared` package for:
+This app uses the `@flowmato/shared` package for:
 - Timer logic and calculations
 - Session configurations
 - Statistics utilities

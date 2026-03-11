@@ -101,8 +101,8 @@ export const SessionComplete = ({
       <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 md:p-10 border border-white/20 dark:border-cyan-500/20">
         <div className="text-center mb-8">
           <img
-            src="/flomato/state/flomato_relaxing.png"
-            alt="Flomato relaxing"
+            src="/flowmato/state/flowmato_relaxing.png"
+            alt="Flowmato relaxing"
             className="w-20 h-20 mx-auto mb-4 drop-shadow-md"
           />
           <h2 className="text-4xl font-bold text-slate-800 dark:text-white mb-3">
@@ -141,8 +141,8 @@ export const SessionComplete = ({
         <div className="mb-6 flex justify-center">
           {selectedStatus === 'completed' ? (
             <img
-              src="/flomato/state/flomato_celebrating.png"
-              alt="Flomato celebrating"
+              src="/flowmato/state/flowmato_celebrating.png"
+              alt="Flowmato celebrating"
               className="w-24 h-24 drop-shadow-lg animate-bounce"
             />
           ) : (

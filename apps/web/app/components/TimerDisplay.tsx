@@ -73,23 +73,23 @@ export const TimerDisplay = ({
   const canRemoveCycle = sessions.length - currentSessionIndex > 2;
   const currentSessionType = sessions[currentSessionIndex]?.type;
 
-  const getFlomatoSrc = () => {
-    if (currentSessionType === 'break') return '/flomato/state/flomato_relaxing.png';
-    if (isPaused) return '/flomato/state/flomato_daydreaming.png';
+  const getFlowmatoSrc = () => {
+    if (currentSessionType === 'break') return '/flowmato/state/flowmato_relaxing.png';
+    if (isPaused) return '/flowmato/state/flowmato_daydreaming.png';
     const total = sessions[currentSessionIndex]?.duration ?? 1;
     const pct = (total - timeRemaining) / total;
-    if (pct < 0.17) return '/flomato/progress/1_seedling.png';
-    if (pct < 0.34) return '/flomato/progress/2_plant.png';
-    if (pct < 0.50) return '/flomato/progress/3_small.png';
-    if (pct < 0.67) return '/flomato/progress/4_medium.png';
-    if (pct < 0.84) return '/flomato/progress/5_full.png';
-    return '/flomato/progress/6_happy.png';
+    if (pct < 0.17) return '/flowmato/progress/1_seedling.png';
+    if (pct < 0.34) return '/flowmato/progress/2_plant.png';
+    if (pct < 0.50) return '/flowmato/progress/3_small.png';
+    if (pct < 0.67) return '/flowmato/progress/4_medium.png';
+    if (pct < 0.84) return '/flowmato/progress/5_full.png';
+    return '/flowmato/progress/6_happy.png';
   };
 
-  const getFlomatoLabel = () => {
-    if (currentSessionType === 'break') return 'Flomato is resting...';
-    if (isPaused) return 'Flomato is daydreaming...';
-    return 'Flomato is growing!';
+  const getFlowmatoLabel = () => {
+    if (currentSessionType === 'break') return 'Flowmato is resting...';
+    if (isPaused) return 'Flowmato is daydreaming...';
+    return 'Flowmato is growing!';
   };
 
   const handleStartEditIntent = () => {
@@ -233,14 +233,14 @@ export const TimerDisplay = ({
           )}
         </div>
 
-        {/* Flomato */}
+        {/* Flowmato */}
         <div className="text-center mb-2">
           <img
-            src={getFlomatoSrc()}
-            alt="Flomato"
+            src={getFlowmatoSrc()}
+            alt="Flowmato"
             className="w-20 h-20 sm:w-24 sm:h-24 mx-auto drop-shadow-md transition-all duration-700"
           />
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{getFlomatoLabel()}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{getFlowmatoLabel()}</p>
         </div>
 
         {/* Timer number */}
