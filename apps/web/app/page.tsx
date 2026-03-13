@@ -175,7 +175,7 @@ export default function Home() {
 
         <div style="display:flex;gap:6px;flex-shrink:0;">
           <button id="pip-pause-btn" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);color:white;padding:7px 10px;border-radius:8px;cursor:pointer;font-weight:600;font-size:12px;">${isPaused ? '▶ Resume' : '⏸ Pause'}</button>
-          <button id="pip-mute-btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);color:white;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;">${muteAll ? '🔊' : '🔇'}</button>
+          <button id="pip-mute-btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);color:white;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;">${muteAll ? '🔇' : '🔊'}</button>
         </div>
       `;
 
@@ -254,7 +254,7 @@ export default function Home() {
           pauseBtn.textContent = isPausedRef.current ? '▶ Resume' : '⏸ Pause';
         }
         if (muteBtn) {
-          muteBtn.textContent = muteAllRef.current ? '🔊' : '🔇';
+          muteBtn.textContent = muteAllRef.current ? '🔇' : '🔊';
         }
       };
 
@@ -601,6 +601,21 @@ export default function Home() {
   const handleRemoveStep = (stepId: string) => {
     setSessionDraft(prev => {
       const updatedDraft = { ...prev, steps: prev.steps.filter(s => s.id !== stepId) };
+      saveDraft(updatedDraft);
+      return updatedDraft;
+    });
+  };
+
+  // Reorder a step by moving fromId to the position of toId
+  const handleReorderStep = (fromId: string, toId: string) => {
+    setSessionDraft(prev => {
+      const steps = [...prev.steps];
+      const fromIdx = steps.findIndex(s => s.id === fromId);
+      const toIdx = steps.findIndex(s => s.id === toId);
+      if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return prev;
+      const [moved] = steps.splice(fromIdx, 1);
+      steps.splice(toIdx, 0, moved);
+      const updatedDraft = { ...prev, steps };
       saveDraft(updatedDraft);
       return updatedDraft;
     });
@@ -1600,6 +1615,7 @@ export default function Home() {
             onAddStep={handleAddStep}
             onEditStep={handleEditStep}
             onRemoveStep={handleRemoveStep}
+            onReorderStep={handleReorderStep}
           />
         )}
       </div>

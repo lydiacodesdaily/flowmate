@@ -20,6 +20,8 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [hasGenerated, setHasGenerated] = useState(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<{ id: string; position: 'before' | 'after' } | null>(null);
 
   // Load draft on mount
   useEffect(() => {
@@ -166,31 +168,86 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
           {/* Existing Steps - Minimal, calm design */}
           {steps.length > 0 && (
             <div className="space-y-2 mb-3">
-              {steps.map((step) => (
-                <div
-                  key={step.id}
-                  className="flex items-start gap-3 group bg-slate-50 dark:bg-slate-700/30 rounded-lg px-3 py-2.5 transition-all hover:bg-slate-100 dark:hover:bg-slate-700/50"
-                >
-                  <div className="flex-shrink-0 w-5 h-5 rounded border-2 border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-700 mt-0.5"></div>
-                  <input
-                    type="text"
-                    value={step.text}
-                    onChange={(e) => handleEditStep(step.id, e.target.value.slice(0, MAX_STEP_LENGTH))}
-                    maxLength={MAX_STEP_LENGTH}
-                    className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400"
-                    placeholder="Step description..."
-                  />
-                  <button
-                    onClick={() => handleRemoveStep(step.id)}
-                    className="flex-shrink-0 p-1 rounded text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 transition-all opacity-0 group-hover:opacity-100"
-                    aria-label="Remove step"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
+              {steps.map((step) => {
+                const isOver = dragOver?.id === step.id;
+                return (
+                  <div key={step.id} className="relative">
+                    {isOver && dragOver.position === 'before' && (
+                      <div className="absolute -top-1 left-2 right-2 h-0.5 bg-cyan-400 dark:bg-cyan-500 rounded-full pointer-events-none z-10" />
+                    )}
+                    <div
+                      draggable={true}
+                      onDragStart={(e) => {
+                        setDraggingId(step.id);
+                        e.dataTransfer.setData('text/plain', step.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const position = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                        setDragOver({ id: step.id, position });
+                      }}
+                      onDragLeave={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                          setDragOver(null);
+                        }
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const fromId = e.dataTransfer.getData('text/plain');
+                        if (fromId && fromId !== step.id) {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const position = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                          const newSteps = [...steps];
+                          const fromIdx = newSteps.findIndex(s => s.id === fromId);
+                          const [moved] = newSteps.splice(fromIdx, 1);
+                          const toIdx = newSteps.findIndex(s => s.id === step.id);
+                          const insertIdx = position === 'after' ? toIdx + 1 : toIdx;
+                          newSteps.splice(insertIdx, 0, moved);
+                          setSteps(newSteps);
+                        }
+                        setDragOver(null);
+                      }}
+                      onDragEnd={() => {
+                        setDraggingId(null);
+                        setDragOver(null);
+                      }}
+                      className={`flex items-start gap-3 group bg-slate-50 dark:bg-slate-700/30 rounded-lg px-3 py-2.5 transition-all hover:bg-slate-100 dark:hover:bg-slate-700/50 ${draggingId === step.id ? 'opacity-40' : ''}`}
+                    >
+                      <div className="flex-shrink-0 cursor-grab active:cursor-grabbing text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-500 opacity-0 group-hover:opacity-100 select-none mt-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 10 16" className="w-3 h-4">
+                          <circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/>
+                          <circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/>
+                          <circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/>
+                        </svg>
+                      </div>
+                      <div className="flex-shrink-0 w-5 h-5 rounded border-2 border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-700 mt-0.5"></div>
+                      <input
+                        type="text"
+                        value={step.text}
+                        onChange={(e) => handleEditStep(step.id, e.target.value.slice(0, MAX_STEP_LENGTH))}
+                        maxLength={MAX_STEP_LENGTH}
+                        className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400"
+                        placeholder="Step description..."
+                      />
+                      <button
+                        onClick={() => handleRemoveStep(step.id)}
+                        className="flex-shrink-0 p-1 rounded text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 transition-all opacity-0 group-hover:opacity-100"
+                        aria-label="Remove step"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    {isOver && dragOver.position === 'after' && (
+                      <div className="absolute -bottom-1 left-2 right-2 h-0.5 bg-cyan-400 dark:bg-cyan-500 rounded-full pointer-events-none z-10" />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 

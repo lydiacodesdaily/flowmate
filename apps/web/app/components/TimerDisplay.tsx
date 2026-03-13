@@ -33,6 +33,7 @@ interface TimerDisplayProps {
   onAddStep?: (text: string) => void;
   onEditStep?: (stepId: string, newText: string) => void;
   onRemoveStep?: (stepId: string) => void;
+  onReorderStep?: (fromId: string, toId: string) => void;
 }
 
 export const TimerDisplay = ({
@@ -60,6 +61,7 @@ export const TimerDisplay = ({
   onAddStep,
   onEditStep,
   onRemoveStep,
+  onReorderStep,
 }: TimerDisplayProps) => {
   const [isEditingIntent, setIsEditingIntent] = useState(false);
   const [editedIntent, setEditedIntent] = useState("");
@@ -67,6 +69,7 @@ export const TimerDisplay = ({
   const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [editingStepText, setEditingStepText] = useState("");
   const [isAddingStep, setIsAddingStep] = useState(false);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [newStepText, setNewStepText] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -459,8 +462,35 @@ export const TimerDisplay = ({
                         return (
                           <div
                             key={step.id}
-                            className={`group w-full flex items-center gap-2.5 text-left px-2 py-1.5 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 ${step.done && !isEditing ? 'opacity-30' : ''}`}
+                            draggable={!isEditing}
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('text/plain', step.id);
+                              e.dataTransfer.effectAllowed = 'move';
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'move';
+                              setDragOverId(step.id);
+                            }}
+                            onDragLeave={() => setDragOverId(null)}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const fromId = e.dataTransfer.getData('text/plain');
+                              if (fromId && fromId !== step.id) onReorderStep?.(fromId, step.id);
+                              setDragOverId(null);
+                            }}
+                            onDragEnd={() => setDragOverId(null)}
+                            className={`group w-full flex items-center gap-2.5 text-left px-2 py-1.5 rounded-lg transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 ${step.done && !isEditing ? 'opacity-30' : ''} ${dragOverId === step.id ? 'ring-1 ring-cyan-400 dark:ring-cyan-500' : ''}`}
                           >
+                            {!isEditing && (
+                              <div className="flex-shrink-0 cursor-grab active:cursor-grabbing text-slate-200 dark:text-slate-700 group-hover:text-slate-400 dark:group-hover:text-slate-500 opacity-0 group-hover:opacity-100 select-none -ml-0.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 10 16" className="w-2.5 h-3.5">
+                                  <circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/>
+                                  <circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/>
+                                  <circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/>
+                                </svg>
+                              </div>
+                            )}
                             <button
                               onClick={() => onToggleStep?.(step.id)}
                               className={`flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
