@@ -437,7 +437,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 
   const handleAddTime = async () => {
     await hapticService.light();
-    addTime(300); // Add 5 minutes (300 seconds)
+    addTime(60); // Add 1 minute (60 seconds)
   };
 
   const handleSubtractTime = async () => {

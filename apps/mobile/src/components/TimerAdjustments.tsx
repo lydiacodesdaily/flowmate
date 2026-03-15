@@ -34,7 +34,7 @@ export function TimerAdjustments({
           activeOpacity={0.6}
         >
           <Text style={[styles.buttonText, { color: theme.colors.textTertiary }, disabled && styles.disabled]}>
-            − 5m
+            − 1m
           </Text>
         </TouchableOpacity>
 
@@ -45,7 +45,7 @@ export function TimerAdjustments({
           activeOpacity={0.6}
         >
           <Text style={[styles.buttonText, { color: theme.colors.textTertiary }, disabled && styles.disabled]}>
-            + 5m
+            + 1m
           </Text>
         </TouchableOpacity>
       </View>
