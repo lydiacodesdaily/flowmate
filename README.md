@@ -1,206 +1,165 @@
-# FlowMate Monorepo
+# FlowMate
 
-A beautiful and functional focus timer available on web and mobile platforms. Built with Next.js, React Native (Expo), TypeScript, and Tailwind CSS. Supports both Pomodoro technique and Guided Deep Work sessions. Features audio ticking, high-quality voice announcements, and Picture-in-Picture support on web.
+**An audio-guided focus timer built around a single named intent.**
 
-## Project Structure
+Live on **[web](https://flowmate.club)** · **[Android](https://play.google.com/store/apps/details?id=club.flowmate.app)** · iOS in review · ~1,000 active users
+
+---
+
+<table>
+  <tr>
+    <td><img src="apps/web/public/mobile/fm_m_1.jpg" width="160"/></td>
+    <td><img src="apps/web/public/mobile/fm_m_2.jpg" width="160"/></td>
+    <td><img src="apps/web/public/mobile/fm_m_3.jpg" width="160"/></td>
+    <td><img src="apps/web/public/mobile/fm_m_4.jpg" width="160"/></td>
+    <td><img src="apps/web/public/mobile/fm_m_5.jpg" width="160"/></td>
+  </tr>
+</table>
+
+---
+
+## The problem with most timers
+
+Every time you glance at a countdown, you've interrupted yourself. The timer is supposed to be invisible infrastructure — instead it's a screen you have to check. FlowMate inverts this: audio cues reach you wherever your attention is. You can run a full session without looking at the screen once.
+
+Each session also starts with a named intent. One thing, written down before the clock starts. That small friction is the product — it forces a moment of clarity that most people skip and later regret.
+
+---
+
+## Flowmato
+
+The app has a companion character: Flowmato, a little tomato who changes state with the session.
+
+<table>
+  <tr>
+    <td align="center"><img src="apps/web/public/flowmato/state/flowmato_daydreaming.png" width="80"/><br/><sub>Idle</sub></td>
+    <td align="center"><img src="apps/web/public/flowmato/state/flowmato_focus.png" width="80"/><br/><sub>Focus</sub></td>
+    <td align="center"><img src="apps/web/public/flowmato/state/flowmato_relaxing.png" width="80"/><br/><sub>Break</sub></td>
+    <td align="center"><img src="apps/web/public/flowmato/state/flowmato_celebrating.png" width="80"/><br/><sub>Done</sub></td>
+  </tr>
+</table>
+
+Flowmato also grows across sessions — a visual record of accumulated focus time. The progression from seedling to full plant is driven by total completed minutes, not session count.
+
+<video src="apps/web/public/flowmato/progress/flowmato_growing.mp4" controls width="360"></video>
+
+Character state is derived from `timerPhase` — the same single value that drives the audio scheduler and PiP window. Nothing polls Flowmato's state; it just reads the source of truth.
+
+---
+
+## Audio scheduler
+
+This was the core engineering problem. 40+ voice cues have to fire at precise moments across sessions of varying length, across two platforms, without drifting out of sync or coupling to UI event handlers.
+
+The approach: compute whether a cue should fire from elapsed time alone — no stored state, no wired handlers.
+
+```ts
+// packages/shared/utils/timerUtils.ts
+
+// Fires on the correct minute boundaries for any announcement interval preset
+export const shouldAnnounceMinute = (
+  minutes: number,
+  interval: 1 | 2 | 3 | 5 | 10
+): boolean => {
+  return minutes > 0 && minutes <= 24 && minutes % interval === 0;
+};
+
+// For sessions > 25 min, dings replace per-minute announcements at 5-min marks
+export const shouldPlayDing = (
+  seconds: number,
+  sessionDuration: number
+): boolean => {
+  if (sessionDuration <= 25 * 60) return false;
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return secs === 0 && minutes > 0 && minutes % 5 === 0;
+};
+```
+
+Every tick evaluates these functions against current elapsed time. No cue can "miss" because there's nothing to miss — the scheduler re-derives the correct cue set from scratch on each tick. Adding a new cue type means adding one predicate function. There are no chains of event handlers to trace, no side effects to audit.
+
+Five audio presets (Full → Gentle → Minimal → Silent → Hi-Fi) sit above the scheduler as a density filter. Switching presets doesn't touch the scheduler or reload audio — it changes which cues pass through.
+
+---
+
+## Session model
+
+Sessions have three terminal states:
+
+| Status | Condition | Counted in stats |
+|---|---|---|
+| `completed` | Timer reached zero | Yes |
+| `partial` | Stopped early, ≥ 1 min elapsed | Yes |
+| `skipped` | Stopped early, < 1 min elapsed | No |
+
+The `partial` vs `skipped` distinction matters for focus time accuracy. A session started and immediately cancelled shouldn't pad your stats, but one you genuinely worked through — even incompletely — should. The 1-minute threshold is a judgment call that's tuned to feel right in practice.
+
+Sessions are stored client-side only (localStorage on web, AsyncStorage on mobile), retained 90 days, and never leave the device.
+
+---
+
+## Architecture
+
+### Monorepo
 
 ```
 flowmate/
 ├── apps/
-│   ├── web/          # Next.js web application
-│   └── mobile/       # React Native (Expo) mobile app (coming soon)
-├── packages/
-│   └── shared/       # Shared business logic, types, and utilities
+│   ├── web/      # Next.js — Document PiP API, HTML5 Audio
+│   └── mobile/   # React Native (Expo) — native audio, push notifications
+└── packages/
+    └── shared/   # Timer logic, audio scheduler, session types, stats utils
 ```
 
-## Features
+Web and Android share all business logic via `@flowmate/shared`. The shared package owns:
+- Timer segment configuration (Pomodoro, Guided Deep Work)
+- Audio cue scheduler (`shouldAnnounceMinute`, `shouldPlayDing`, and related predicates)
+- Session lifecycle types and stats utilities
 
-### Timer Modes
-- **Pomodoro Mode**: Traditional 25-minute focus sessions with 5-minute breaks
-- **Guided Deep Work Mode**: Structured check-in → focus → wrap-up cycles
+Platform-specific code handles only rendering and native APIs — `expo-audio` on mobile, HTML5 Audio on web; native push notifications on mobile, Document PiP API on web. The same session recorded on either platform will produce identical stats.
 
-### Session Durations
+### State
 
-**Pomodoro Mode:**
-- **25 minutes**: 1 Pomodoro (25 min focus)
-- **55 minutes**: 2 Pomodoros (25 min focus + 5 min break + 25 min focus)
-- **85 minutes**: 3 Pomodoros (25 + 5 + 25 + 5 + 25)
-- **145 minutes**: 5 Pomodoros (25 + 5 + 25 + 5 + 25 + 5 + 25 + 5 + 25)
-
-**Guided Deep Work Mode:**
-- **30 minutes**: 3 min settle-in • 24 min focus • 3 min wrap-up
-- **60 minutes**: 5 • 25 • 5 • 20 • 5
-- **90 minutes**: 5 • 25 • 5 • 25 • 5 • 20 • 5
-- **120 minutes**: Extended guided session
-- **180 minutes**: Marathon guided session
-
-### Audio Features
-- **Audio Ticking**: Subtle tick sound every second to maintain rhythm
-- **High-Quality Voice Announcements**:
-  - Generated using ElevenLabs Sarah voice for natural, clear announcements
-  - Minute countdowns (1-24 minutes) for focus sessions ≤ 25 minutes
-  - Ding sound at 5-minute intervals for focus sessions > 25 minutes
-  - Seconds countdowns (50, 40, 30, 20, 10 seconds)
-  - Final countdown (9, 8, 7... 1)
-  - Session transitions (Focus, Break, Done)
-- **Mute Options**:
-  - Mute all sounds (ticks + announcements)
-  - Mute during breaks only
-  - Real-time mute/unmute without interrupting timer
-
-### Picture-in-Picture
-- **Always-On-Top Timer**: Click the PiP button to open a floating timer window
-- **Works Across Tabs**: Timer stays visible while working in other applications
-- **Interactive Controls**: Pause/Resume and Mute buttons in PiP window
-- **Auto-Close**: PiP automatically closes when returning to the main tab
-- **Real-Time Updates**: Timer and session status update live in PiP window
-
-### User Interface
-- **Dark Mode**: Toggle between light and dark themes with persistent preference
-- **Time Adjustment**: Add or subtract time in 1-minute or 5-minute increments
-- **Progress Tracking**: Visual progress bar and session indicators
-- **Session Overview**: See all upcoming focus and break sessions at a glance
-- **Responsive Design**: Beautiful UI that works on all devices
-
-## Audio File Structure
-
-All voice announcements are stored in `/public/audio/countdown/`:
-
-```
-/audio/
-  /countdown/
-    /minutes/
-      m01.mp3 - m24.mp3  (1-24 minute announcements)
-    /seconds/
-      s01.mp3 - s09.mp3  (1-9 second countdown)
-      s10.mp3, s20.mp3, s30.mp3, s40.mp3, s50.mp3  (10-second intervals)
-    /transitions/
-      focus.mp3          ("Focus")
-      break.mp3          ("Break")
-      done.mp3           ("Done")
-  /effects/
-    tick.m4a             (Clock tick sound)
-    ding.mp3             (Ding sound for 5-min intervals when > 25 min)
-```
-
-Voice files generated using **ElevenLabs Sarah voice** for high-quality, natural-sounding announcements.
-
-## Pomodoro Mode Structure
-
-Following the conventional Pomodoro technique, each Pomodoro is 25 minutes of focused work. Breaks (5 minutes) are added between Pomodoros, but **not after the final one**:
-
-- **25 min** = 1 Pomodoro (25 min focus)
-- **55 min** = 2 Pomodoros (25 min focus + 5 min break + 25 min focus)
-- **85 min** = 3 Pomodoros (25 + 5 + 25 + 5 + 25)
-- **145 min** = 5 Pomodoros (25 + 5 + 25 + 5 + 25 + 5 + 25 + 5 + 25)
-
-## Guided Deep Work Mode Structure
-
-Guided Deep Work mode uses structured check-in → focus → wrap-up cycles:
-- **30 min**: 3 min settle-in → 24 min focus → 3 min wrap-up
-- **60 min**: 5 min settle-in → 25 min focus → 5 min break → 20 min focus → 5 min wrap-up
-- **90 min**: 5 → 25 → 5 → 25 → 5 → 20 → 5
-- **120 min**: Extended pattern for marathon sessions
-- **180 min**: Extended pattern for ultra-marathon sessions
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm
-- For mobile development: Expo CLI and Expo Go app
-
-### Installation
-
-```bash
-# Install all dependencies
-npm install
-```
-
-### Development
-
-**Web App:**
-```bash
-npm run dev
-# or
-npm run dev:web
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser
-
-**Mobile App:**
-```bash
-npm run dev:mobile
-```
-
-## Usage
-
-1. **Choose Mode**: Select between Pomodoro or Guided Deep Work mode
-2. **Select Duration**: Choose your desired session duration
-3. **Start Timer**: Timer automatically starts with first session
-4. **Listen**: Enjoy high-quality voice announcements at key intervals
-5. **Controls**:
-   - **Pause/Resume**: Control timer playback
-   - **Reset**: Start over with new duration selection
-   - **PiP**: Open Picture-in-Picture for always-visible timer
-   - **Mute**: Silence sounds as needed
-   - **+/- Time**: Adjust remaining time in 1 or 5-minute increments
-   - **Add Pomodoro**: Extend session with additional cycles (Pomodoro mode only)
-
-## Keyboard Shortcuts & Tips
-
-- Use the time adjustment buttons to fine-tune your session length
-- Mute during breaks keeps ticks and announcements silent during rest periods
-- PiP window stays on top of all applications - perfect for full-screen work
-- Dark mode preference is saved and persists across sessions
-
-## Browser Compatibility
-
-### Full Support
-- **Chrome/Edge 116+**: All features including Picture-in-Picture
-- **Firefox**: All features except Picture-in-Picture
-- **Safari**: Core timer functionality (PiP support varies)
-
-### Required Features
-- HTML5 Audio API (all modern browsers)
-- Document Picture-in-Picture API (Chrome/Edge only)
-
-## Tech Stack
-
-- **Next.js 16** - React framework with App Router
-- **React 19** - Latest React with modern hooks
-- **TypeScript** - Type safety throughout
-- **Tailwind CSS** - Utility-first styling with dark mode
-- **Document PiP API** - Always-on-top timer window
-- **HTML5 Audio API** - High-quality audio playback
-- **ElevenLabs** - Professional voice generation (Sarah voice)
-
-## Building for Production
-
-```bash
-npm run build
-npm start
-```
-
-## Monorepo Packages
-
-### `@flowmate/web`
-Next.js web application with all features including Picture-in-Picture support.
-
-### `@flowmate/shared`
-Shared code used across all platforms:
-- TypeScript type definitions
-- Timer logic utilities
-- Statistics utilities
-- Audio configuration constants
-- Session configurations
-
-### `@flowmate/mobile` (Coming Soon)
-React Native mobile app with native audio, notifications, and widgets.
-
-## License
-
-MIT
+On web, `timerPhase` lives in `page.tsx` and flows down as props — no Context API. On mobile, `TimerContext` wraps the navigator. Both share the same session model from `@flowmate/shared`. This was intentional: keeping web state at the root makes the data flow easy to trace and avoids the debugging overhead of context updates that don't obviously connect to their source.
 
 ---
 
-Built with focus and flow in mind. 🎯
+## What I'd do differently
+
+**Cue density should adapt to session length automatically.** A 5-minute sprint and a 90-minute deep work block have different rhythms. Right now density is a manual preset — it should be a function of duration.
+
+**The partial/skipped threshold (1 min) is a guess.** It feels right but there's no data behind it. This should be measured: what threshold correlates with sessions users actually report as meaningful?
+
+**Adaptive cues based on step progress.** When focus steps are tracked, audio cues could acknowledge completion ("you've finished 2 of 4 steps") rather than only marking elapsed time. The data is there; it just isn't wired to the scheduler yet.
+
+**Measure audio-only vs. audio + visual.** The working hypothesis is that audio is primary and Flowmato is additive. That needs to be tested, not assumed.
+
+---
+
+## Stack
+
+| | |
+|---|---|
+| Web | Next.js 16, React 19, TypeScript, Tailwind CSS |
+| Mobile | React Native, Expo 54 |
+| Shared logic | Turborepo monorepo (`@flowmate/shared`) |
+| Audio | HTML5 Audio API (web), expo-audio (mobile), ElevenLabs TTS |
+| PiP | Document Picture-in-Picture API — Chrome/Edge only |
+| AI | OpenAI (focus step generation), Claude |
+
+---
+
+## Running it
+
+```bash
+npm install
+
+npm run dev:web     # Next.js on localhost:3000
+npm run dev:mobile  # Expo — requires Expo CLI and Expo Go
+```
+
+Node 18+. For mobile native builds: `npm run android` or `npm run ios` from the repo root.
+
+---
+
+Full write-up: [lydiakwag.com/projects/flowmate](https://www.lydiakwag.com/projects/flowmate)
