@@ -2,7 +2,7 @@
 
 **An audio-guided focus timer built around a single named intent.**
 
-Live on **[web](https://flowmate.club)** · **[Android](https://play.google.com/store/apps/details?id=club.flowmate.app)** · iOS in review · ~1,000 active users
+Live on **[web](https://flowmate.club)** · **[Android](https://play.google.com/store/apps/details?id=club.flowmate.app)** (soft launch, not yet promoted) · iOS in review · ~1,000 web users
 
 ---
 
