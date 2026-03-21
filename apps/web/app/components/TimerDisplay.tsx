@@ -4,6 +4,7 @@ import { useState } from "react";
 import { TimerBlock, TimerMode, SessionDraft } from "../types";
 import { ProgressBar } from "./ProgressBar";
 import { TomatoIcon } from "./TomatoIcon";
+import { FlowmatoAnimated } from "./FlowmatoAnimated";
 
 const MAX_STEPS = 5;
 const MAX_STEP_LENGTH = 60;
@@ -81,12 +82,12 @@ export const TimerDisplay = ({
     if (isPaused) return '/flowmato/state/flowmato_daydreaming.png';
     const total = sessions[currentSessionIndex]?.duration ?? 1;
     const pct = (total - timeRemaining) / total;
-    if (pct < 0.17) return '/flowmato/progress/1_seedling.png';
-    if (pct < 0.34) return '/flowmato/progress/2_plant.png';
-    if (pct < 0.50) return '/flowmato/progress/3_small.png';
-    if (pct < 0.67) return '/flowmato/progress/4_medium.png';
-    if (pct < 0.84) return '/flowmato/progress/5_full.png';
-    return '/flowmato/progress/6_happy.png';
+    if (pct < 0.20) return '/flowmato/progress/1_seedling.png';
+    if (pct < 0.40) return '/flowmato/progress/2_plant.png';
+    if (pct < 0.60) return '/flowmato/progress/3_small.png';
+    if (pct < 0.80) return '/flowmato/progress/4_medium.png';
+    if (pct < 1.00) return '/flowmato/progress/5_full.png';
+    return '/flowmato/progress/6_happy.png'; // only at 100%
   };
 
   const getFlowmatoLabel = () => {
@@ -237,13 +238,14 @@ export const TimerDisplay = ({
         </div>
 
         {/* Flowmato */}
-        <div className="text-center mb-2">
-          <img
+        <div className="flex justify-center mb-2">
+          <FlowmatoAnimated
+            key={currentSessionIndex}
             src={getFlowmatoSrc()}
-            alt="Flowmato"
-            className="w-20 h-20 sm:w-24 sm:h-24 mx-auto drop-shadow-md transition-all duration-700"
+            label={getFlowmatoLabel()}
+            isPaused={isPaused}
+            currentSessionType={currentSessionType}
           />
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{getFlowmatoLabel()}</p>
         </div>
 
         {/* Timer number */}

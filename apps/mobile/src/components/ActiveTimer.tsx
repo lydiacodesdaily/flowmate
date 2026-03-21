@@ -22,6 +22,7 @@ import { TransitionWarning } from './TransitionWarning';
 import { ActiveSteps } from './ActiveSteps';
 import { EarlyCompletionBanner } from './EarlyCompletionBanner';
 import { ContextualTip } from './tips';
+import { FlowmatoAnimated } from './FlowmatoAnimated';
 import { audioService } from '../services/audioService';
 import { createSessionRecord, appendHistory, updateHistoryRecord } from '../services/sessionService';
 import { hapticService } from '../services/hapticService';
@@ -651,6 +652,23 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   // Determine if current session is a break for visual distinction
   const isBreakSession = currentSession?.type === 'break';
 
+  const getFlowmatoImageSrc = () => {
+    if (isBreakSession) return require('../../assets/flowmato/state/flowmato_relaxing.png');
+    if (status === 'paused') return require('../../assets/flowmato/state/flowmato_daydreaming.png');
+    if (progress < 0.20) return require('../../assets/flowmato/progress/1_seedling.png');
+    if (progress < 0.40) return require('../../assets/flowmato/progress/2_plant.png');
+    if (progress < 0.60) return require('../../assets/flowmato/progress/3_small.png');
+    if (progress < 0.80) return require('../../assets/flowmato/progress/4_medium.png');
+    if (progress < 1.00) return require('../../assets/flowmato/progress/5_full.png');
+    return require('../../assets/flowmato/progress/6_happy.png');
+  };
+
+  const getFlowmatoLabel = () => {
+    if (isBreakSession) return 'Flowmato is resting...';
+    if (status === 'paused') return 'Flowmato is daydreaming...';
+    return 'Flowmato is growing!';
+  };
+
   // Determine background color based on session type and transition state
   const getContainerBackground = () => {
     // Transition zone takes precedence (subtle amber tint)
@@ -707,6 +725,15 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
           />
 
           <View style={styles.timerContainer}>
+          {/* Flowmato character */}
+          <FlowmatoAnimated
+            key={currentSessionIndex}
+            imageSrc={getFlowmatoImageSrc()}
+            label={getFlowmatoLabel()}
+            isPaused={status === 'paused'}
+            currentSessionType={currentSession?.type}
+          />
+
           <TimerDisplay
             timeRemaining={timeRemaining}
             totalTime={totalTime}
