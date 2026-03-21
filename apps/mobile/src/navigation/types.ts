@@ -8,7 +8,7 @@ export type FocusStackParamList = {
   PomodoroSelection: undefined;
   GuidedSelection: undefined;
   CustomSelection: undefined;
-  ActiveTimer: { sessions: Session[]; isQuickStart?: boolean };
+  ActiveTimer: { sessions: Session[]; isQuickStart?: boolean; resumedFromId?: string };
 };
 
 // Bottom Tab Navigator

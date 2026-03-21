@@ -24,7 +24,7 @@ import { EarlyCompletionBanner } from './EarlyCompletionBanner';
 import { ContextualTip } from './tips';
 import { FlowmatoAnimated } from './FlowmatoAnimated';
 import { audioService } from '../services/audioService';
-import { createSessionRecord, appendHistory, updateHistoryRecord } from '../services/sessionService';
+import { createSessionRecord, appendHistory, updateHistoryRecord, setActiveSession, clearActiveSession } from '../services/sessionService';
 import { hapticService } from '../services/hapticService';
 import { notificationService } from '../services/notificationService';
 import { useTheme } from '../theme';
@@ -53,7 +53,7 @@ function generateSessionLabel(mode: TimerMode, sessions: Session[]): string {
 }
 
 export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
-  const { sessions: routeSessions, isQuickStart } = route.params;
+  const { sessions: routeSessions, isQuickStart, resumedFromId } = route.params;
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
   const { reduceMotion, skipFocusPrompt } = useAccessibility();
@@ -130,6 +130,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const sessionEndTimeRef = useRef(sessionEndTime);
   const totalTimeRef = useRef(totalTime);
   const onFocusSessionCompleteRef = useRef(onFocusSessionComplete);
+  const resumedFromIdRef = useRef(resumedFromId);
 
   // Keep refs in sync with current values
   useEffect(() => {
@@ -140,7 +141,19 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     sessionEndTimeRef.current = sessionEndTime;
     totalTimeRef.current = totalTime;
     onFocusSessionCompleteRef.current = onFocusSessionComplete;
-  }, [sessionDraft, timerMode, timerType, sessionStartTime, sessionEndTime, totalTime, onFocusSessionComplete]);
+    resumedFromIdRef.current = resumedFromId;
+  }, [sessionDraft, timerMode, timerType, sessionStartTime, sessionEndTime, totalTime, onFocusSessionComplete, resumedFromId]);
+
+  // Write activeSession to storage when timer starts (for crash recovery)
+  useEffect(() => {
+    if (sessionStartTime > 0) {
+      setActiveSession({
+        startedAt: sessionStartTime,
+        plannedSeconds: totalTimeRef.current,
+        draft: sessionDraftRef.current,
+      });
+    }
+  }, [sessionStartTime]);
 
   // Check if controls should be locked
   const isLocked = focusLockEnabled && (status === 'running' || status === 'paused');
@@ -220,7 +233,9 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
           sessionTimerType,             // 'focus' or 'break'
           session.type,                 // 'settle', 'focus', 'break', 'wrap'
           'completed',
-          sessionTimerType === 'focus' ? currentDraft : undefined  // Only attach draft to focus sessions
+          sessionTimerType === 'focus' ? currentDraft : undefined,  // Only attach draft to focus sessions
+          undefined,                // note
+          sessionTimerType === 'focus' ? resumedFromIdRef.current : undefined  // resumedFromId
         );
 
         await appendHistory(record);
@@ -270,7 +285,8 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
           await onFocusSessionCompleteRef.current();
         }
         // No intent/steps - just navigate back after a brief moment
-        setTimeout(() => {
+        setTimeout(async () => {
+          await clearActiveSession();
           setSessionDraft({ intent: '', steps: [] });
           reset();
           navigation.navigate('ModeSelection');
@@ -415,7 +431,9 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         timerType,
         sessionType,
         sessionStatus,
-        sessionDraft
+        sessionDraft,
+        undefined,        // note
+        resumedFromId     // link to resumed session if applicable
       );
 
       await appendHistory(record);
@@ -432,6 +450,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     }
 
     // No intent/steps or skipped session - just navigate back
+    await clearActiveSession();
     reset();
     navigation.navigate('ModeSelection');
   };
@@ -615,6 +634,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 
     // Clear session draft for next session
     console.log('handleSessionSave: Clearing sessionDraft and resetting timer');
+    await clearActiveSession();
     setSessionDraft({ intent: '', steps: [] });
     reset(); // Reset timer status to idle
     setShowCompleteModal(false);
@@ -632,6 +652,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     }
 
     setAutoSavedRecordId(null);
+    await clearActiveSession();
     setSessionDraft({ intent: '', steps: [] });
     reset(); // Reset timer status to idle
     setShowCompleteModal(false);

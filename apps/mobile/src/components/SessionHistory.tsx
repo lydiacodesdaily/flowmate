@@ -4,11 +4,18 @@ import {
   Text,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
-import { DailySummary } from '@flowmate/shared/types';
-import { RETENTION_DAYS, formatFocusTime } from '../services/sessionService';
+import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
+import { DailySummary, SessionRecord } from '@flowmate/shared/types';
+import { RETENTION_DAYS, formatFocusTime, formatTime, isResumable, sessionToDraft, saveDraft } from '../services/sessionService';
 import { useTheme } from '../theme/ThemeContext';
 import { useResponsive } from '../hooks/useResponsive';
+import { useTimerContext } from '../contexts/TimerContext';
+import type { TabParamList } from '../navigation/types';
+
+type RootNavigationProp = NavigationProp<TabParamList>;
 
 interface SessionHistoryProps {
   dailySummaries: DailySummary[];
@@ -17,6 +24,34 @@ interface SessionHistoryProps {
 export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
   const { theme } = useTheme();
   const { contentStyle } = useResponsive();
+  const navigation = useNavigation<RootNavigationProp>();
+  const { setSessionDraft } = useTimerContext();
+
+  const handleResume = async (session: SessionRecord) => {
+    const remainingSeconds = session.plannedSeconds - session.completedSeconds;
+    if (remainingSeconds <= 0) return;
+
+    const draft = sessionToDraft(session, true); // preserve step state
+    setSessionDraft(draft);
+    await saveDraft(draft);
+
+    const durationMinutes = Math.ceil(remainingSeconds / 60);
+    navigation.navigate('FocusTab', {
+      screen: 'ActiveTimer',
+      params: {
+        sessions: [{ type: 'focus', durationMinutes }],
+        isQuickStart: true,
+        resumedFromId: session.id,
+      },
+    } as any);
+  };
+
+  const handleContinueToday = async (session: SessionRecord) => {
+    const draft = sessionToDraft(session, false); // reset steps
+    setSessionDraft(draft);
+    await saveDraft(draft);
+    navigation.navigate('FocusTab');
+  };
 
   if (dailySummaries.length === 0) {
     return (
@@ -39,7 +74,13 @@ export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
       showsVerticalScrollIndicator={false}
     >
       {dailySummaries.map((summary) => (
-        <DailySummaryCard key={summary.date} summary={summary} theme={theme} />
+        <DailySummaryCard
+          key={summary.date}
+          summary={summary}
+          theme={theme}
+          onResume={handleResume}
+          onContinueToday={handleContinueToday}
+        />
       ))}
 
       {/* Retention notice */}
@@ -55,9 +96,111 @@ export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
 interface DailySummaryCardProps {
   summary: DailySummary;
   theme: any;
+  onResume: (session: SessionRecord) => void;
+  onContinueToday: (session: SessionRecord) => void;
 }
 
-function DailySummaryCard({ summary, theme }: DailySummaryCardProps) {
+function getSessionActionButton(
+  session: SessionRecord,
+  onResume: (session: SessionRecord) => void,
+  onContinueToday: (session: SessionRecord) => void,
+  theme: any
+): React.ReactNode {
+  // Only focus sessions get action buttons; break and skipped get none
+  if (session.timerType !== 'focus' || session.status === 'skipped') return null;
+
+  if (session.status === 'partial' && isResumable(session)) {
+    return (
+      <TouchableOpacity
+        style={[styles.actionButton, { backgroundColor: theme.colors.primary }]}
+        onPress={() => onResume(session)}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.actionButtonText}>Resume</Text>
+      </TouchableOpacity>
+    );
+  }
+
+  if (session.status === 'partial') {
+    return (
+      <TouchableOpacity
+        style={[styles.actionButton, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border, borderWidth: 1 }]}
+        onPress={() => onContinueToday(session)}
+        activeOpacity={0.85}
+      >
+        <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>Continue Today</Text>
+      </TouchableOpacity>
+    );
+  }
+
+  if (session.status === 'completed') {
+    return (
+      <TouchableOpacity
+        style={[styles.actionButton, { backgroundColor: theme.colors.surfaceSecondary, borderColor: theme.colors.border, borderWidth: 1 }]}
+        onPress={() => onContinueToday(session)}
+        activeOpacity={0.85}
+      >
+        <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>Repeat</Text>
+      </TouchableOpacity>
+    );
+  }
+
+  return null;
+}
+
+function SessionRow({
+  session,
+  theme,
+  onResume,
+  onContinueToday,
+}: {
+  session: SessionRecord;
+  theme: any;
+  onResume: (session: SessionRecord) => void;
+  onContinueToday: (session: SessionRecord) => void;
+}) {
+  const statusIcon =
+    session.status === 'completed' ? '✓' :
+    session.status === 'partial' ? '◐' : '⊘';
+
+  const statusColor =
+    session.status === 'completed' ? theme.colors.primary :
+    session.status === 'partial' ? theme.colors.warning : theme.colors.textTertiary;
+
+  const completedMin = Math.floor(session.completedSeconds / 60);
+  const plannedMin = Math.floor(session.plannedSeconds / 60);
+
+  const actionButton = getSessionActionButton(session, onResume, onContinueToday, theme);
+
+  return (
+    <View style={[styles.sessionRow, { borderTopColor: theme.colors.border }]}>
+      <View style={styles.sessionRowMain}>
+        <Text style={[styles.sessionStatusIcon, { color: statusColor }]}>{statusIcon}</Text>
+        <View style={styles.sessionRowContent}>
+          <Text style={[styles.sessionTime, { color: theme.colors.textSecondary }]}>
+            {formatTime(session.startedAt)}
+            {session.timerType === 'break' ? ' · break' : ''}
+          </Text>
+          <Text style={[styles.sessionDuration, { color: theme.colors.text }]}>
+            {completedMin}m{session.status !== 'completed' ? `/${plannedMin}m` : ''}
+          </Text>
+          {session.intent ? (
+            <Text style={[styles.sessionIntent, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+              {session.intent}
+            </Text>
+          ) : null}
+        </View>
+        {actionButton && (
+          <View style={styles.sessionActionContainer}>
+            {actionButton}
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function DailySummaryCard({ summary, theme, onResume, onContinueToday }: DailySummaryCardProps) {
   const sessionCount = summary.completedCount + summary.partialCount;
   const hasBreaks = summary.breakMinutes > 0;
 
@@ -102,6 +245,17 @@ function DailySummaryCard({ summary, theme }: DailySummaryCardProps) {
           </Text>
         </View>
       </View>
+
+      {/* Individual Sessions */}
+      {summary.sessions.map((session) => (
+        <SessionRow
+          key={session.id}
+          session={session}
+          theme={theme}
+          onResume={onResume}
+          onContinueToday={onContinueToday}
+        />
+      ))}
     </View>
   );
 }
@@ -155,6 +309,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start',
     gap: 32,
+    marginBottom: 12,
   },
   statItem: {
     alignItems: 'flex-start',
@@ -179,5 +334,49 @@ const styles = StyleSheet.create({
   retentionText: {
     fontSize: 13,
     textAlign: 'center',
+  },
+  sessionRow: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 10,
+    marginTop: 4,
+  },
+  sessionRowMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  sessionStatusIcon: {
+    fontSize: 14,
+    width: 18,
+    textAlign: 'center',
+  },
+  sessionRowContent: {
+    flex: 1,
+  },
+  sessionTime: {
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  sessionDuration: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  sessionIntent: {
+    fontSize: 12,
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
+  sessionActionContainer: {
+    flexShrink: 0,
+  },
+  actionButton: {
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  actionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
