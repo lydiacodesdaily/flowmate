@@ -6,7 +6,7 @@ export const MobileLandingPage = () => {
       {/* Logo + Branding */}
       <div className="text-center mb-10">
         <div className="w-28 h-28 mx-auto mb-5">
-          <img src="/flowmato.png" alt="Flowmato" className="w-full h-full object-contain drop-shadow-xl" />
+          <img src="/flowmato/flowmato.png" alt="Flowmato" className="w-full h-full object-contain drop-shadow-xl" />
         </div>
         <h1 className="text-4xl font-bold text-slate-800 dark:text-white mb-2 tracking-tight">
           Flowmate

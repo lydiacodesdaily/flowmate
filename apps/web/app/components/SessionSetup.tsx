@@ -7,13 +7,15 @@ import { getDraft, saveDraft, createPrepStep } from "../utils/sessionUtils";
 interface SessionSetupProps {
   onStart: () => void;
   onSkipSetup: () => void;
+  isPremium?: boolean;
+  onUpgrade?: () => void;
 }
 
 const MAX_INTENT_LENGTH = 80;
 const MAX_STEP_LENGTH = 60;
 const MAX_STEPS = 5;
 
-export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
+export const SessionSetup = ({ onStart, onSkipSetup, isPremium = false, onUpgrade }: SessionSetupProps) => {
   const [intent, setIntent] = useState("");
   const [steps, setSteps] = useState<PrepStep[]>([]);
   const [newStepText, setNewStepText] = useState("");
@@ -139,13 +141,23 @@ export const SessionSetup = ({ onStart, onSkipSetup }: SessionSetupProps) => {
             </div>
           )}
           {intent.trim().length >= 3 && steps.length < MAX_STEPS && (
-            <button
-              onClick={generateSteps}
-              disabled={isGenerating}
-              className="mt-2 text-xs text-cyan-600 dark:text-cyan-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGenerating ? "Generating…" : hasGenerated ? "↻ Regenerate" : "✨ Generate steps"}
-            </button>
+            isPremium ? (
+              <button
+                onClick={generateSteps}
+                disabled={isGenerating}
+                className="mt-2 text-xs text-cyan-600 dark:text-cyan-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGenerating ? "Generating…" : hasGenerated ? "↻ Regenerate" : "✨ Generate steps"}
+              </button>
+            ) : (
+              <button
+                onClick={onUpgrade}
+                className="mt-2 text-xs text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1"
+              >
+                <span>✦</span>
+                <span>Generate steps · Premium</span>
+              </button>
+            )
           )}
           {generateError && (
             <p className="text-xs text-red-400 mt-1">{generateError}</p>

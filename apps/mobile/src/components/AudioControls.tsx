@@ -6,6 +6,9 @@ import { useTheme } from '../theme';
 import { useSensoryPresets } from '../hooks/useSensoryPresets';
 import { SENSORY_PRESETS } from '../constants/sensoryPresets';
 import { hapticService } from '../services/hapticService';
+import { usePremium } from '../contexts/PremiumContext';
+
+const FREE_SENSORY_PRESETS = new Set(['full', 'silent']);
 
 interface AudioControlsProps {
   muteDuringBreaks: boolean;
@@ -43,12 +46,17 @@ export function AudioControls({
   const { theme } = useTheme();
   const [currentSettings, setCurrentSettings] = useState<AudioSettings>(audioService.getSettings());
   const { selectedPreset, selectPreset, isLoading: presetLoading } = useSensoryPresets();
+  const { isPremium, openPaywall } = usePremium();
 
   useEffect(() => {
     setCurrentSettings(audioService.getSettings());
   }, []);
 
   const handlePresetSelect = async (presetId: typeof selectedPreset) => {
+    if (!FREE_SENSORY_PRESETS.has(presetId) && !isPremium) {
+      openPaywall();
+      return;
+    }
     await hapticService.selection();
     await selectPreset(presetId);
     // Refresh local settings state after preset applies
@@ -84,6 +92,7 @@ export function AudioControls({
         >
           {displayPresets.map((preset) => {
             const isSelected = selectedPreset === preset.id;
+            const isLocked = !FREE_SENSORY_PRESETS.has(preset.id) && !isPremium;
             return (
               <TouchableOpacity
                 key={preset.id}
@@ -94,12 +103,13 @@ export function AudioControls({
                     backgroundColor: theme.colors.primary,
                     borderColor: theme.colors.primary,
                   },
+                  isLocked && { opacity: 0.7 },
                 ]}
                 onPress={() => handlePresetSelect(preset.id)}
                 activeOpacity={0.7}
                 disabled={presetLoading}
               >
-                <Text style={styles.presetIcon}>{preset.icon}</Text>
+                <Text style={styles.presetIcon}>{isLocked ? '🔒' : preset.icon}</Text>
                 <Text
                   style={[
                     styles.presetName,

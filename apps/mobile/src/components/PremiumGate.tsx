@@ -11,7 +11,7 @@ import { usePremium } from '../contexts/PremiumContext';
 interface PremiumGateProps {
   /** Short label shown in the upgrade prompt, e.g. "AI steps" */
   feature: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   /** Custom fallback — defaults to a compact upgrade prompt */
   fallback?: React.ReactNode;
   /** Render as an inline badge overlay instead of replacing children */
@@ -34,7 +34,7 @@ export function PremiumGate({
 }: PremiumGateProps) {
   const { isPremium, isLoading, openPaywall } = usePremium();
 
-  if (isLoading || isPremium) return <>{children}</>;
+  if (isLoading || isPremium) return children ? <>{children}</> : null;
 
   if (fallback) return <>{fallback}</>;
 

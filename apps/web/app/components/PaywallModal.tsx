@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PackageType, type Package } from "@revenuecat/purchases-js";
 import type { PremiumState } from "../hooks/usePremium";
 
 const PREMIUM_FEATURES = [
@@ -37,9 +38,9 @@ export function PaywallModal({
 
   if (!paywallVisible) return null;
 
-  const packages = offering?.availablePackages ?? [];
-  const monthlyPkg = packages.find((p) => p.packageType === "MONTHLY");
-  const annualPkg = packages.find((p) => p.packageType === "ANNUAL");
+  const packages: Package[] = offering?.availablePackages ?? [];
+  const monthlyPkg = packages.find((p) => p.packageType === PackageType.Monthly);
+  const annualPkg = packages.find((p) => p.packageType === PackageType.Annual);
 
   const handlePurchase = async (pkgId: string) => {
     setError(null);
@@ -132,7 +133,7 @@ export function PaywallModal({
               <div className="font-bold text-xl">
                 {purchasing === annualPkg.identifier
                   ? "Processing…"
-                  : annualPkg.product.priceString + " / year"}
+                  : annualPkg.webBillingProduct.currentPrice.formattedPrice + " / year"}
               </div>
             </button>
           )}
@@ -147,7 +148,7 @@ export function PaywallModal({
               <div className="font-bold text-xl">
                 {purchasing === monthlyPkg.identifier
                   ? "Processing…"
-                  : monthlyPkg.product.priceString + " / month"}
+                  : monthlyPkg.webBillingProduct.currentPrice.formattedPrice + " / month"}
               </div>
             </button>
           )}

@@ -24,6 +24,9 @@ import {
 import { TIMER_VISUAL_PRESETS } from '../constants/timerVisuals';
 import { hapticService } from '../services/hapticService';
 import { useResponsive } from '../hooks/useResponsive';
+import { usePremium } from '../contexts/PremiumContext';
+
+const FREE_TIMER_VISUALS = new Set(['thin']);
 
 export function SettingsScreen({ navigation }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
@@ -41,6 +44,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
   const { showElapsedTime, setShowElapsedTime } = useTimerDisplaySettings();
   const { selectedStyle: selectedVisual, selectStyle: selectVisual, isLoading: visualLoading } = useTimerVisual();
   const { forceShowPrompt, getDebugInfo, resetSettings: resetReviewSettings } = useReviewPrompt();
+  const { isPremium, openPaywall } = usePremium();
 
   // Review prompt debug state (development only)
   const [reviewDebugInfo, setReviewDebugInfo] = useState<{
@@ -60,6 +64,10 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
   };
 
   const handleVisualSelect = async (visualId: typeof selectedVisual) => {
+    if (!FREE_TIMER_VISUALS.has(visualId) && !isPremium) {
+      openPaywall();
+      return;
+    }
     await hapticService.selection();
     await selectVisual(visualId);
   };
@@ -185,6 +193,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
         >
           {TIMER_VISUAL_PRESETS.map((preset) => {
             const isSelected = selectedVisual === preset.id;
+            const isLocked = !FREE_TIMER_VISUALS.has(preset.id) && !isPremium;
             return (
               <TouchableOpacity
                 key={preset.id}
@@ -193,13 +202,14 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
                   {
                     backgroundColor: isSelected ? theme.colors.primary : theme.colors.surfaceSecondary,
                     borderColor: isSelected ? theme.colors.primary : theme.colors.border,
+                    opacity: isLocked ? 0.7 : 1,
                   },
                 ]}
                 onPress={() => handleVisualSelect(preset.id)}
                 activeOpacity={0.7}
                 disabled={visualLoading}
               >
-                <Text style={styles.presetIcon}>{preset.icon}</Text>
+                <Text style={styles.presetIcon}>{isLocked ? '🔒' : preset.icon}</Text>
                 <Text
                   style={[
                     styles.presetName,

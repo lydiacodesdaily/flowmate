@@ -13,6 +13,8 @@ import { SessionSetup } from "./components/SessionSetup";
 import { SessionComplete } from "./components/SessionComplete";
 import { EarlyStopModal } from "./components/EarlyStopModal";
 import { ProgressModal } from "./components/ProgressModal";
+import { PaywallModal } from "./components/PaywallModal";
+import { usePremium } from "./hooks/usePremium";
 import { loadStats, saveStats, addFocusSession } from "./utils/statsUtils";
 import { getDraft, saveDraft, clearDraft, createSessionRecord, appendHistory, createPrepStep, getActiveSession, setActiveSession, clearActiveSession, isResumable, sessionToDraft } from "./utils/sessionUtils";
 
@@ -57,6 +59,18 @@ export default function Home() {
   // Resume / Continue Today state
   const [resumingFromId, setResumingFromId] = useState<string | null>(null);
   const [crashRecovery, setCrashRecovery] = useState<ActiveSession | null>(null);
+
+  // Premium
+  const {
+    isPremium,
+    isLoading: isPremiumLoading,
+    paywallVisible,
+    openPaywall,
+    closePaywall,
+    offering,
+    purchasePackage,
+    restorePurchases,
+  } = usePremium();
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -1399,6 +1413,7 @@ export default function Home() {
   }
 
   return (
+    <>
     <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 bg-gradient-to-br from-[#E0F2FE] via-[#EEF2FF] to-[#93C5FD] dark:from-[#0F172A] dark:via-[#1E293B] dark:to-[#0F172A] transition-colors duration-500">
 
       {/* First session callout */}
@@ -1497,6 +1512,8 @@ export default function Home() {
         <SessionSetup
           onStart={handleStartTimer}
           onSkipSetup={handleSkipSetup}
+          isPremium={isPremium}
+          onUpgrade={openPaywall}
         />
       )}
 
@@ -1607,8 +1624,8 @@ export default function Home() {
             setMuteAll={setMuteAll}
             muteBreak={muteBreak}
             setMuteBreak={setMuteBreak}
-            isPiPSupported={isPiPSupported}
-            openPiP={openPiP}
+            isPiPSupported={isPremium && isPiPSupported}
+            openPiP={isPremium ? openPiP : openPaywall}
             sessionDraft={sessionDraft}
             onUpdateIntent={handleUpdateIntent}
             onToggleStep={handleToggleStep}
@@ -1637,5 +1654,14 @@ export default function Home() {
         </div>
       </footer>
     </main>
+
+    <PaywallModal
+      paywallVisible={paywallVisible}
+      closePaywall={closePaywall}
+      offering={offering}
+      purchasePackage={purchasePackage}
+      restorePurchases={restorePurchases}
+    />
+    </>
   );
 }
