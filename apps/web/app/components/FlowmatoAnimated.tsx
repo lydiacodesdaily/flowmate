@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 // Shared spring config — used everywhere for a consistent feel
 const spring = { type: "spring", stiffness: 280, damping: 22 } as const;
@@ -45,6 +45,7 @@ export const FlowmatoAnimated = ({
 }: FlowmatoAnimatedProps) => {
   // Component is remounted via key={currentSessionIndex} in TimerDisplay,
   // so all state/refs are fresh at the start of each session.
+  const prefersReducedMotion = useReducedMotion();
   const rawStage = srcToStage(src);
 
   // If we mount at stage 6, sessions haven't loaded yet (timeRemaining=0 makes
@@ -61,7 +62,7 @@ export const FlowmatoAnimated = ({
   const [growPopKey, setGrowPopKey] = useState(0);
   const [isCelebrating, setIsCelebrating] = useState(false);
 
-  const isFloating = !isPaused && currentSessionType === "focus";
+  const isFloating = !isPaused && currentSessionType !== "focus" && !prefersReducedMotion;
 
   // Advance displaySrc when stage grows; allow break/daydream to show immediately.
   // Also handles new session start: if stage drops from 6 → 1, that means the
@@ -99,7 +100,7 @@ export const FlowmatoAnimated = ({
   }, [rawStage]);
 
   const floatTransition = isFloating
-    ? { y: { repeat: Infinity, duration: 2.8, ease: "easeInOut" as const } }
+    ? { y: { repeat: Infinity, duration: 5.5, ease: "easeInOut" as const } }
     : { ...spring };
 
   const particles = Array.from({ length: PARTICLE_COUNT }, (_, i) => {
@@ -119,7 +120,7 @@ export const FlowmatoAnimated = ({
 
         {/* Idle float wrapper */}
         <motion.div
-          animate={{ y: isFloating ? [0, -7, 0] : 0 }}
+          animate={{ y: isFloating ? [0, -4, 0] : 0 }}
           transition={floatTransition}
           className="w-full h-full flex items-center justify-center"
         >
