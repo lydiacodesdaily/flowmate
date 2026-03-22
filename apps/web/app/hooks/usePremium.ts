@@ -37,6 +37,7 @@ export function usePremium(): PremiumState {
 
   useEffect(() => {
     if (!RC_API_KEY) {
+      setIsPremium(true); // no key = free/dev mode, all features open
       setIsLoading(false);
       return;
     }
