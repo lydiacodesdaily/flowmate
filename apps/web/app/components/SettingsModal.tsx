@@ -1,5 +1,125 @@
 "use client";
 
+type AudioPresetId = 'full' | 'gentle' | 'minimal' | 'transitions' | 'silent' | 'custom';
+
+interface AudioPresetConfig {
+  tickVolume: number;
+  tickSound: string;
+  announcementVolume: number;
+  minuteAnnouncementInterval: number;
+  enableFinalCountdown: boolean;
+  enableDingCheckpoints: boolean;
+  enableTransitionSounds: boolean;
+  muteBreak: boolean;
+}
+
+interface AudioPreset {
+  id: AudioPresetId;
+  name: string;
+  icon: string;
+  description: string;
+  config: AudioPresetConfig;
+}
+
+const AUDIO_PRESETS: AudioPreset[] = [
+  {
+    id: 'full',
+    name: 'Full',
+    icon: '🔊',
+    description: 'Ticks + voice every minute + countdown',
+    config: {
+      tickVolume: 0.15,
+      tickSound: 'tick-tok-alternate.mp3',
+      announcementVolume: 0.5,
+      minuteAnnouncementInterval: 1,
+      enableFinalCountdown: true,
+      enableDingCheckpoints: true,
+      enableTransitionSounds: true,
+      muteBreak: false,
+    },
+  },
+  {
+    id: 'gentle',
+    name: 'Gentle',
+    icon: '🔉',
+    description: 'Soft ticks, voice every 5 min',
+    config: {
+      tickVolume: 0.05,
+      tickSound: 'tick-tok-alternate.mp3',
+      announcementVolume: 0.35,
+      minuteAnnouncementInterval: 5,
+      enableFinalCountdown: false,
+      enableDingCheckpoints: true,
+      enableTransitionSounds: true,
+      muteBreak: false,
+    },
+  },
+  {
+    id: 'minimal',
+    name: 'Minimal',
+    icon: '🔈',
+    description: 'Voice only, every 10 min',
+    config: {
+      tickVolume: 0,
+      tickSound: 'tick-tok-alternate.mp3',
+      announcementVolume: 0.35,
+      minuteAnnouncementInterval: 10,
+      enableFinalCountdown: false,
+      enableDingCheckpoints: false,
+      enableTransitionSounds: true,
+      muteBreak: false,
+    },
+  },
+  {
+    id: 'transitions',
+    name: 'Transitions',
+    icon: '🔔',
+    description: 'Session start/end only',
+    config: {
+      tickVolume: 0,
+      tickSound: 'tick-tok-alternate.mp3',
+      announcementVolume: 0,
+      minuteAnnouncementInterval: 10,
+      enableFinalCountdown: false,
+      enableDingCheckpoints: false,
+      enableTransitionSounds: true,
+      muteBreak: false,
+    },
+  },
+  {
+    id: 'silent',
+    name: 'Silent',
+    icon: '🔇',
+    description: 'No audio',
+    config: {
+      tickVolume: 0,
+      tickSound: 'tick-tok-alternate.mp3',
+      announcementVolume: 0,
+      minuteAnnouncementInterval: 1,
+      enableFinalCountdown: false,
+      enableDingCheckpoints: false,
+      enableTransitionSounds: false,
+      muteBreak: false,
+    },
+  },
+  {
+    id: 'custom',
+    name: 'Custom',
+    icon: '🎨',
+    description: 'Your settings',
+    config: {
+      tickVolume: 0,
+      tickSound: 'tick-tok-alternate.mp3',
+      announcementVolume: 0.5,
+      minuteAnnouncementInterval: 1,
+      enableFinalCountdown: true,
+      enableDingCheckpoints: true,
+      enableTransitionSounds: true,
+      muteBreak: false,
+    },
+  },
+];
+
 interface SettingsModalProps {
   showSettings: boolean;
   setShowSettings: (show: boolean) => void;
@@ -19,6 +139,10 @@ interface SettingsModalProps {
   setEnableFinalCountdown: (enable: boolean) => void;
   enableDingCheckpoints: boolean;
   setEnableDingCheckpoints: (enable: boolean) => void;
+  enableTransitionSounds: boolean;
+  setEnableTransitionSounds: (enable: boolean) => void;
+  audioPreset: string;
+  setAudioPreset: (id: string) => void;
   theme: 'light' | 'dark' | 'system';
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   isMobile: boolean;
@@ -43,11 +167,46 @@ export const SettingsModal = ({
   setEnableFinalCountdown,
   enableDingCheckpoints,
   setEnableDingCheckpoints,
+  enableTransitionSounds,
+  setEnableTransitionSounds,
+  audioPreset,
+  setAudioPreset,
   theme,
   setTheme,
   isMobile,
 }: SettingsModalProps) => {
   if (!showSettings) return null;
+
+  const applyPreset = (preset: AudioPreset) => {
+    if (preset.id === 'custom') {
+      setAudioPreset('custom');
+      localStorage.setItem('audioPreset', 'custom');
+      return;
+    }
+    const c = preset.config;
+    setTickVolume(c.tickVolume);
+    localStorage.setItem('tickVolume', String(c.tickVolume));
+    setTickSound(c.tickSound);
+    localStorage.setItem('tickSound', c.tickSound);
+    setAnnouncementVolume(c.announcementVolume);
+    localStorage.setItem('announcementVolume', String(c.announcementVolume));
+    setMinuteAnnouncementInterval(c.minuteAnnouncementInterval);
+    localStorage.setItem('minuteAnnouncementInterval', String(c.minuteAnnouncementInterval));
+    setEnableFinalCountdown(c.enableFinalCountdown);
+    localStorage.setItem('enableFinalCountdown', String(c.enableFinalCountdown));
+    setEnableDingCheckpoints(c.enableDingCheckpoints);
+    localStorage.setItem('enableDingCheckpoints', String(c.enableDingCheckpoints));
+    setEnableTransitionSounds(c.enableTransitionSounds);
+    localStorage.setItem('enableTransitionSounds', String(c.enableTransitionSounds));
+    setMuteBreak(c.muteBreak);
+    setAudioPreset(preset.id);
+    localStorage.setItem('audioPreset', preset.id);
+  };
+
+  const markCustom = () => {
+    setAudioPreset('custom');
+    localStorage.setItem('audioPreset', 'custom');
+  };
 
   return (
     <div
@@ -75,6 +234,35 @@ export const SettingsModal = ({
           <div>
             <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-400 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">🔊 Audio</h3>
 
+            {/* Audio Presets */}
+            <div className="mb-6">
+              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                Preset
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {AUDIO_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    onClick={() => applyPreset(preset)}
+                    className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border-2 text-xs font-medium transition-all duration-200 ${
+                      audioPreset === preset.id
+                        ? 'border-blue-600 dark:border-cyan-500 bg-blue-50 dark:bg-cyan-950 text-blue-700 dark:text-cyan-300'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:border-blue-300 dark:hover:border-cyan-700'
+                    }`}
+                    title={preset.description}
+                  >
+                    <span className="text-base leading-none">{preset.icon}</span>
+                    <span>{preset.name}</span>
+                  </button>
+                ))}
+              </div>
+              {audioPreset !== 'custom' && (
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-500 text-center">
+                  {AUDIO_PRESETS.find(p => p.id === audioPreset)?.description}
+                </p>
+              )}
+            </div>
+
             {/* Tick Sound Toggle and Settings */}
             <div className="mb-6">
               <div className="flex items-center justify-between py-2 mb-3">
@@ -96,13 +284,12 @@ export const SettingsModal = ({
                 <button
                     id="tick-sound-enabled"
                     onClick={() => {
+                      markCustom();
                       if (tickVolume > 0) {
-                        // Turn off - save current volume and set to 0
                         localStorage.setItem('lastTickVolume', String(tickVolume));
                         setTickVolume(0);
                         localStorage.setItem('tickVolume', '0');
                       } else {
-                        // Turn on - restore last saved volume or use default
                         const savedVolume = localStorage.getItem('lastTickVolume');
                         const newVolume = savedVolume ? parseFloat(savedVolume) : 0.05;
                         setTickVolume(newVolume);
@@ -129,6 +316,7 @@ export const SettingsModal = ({
                     <select
                       value={tickSound}
                       onChange={(e) => {
+                        markCustom();
                         const newSound = e.target.value;
                         setTickSound(newSound);
                         localStorage.setItem('tickSound', newSound);
@@ -158,6 +346,7 @@ export const SettingsModal = ({
                       step="0.01"
                       value={tickVolume}
                       onChange={(e) => {
+                        markCustom();
                         const newVolume = parseFloat(e.target.value);
                         setTickVolume(newVolume);
                         localStorage.setItem('tickVolume', String(newVolume));
@@ -201,13 +390,12 @@ export const SettingsModal = ({
                 <button
                   id="voice-announcements"
                   onClick={() => {
+                    markCustom();
                     if (announcementVolume > 0) {
-                      // Turn off - save current volume and set to 0
                       localStorage.setItem('lastAnnouncementVolume', String(announcementVolume));
                       setAnnouncementVolume(0);
                       localStorage.setItem('announcementVolume', '0');
                     } else {
-                      // Turn on - restore last saved volume or use default
                       const savedVolume = localStorage.getItem('lastAnnouncementVolume');
                       const newVolume = savedVolume ? parseFloat(savedVolume) : 0.20;
                       setAnnouncementVolume(newVolume);
@@ -241,6 +429,7 @@ export const SettingsModal = ({
                       step="0.01"
                       value={announcementVolume}
                       onChange={(e) => {
+                        markCustom();
                         const newVolume = parseFloat(e.target.value);
                         setAnnouncementVolume(newVolume);
                         localStorage.setItem('announcementVolume', String(newVolume));
@@ -261,6 +450,7 @@ export const SettingsModal = ({
                       id="minute-interval"
                       value={minuteAnnouncementInterval}
                       onChange={(e) => {
+                        markCustom();
                         const newInterval = parseInt(e.target.value, 10);
                         setMinuteAnnouncementInterval(newInterval);
                         localStorage.setItem('minuteAnnouncementInterval', String(newInterval));
@@ -283,6 +473,7 @@ export const SettingsModal = ({
                     <button
                       id="seconds-countdown"
                       onClick={() => {
+                        markCustom();
                         setEnableFinalCountdown(!enableFinalCountdown);
                         localStorage.setItem('enableFinalCountdown', String(!enableFinalCountdown));
                       }}
@@ -316,6 +507,7 @@ export const SettingsModal = ({
                     <button
                       id="ding-checkpoints"
                       onClick={() => {
+                        markCustom();
                         setEnableDingCheckpoints(!enableDingCheckpoints);
                         localStorage.setItem('enableDingCheckpoints', String(!enableDingCheckpoints));
                       }}
@@ -332,6 +524,44 @@ export const SettingsModal = ({
                   </div>
                 </div>
               )}
+
+              {/* Session start/end sounds — shown when voice announcements are off */}
+              {announcementVolume === 0 && (
+                <div className="ml-6 mt-2">
+                  <div className="flex items-center justify-between py-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <label htmlFor="transition-sounds" className="text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
+                        Session start/end sounds
+                      </label>
+                      <div className="group relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 cursor-help">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                        </svg>
+                        <div className="absolute left-0 top-full mt-1 w-52 p-2 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                          Plays a short chime when a focus or break session starts and ends — no minute-by-minute updates
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      id="transition-sounds"
+                      onClick={() => {
+                        markCustom();
+                        setEnableTransitionSounds(!enableTransitionSounds);
+                        localStorage.setItem('enableTransitionSounds', String(!enableTransitionSounds));
+                      }}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
+                        enableTransitionSounds ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          enableTransitionSounds ? 'translate-x-5' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Mute During Breaks */}
@@ -342,6 +572,7 @@ export const SettingsModal = ({
               <button
                 id="mute-breaks"
                 onClick={() => {
+                  markCustom();
                   setMuteBreak(!muteBreak);
                   if (!muteBreak && 'speechSynthesis' in window) {
                     window.speechSynthesis.cancel();

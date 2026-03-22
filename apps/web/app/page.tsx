@@ -32,17 +32,19 @@ export default function Home() {
   const [muteAll, setMuteAll] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const [tickSound, setTickSound] = useState<string>('tick-tok-alternate.mp3');
-  const [tickVolume, setTickVolume] = useState<number>(0);
-  const [announcementVolume, setAnnouncementVolume] = useState<number>(0.5);
+  const [tickVolume, setTickVolume] = useState<number>(0.05);
+  const [announcementVolume, setAnnouncementVolume] = useState<number>(0.35);
   const [showSettings, setShowSettings] = useState(false);
   const [customMinutes, setCustomMinutes] = useState<string>("");
   const [isPiPSupported, setIsPiPSupported] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [enableConfetti, setEnableConfetti] = useState(true);
-  const [minuteAnnouncementInterval, setMinuteAnnouncementInterval] = useState(1);
-  const [enableFinalCountdown, setEnableFinalCountdown] = useState(true);
+  const [minuteAnnouncementInterval, setMinuteAnnouncementInterval] = useState(5);
+  const [enableFinalCountdown, setEnableFinalCountdown] = useState(false);
   const [enableDingCheckpoints, setEnableDingCheckpoints] = useState(true);
+  const [enableTransitionSounds, setEnableTransitionSounds] = useState(true);
+  const [audioPreset, setAudioPreset] = useState<string>('gentle');
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [completedFocusMinutes, setCompletedFocusMinutes] = useState<number>(0);
   const [showCallout, setShowCallout] = useState(false);
@@ -80,7 +82,8 @@ export default function Home() {
   const minuteAnnouncementIntervalRef = useRef<number>(1);
   const muteAllRef = useRef<boolean>(false);
   const muteBreakRef = useRef<boolean>(false);
-  const announcementVolumeRef = useRef<number>(0.5);
+  const announcementVolumeRef = useRef<number>(0.35);
+  const enableTransitionSoundsRef = useRef<boolean>(true);
   const pipWindowRef = useRef<Window | null>(null);
   const isPausedRef = useRef<boolean>(false);
   const timeRemainingRef = useRef<number>(0);
@@ -103,8 +106,9 @@ export default function Home() {
     muteBreakRef.current = muteBreak;
     minuteAnnouncementIntervalRef.current = minuteAnnouncementInterval;
     announcementVolumeRef.current = announcementVolume;
+    enableTransitionSoundsRef.current = enableTransitionSounds;
     sessionDraftRef.current = sessionDraft;
-  }, [isPaused, timeRemaining, currentSessionIndex, sessions, muteAll, muteBreak, minuteAnnouncementInterval, announcementVolume, sessionDraft]);
+  }, [isPaused, timeRemaining, currentSessionIndex, sessions, muteAll, muteBreak, minuteAnnouncementInterval, announcementVolume, enableTransitionSounds, sessionDraft]);
 
   const openPiP = async () => {
     if (!('documentPictureInPicture' in window)) {
@@ -924,11 +928,7 @@ export default function Home() {
   const speak = (text: string) => {
     console.log('[speak] Called with text:', text, 'announcementVolume:', announcementVolumeRef.current);
 
-    // Check if announcement volume is 0 (disabled)
-    if (announcementVolumeRef.current === 0) {
-      console.log('[speak] Skipping - announcement volume is 0');
-      return;
-    }
+    const isTransition = text === "Focus." || text === "Break." || text === "Done.";
 
     // Check if all sound is muted
     if (muteAllRef.current) {
@@ -943,19 +943,36 @@ export default function Home() {
       return;
     }
 
+    // Transition sounds (Focus/Break/Done) have their own enable flag
+    if (isTransition) {
+      if (!enableTransitionSoundsRef.current) {
+        console.log('[speak] Skipping transition - transition sounds disabled');
+        return;
+      }
+      // Use announcement volume if set, otherwise fall back to a default
+      const vol = announcementVolumeRef.current > 0 ? announcementVolumeRef.current : 0.4;
+      const transitionPaths: Record<string, string> = {
+        "Focus.": '/audio/countdown/transitions/focus.mp3',
+        "Break.": '/audio/countdown/transitions/break.mp3',
+        "Done.": '/audio/countdown/transitions/done.mp3',
+      };
+      const audio = new Audio(transitionPaths[text]);
+      audio.volume = vol;
+      audio.play().catch(() => {});
+      return;
+    }
+
+    // Check if announcement volume is 0 (disabled) for non-transition sounds
+    if (announcementVolumeRef.current === 0) {
+      console.log('[speak] Skipping - announcement volume is 0');
+      return;
+    }
+
     let audioPath = '';
 
     // Ding sound for 5-minute intervals (> 25 minutes)
     if (text === 'ding') {
       audioPath = '/audio/effects/ding.mp3';
-    }
-    // Session type announcements (Focus, Break, Done)
-    else if (text === "Focus.") {
-      audioPath = '/audio/countdown/transitions/focus.mp3';
-    } else if (text === "Break.") {
-      audioPath = '/audio/countdown/transitions/break.mp3';
-    } else if (text === "Done.") {
-      audioPath = '/audio/countdown/transitions/done.mp3';
     }
     // Minute announcements (e.g., "25 minutes", "1 minute")
     else if (text.includes('minute')) {
@@ -1079,6 +1096,16 @@ export default function Home() {
       const savedEnableDingCheckpoints = localStorage.getItem('enableDingCheckpoints');
       if (savedEnableDingCheckpoints !== null) {
         setEnableDingCheckpoints(savedEnableDingCheckpoints === 'true');
+      }
+
+      const savedEnableTransitionSounds = localStorage.getItem('enableTransitionSounds');
+      if (savedEnableTransitionSounds !== null) {
+        setEnableTransitionSounds(savedEnableTransitionSounds === 'true');
+      }
+
+      const savedAudioPreset = localStorage.getItem('audioPreset');
+      if (savedAudioPreset) {
+        setAudioPreset(savedAudioPreset);
       }
 
       // Check if Document Picture-in-Picture API is supported
@@ -1493,6 +1520,10 @@ export default function Home() {
         setEnableFinalCountdown={setEnableFinalCountdown}
         enableDingCheckpoints={enableDingCheckpoints}
         setEnableDingCheckpoints={setEnableDingCheckpoints}
+        enableTransitionSounds={enableTransitionSounds}
+        setEnableTransitionSounds={setEnableTransitionSounds}
+        audioPreset={audioPreset}
+        setAudioPreset={setAudioPreset}
         theme={theme}
         setTheme={handleThemeChange}
         isMobile={isMobile}
@@ -1642,8 +1673,6 @@ export default function Home() {
         <div className="mb-1">Made by Liddy 🦥✨ · <a href="https://lydiastud.io" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Lydia Studio</a></div>
         <div>
           💬 <a href="https://tally.so/r/Y50Qb5" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Share feedback</a>
-          {' · '}
-          🍵 <a href="https://buymeacoffee.com/lydiastudio" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Buy me a matcha latte</a>
           {' · '}
           🎧 <a href="https://www.lydiastud.io/flow-club-companion" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Flow Club Companion</a>
         </div>
