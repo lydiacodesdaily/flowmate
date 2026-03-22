@@ -47,12 +47,11 @@ export const FlowmatoAnimated = ({
   // so all state/refs are fresh at the start of each session.
   const rawStage = srcToStage(src);
 
-  // Guard: if we mount at stage 6, timeRemaining is still 0 from the just-finished
-  // session — the new session hasn't ticked yet. Treat as stage 0 so the normal
-  // advancing logic picks up from seedling on the very next render.
-  const mountStage = rawStage === 6 ? 0 : rawStage;
-  const maxStageRef = useRef<number>(mountStage);
-  const prevStageRef = useRef<number>(mountStage);
+  // If we mount at stage 6, sessions haven't loaded yet (timeRemaining=0 makes
+  // pct=1.0). Show seedling visually, but initialize maxStageRef to 6 so the
+  // advance effect never fires upward from 0 and overwrites it.
+  const maxStageRef = useRef<number>(rawStage);
+  const prevStageRef = useRef<number>(rawStage);
 
   // displaySrc only ever advances — prevents regression when adding time
   const [displaySrc, setDisplaySrc] = useState(
@@ -64,13 +63,19 @@ export const FlowmatoAnimated = ({
 
   const isFloating = !isPaused && currentSessionType === "focus";
 
-  // Advance displaySrc when stage grows; allow break/daydream to show immediately
+  // Advance displaySrc when stage grows; allow break/daydream to show immediately.
+  // Also handles new session start: if stage drops from 6 → 1, that means the
+  // real timer just began (sessions were empty on mount, now they're loaded).
   useEffect(() => {
     if (rawStage > maxStageRef.current) {
       maxStageRef.current = rawStage;
       setDisplaySrc(src);
     } else if (rawStage === 0) {
       maxStageRef.current = 0;
+      setDisplaySrc(src);
+    } else if (rawStage === 1 && maxStageRef.current === 6) {
+      // Stage dropped from 6 → 1: timer just started after mount with empty sessions
+      maxStageRef.current = 1;
       setDisplaySrc(src);
     }
   }, [src, rawStage]);
