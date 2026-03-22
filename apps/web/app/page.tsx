@@ -1699,17 +1699,49 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="mt-8 sm:mt-12 pb-4 text-center text-sm sm:text-sm text-slate-600 dark:text-cyan-200/60 transition-colors duration-500">
-        <div className="mb-1">Made by Liddy 🦥✨ · <a href="https://lydiastud.io" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Lydia Studio</a></div>
-        <div>
-          💬 <a href="https://tally.so/r/Y50Qb5" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Share feedback</a>
-          {' · '}
-          🎧 <a href="https://www.lydiastud.io/flow-club-companion" target="_blank" rel="noopener noreferrer" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Flow Club Companion</a>
-        </div>
-        <div className="mt-1">
-          <a href="/privacy" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Privacy</a>
-          {' · '}
-          <a href="/terms" className="hover:text-slate-800 dark:hover:text-cyan-300 underline transition-colors">Terms</a>
+      <footer className="mt-12 pb-8 w-full max-w-2xl transition-colors duration-500">
+        <div className="border-t border-slate-200 dark:border-cyan-200/10 pt-8 transition-colors duration-500">
+          <div className="grid grid-cols-3 gap-6 mb-8">
+            {/* Brand */}
+            <div>
+              <div className="text-sm font-semibold text-slate-700 dark:text-cyan-200/80 mb-2 transition-colors duration-500">FlowMate</div>
+              <p className="text-xs text-slate-400 dark:text-cyan-200/40 leading-relaxed transition-colors duration-500">Focused work,<br />made simple.</p>
+            </div>
+            {/* Product */}
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-cyan-200/40 mb-3 transition-colors duration-500">Product</div>
+              <ul className="space-y-2">
+                <li>
+                  <a href="https://play.google.com/store/apps/details?id=club.flowmate.app" target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 dark:text-cyan-200/50 hover:text-slate-700 dark:hover:text-cyan-300 transition-colors">Android App</a>
+                </li>
+                <li>
+                  <span className="text-xs text-slate-300 dark:text-cyan-200/25 transition-colors duration-500">iOS — coming soon</span>
+                </li>
+              </ul>
+            </div>
+            {/* Company */}
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-cyan-200/40 mb-3 transition-colors duration-500">Company</div>
+              <ul className="space-y-2">
+                <li>
+                  <a href="/support" className="text-xs text-slate-500 dark:text-cyan-200/50 hover:text-slate-700 dark:hover:text-cyan-300 transition-colors">Support</a>
+                </li>
+                <li>
+                  <a href="https://tally.so/r/Y50Qb5" target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 dark:text-cyan-200/50 hover:text-slate-700 dark:hover:text-cyan-300 transition-colors">Feedback</a>
+                </li>
+                <li>
+                  <a href="/privacy" className="text-xs text-slate-500 dark:text-cyan-200/50 hover:text-slate-700 dark:hover:text-cyan-300 transition-colors">Privacy</a>
+                </li>
+                <li>
+                  <a href="/terms" className="text-xs text-slate-500 dark:text-cyan-200/50 hover:text-slate-700 dark:hover:text-cyan-300 transition-colors">Terms</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="flex items-center justify-between pt-5 border-t border-slate-200/50 dark:border-cyan-200/5 transition-colors duration-500">
+            <span className="text-xs text-slate-400 dark:text-cyan-200/35 transition-colors duration-500">© {new Date().getFullYear()} FlowMate</span>
+            <a href="https://lydiastud.io" target="_blank" rel="noopener noreferrer" className="text-xs text-slate-400 dark:text-cyan-200/35 hover:text-slate-600 dark:hover:text-cyan-300 transition-colors">Lydia Studio</a>
+          </div>
         </div>
       </footer>
     </main>
