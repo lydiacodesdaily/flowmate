@@ -37,7 +37,7 @@ export function useSensoryPresets() {
       announcementVolume: config.announcementVolume,
       announcementInterval: config.announcementInterval,
       secondsCountdown: config.secondsCountdown,
-      muteAll: config.tickSound === 'none' && !config.announcements,
+      muteAll: config.tickSound === 'none' && !config.announcements && !config.transitionChime,
     });
 
     // Apply haptic setting

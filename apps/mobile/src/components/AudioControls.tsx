@@ -45,7 +45,7 @@ export function AudioControls({
 }: AudioControlsProps) {
   const { theme } = useTheme();
   const [currentSettings, setCurrentSettings] = useState<AudioSettings>(audioService.getSettings());
-  const { selectedPreset, selectPreset, isLoading: presetLoading } = useSensoryPresets();
+  const { selectedPreset, selectPreset, customConfig, updateCustomConfig, isLoading: presetLoading } = useSensoryPresets();
   const { isPremium, openPaywall } = usePremium();
 
   useEffect(() => {
@@ -63,12 +63,18 @@ export function AudioControls({
     setCurrentSettings(audioService.getSettings());
   };
 
-  const updateSetting = <K extends keyof AudioSettings>(
+  const updateSetting = async <K extends keyof AudioSettings>(
     key: K,
     value: AudioSettings[K]
   ) => {
     audioService.updateSettings({ [key]: value });
     setCurrentSettings(audioService.getSettings());
+    // Switch to Custom when user edits any setting manually
+    if (selectedPreset !== 'custom') {
+      const newCustomConfig = { ...customConfig, [key]: value };
+      await updateCustomConfig(newCustomConfig);
+      await selectPreset('custom', newCustomConfig);
+    }
   };
 
   const tickVolume = getClosestPreset(currentSettings.tickVolume);

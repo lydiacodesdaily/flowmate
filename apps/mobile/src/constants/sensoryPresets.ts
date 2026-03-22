@@ -74,6 +74,23 @@ export const SENSORY_PRESETS: SensoryPreset[] = [
     },
   },
   {
+    id: 'transitions',
+    name: 'Transitions',
+    description: 'Session start/end only',
+    icon: '🔔',
+    config: {
+      tickSound: 'none',
+      tickVolume: 0,
+      announcements: false,
+      announcementVolume: 0,
+      announcementInterval: 10,
+      secondsCountdown: false,
+      haptics: false,
+      transitionWarning: true,
+      transitionChime: true,
+    },
+  },
+  {
     id: 'silent',
     name: 'Silent',
     description: 'Visual only, no audio or vibration',

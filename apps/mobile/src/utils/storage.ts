@@ -294,7 +294,7 @@ export const saveFocusLockSettings = async (settings: FocusLockSettings): Promis
  * Sensory preset storage
  */
 
-export type SensoryPresetId = 'full' | 'gentle' | 'minimal' | 'silent' | 'highAlert' | 'custom';
+export type SensoryPresetId = 'full' | 'gentle' | 'minimal' | 'transitions' | 'silent' | 'highAlert' | 'custom';
 
 export interface CustomSensoryConfig {
   tickSound: 'alternating' | 'classic' | 'beep' | 'none';
