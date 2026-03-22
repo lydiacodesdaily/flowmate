@@ -16,6 +16,7 @@ import { ProgressModal } from "./components/ProgressModal";
 import { PaywallModal } from "./components/PaywallModal";
 import { usePremium } from "./hooks/usePremium";
 import { loadStats, saveStats, addFocusSession } from "./utils/statsUtils";
+import { AUDIO_PRESETS, getPresetById } from "./constants/audioPresets";
 import { getDraft, saveDraft, clearDraft, createSessionRecord, appendHistory, createPrepStep, getActiveSession, setActiveSession, clearActiveSession, isResumable, sessionToDraft } from "./utils/sessionUtils";
 
 export default function Home() {
@@ -44,6 +45,7 @@ export default function Home() {
   const [enableFinalCountdown, setEnableFinalCountdown] = useState(false);
   const [enableDingCheckpoints, setEnableDingCheckpoints] = useState(true);
   const [enableTransitionSounds, setEnableTransitionSounds] = useState(true);
+  const [transitionVolume, setTransitionVolume] = useState<number>(0.35);
   const [audioPreset, setAudioPreset] = useState<string>('gentle');
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [completedFocusMinutes, setCompletedFocusMinutes] = useState<number>(0);
@@ -84,6 +86,7 @@ export default function Home() {
   const muteBreakRef = useRef<boolean>(false);
   const announcementVolumeRef = useRef<number>(0.35);
   const enableTransitionSoundsRef = useRef<boolean>(true);
+  const transitionVolumeRef = useRef<number>(0.35);
   const pipWindowRef = useRef<Window | null>(null);
   const isPausedRef = useRef<boolean>(false);
   const timeRemainingRef = useRef<number>(0);
@@ -107,8 +110,9 @@ export default function Home() {
     minuteAnnouncementIntervalRef.current = minuteAnnouncementInterval;
     announcementVolumeRef.current = announcementVolume;
     enableTransitionSoundsRef.current = enableTransitionSounds;
+    transitionVolumeRef.current = transitionVolume;
     sessionDraftRef.current = sessionDraft;
-  }, [isPaused, timeRemaining, currentSessionIndex, sessions, muteAll, muteBreak, minuteAnnouncementInterval, announcementVolume, enableTransitionSounds, sessionDraft]);
+  }, [isPaused, timeRemaining, currentSessionIndex, sessions, muteAll, muteBreak, minuteAnnouncementInterval, announcementVolume, enableTransitionSounds, transitionVolume, sessionDraft]);
 
   const openPiP = async () => {
     if (!('documentPictureInPicture' in window)) {
@@ -949,8 +953,8 @@ export default function Home() {
         console.log('[speak] Skipping transition - transition sounds disabled');
         return;
       }
-      // Use announcement volume if set, otherwise fall back to a default
-      const vol = announcementVolumeRef.current > 0 ? announcementVolumeRef.current : 0.4;
+      // Use announcement volume if set, otherwise use dedicated transition volume
+      const vol = announcementVolumeRef.current > 0 ? announcementVolumeRef.current : transitionVolumeRef.current;
       const transitionPaths: Record<string, string> = {
         "Focus.": '/audio/countdown/transitions/focus.mp3',
         "Break.": '/audio/countdown/transitions/break.mp3',
@@ -1062,50 +1066,74 @@ export default function Home() {
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       setIsMobile(isMobileDevice);
 
-      // Load audio settings
-      const savedTickSound = localStorage.getItem('tickSound');
-      if (savedTickSound) {
-        setTickSound(savedTickSound);
-      }
+      // Load audio settings — if a named preset is saved, apply its full config
+      // to keep the UI consistent. Only load individual values for 'custom'.
+      const savedAudioPreset = localStorage.getItem('audioPreset');
+      const namedPreset = savedAudioPreset && savedAudioPreset !== 'custom'
+        ? getPresetById(savedAudioPreset)
+        : null;
 
-      const savedTickVolume = localStorage.getItem('tickVolume');
-      if (savedTickVolume) {
-        setTickVolume(parseFloat(savedTickVolume));
-      }
+      if (namedPreset) {
+        const c = namedPreset.config;
+        setAudioPreset(namedPreset.id);
+        setTickSound(c.tickSound);
+        setTickVolume(c.tickVolume);
+        setAnnouncementVolume(c.announcementVolume);
+        announcementVolumeRef.current = c.announcementVolume;
+        setTransitionVolume(c.transitionVolume);
+        transitionVolumeRef.current = c.transitionVolume;
+        setMinuteAnnouncementInterval(c.minuteAnnouncementInterval);
+        setEnableFinalCountdown(c.enableFinalCountdown);
+        setEnableDingCheckpoints(c.enableDingCheckpoints);
+        setEnableTransitionSounds(c.enableTransitionSounds);
+      } else {
+        // Custom or no preset saved — load individual values
+        const savedTickSound = localStorage.getItem('tickSound');
+        if (savedTickSound) setTickSound(savedTickSound);
 
-      const savedAnnouncementVolume = localStorage.getItem('announcementVolume');
-      if (savedAnnouncementVolume) {
-        setAnnouncementVolume(parseFloat(savedAnnouncementVolume));
+        const savedTickVolume = localStorage.getItem('tickVolume');
+        if (savedTickVolume) setTickVolume(parseFloat(savedTickVolume));
+
+        const savedAnnouncementVolume = localStorage.getItem('announcementVolume');
+        if (savedAnnouncementVolume) {
+          const v = parseFloat(savedAnnouncementVolume);
+          setAnnouncementVolume(v);
+          announcementVolumeRef.current = v;
+        }
+
+        const savedTransitionVolume = localStorage.getItem('transitionVolume');
+        if (savedTransitionVolume) {
+          const v = parseFloat(savedTransitionVolume);
+          setTransitionVolume(v);
+          transitionVolumeRef.current = v;
+        }
+
+        const savedMinuteAnnouncementInterval = localStorage.getItem('minuteAnnouncementInterval');
+        if (savedMinuteAnnouncementInterval !== null) {
+          setMinuteAnnouncementInterval(parseInt(savedMinuteAnnouncementInterval, 10));
+        }
+
+        const savedEnableFinalCountdown = localStorage.getItem('enableFinalCountdown');
+        if (savedEnableFinalCountdown !== null) {
+          setEnableFinalCountdown(savedEnableFinalCountdown === 'true');
+        }
+
+        const savedEnableDingCheckpoints = localStorage.getItem('enableDingCheckpoints');
+        if (savedEnableDingCheckpoints !== null) {
+          setEnableDingCheckpoints(savedEnableDingCheckpoints === 'true');
+        }
+
+        const savedEnableTransitionSounds = localStorage.getItem('enableTransitionSounds');
+        if (savedEnableTransitionSounds !== null) {
+          setEnableTransitionSounds(savedEnableTransitionSounds === 'true');
+        }
+
+        if (savedAudioPreset) setAudioPreset(savedAudioPreset);
       }
 
       const savedEnableConfetti = localStorage.getItem('enableConfetti');
       if (savedEnableConfetti !== null) {
         setEnableConfetti(savedEnableConfetti === 'true');
-      }
-
-      const savedMinuteAnnouncementInterval = localStorage.getItem('minuteAnnouncementInterval');
-      if (savedMinuteAnnouncementInterval !== null) {
-        setMinuteAnnouncementInterval(parseInt(savedMinuteAnnouncementInterval, 10));
-      }
-
-      const savedEnableFinalCountdown = localStorage.getItem('enableFinalCountdown');
-      if (savedEnableFinalCountdown !== null) {
-        setEnableFinalCountdown(savedEnableFinalCountdown === 'true');
-      }
-
-      const savedEnableDingCheckpoints = localStorage.getItem('enableDingCheckpoints');
-      if (savedEnableDingCheckpoints !== null) {
-        setEnableDingCheckpoints(savedEnableDingCheckpoints === 'true');
-      }
-
-      const savedEnableTransitionSounds = localStorage.getItem('enableTransitionSounds');
-      if (savedEnableTransitionSounds !== null) {
-        setEnableTransitionSounds(savedEnableTransitionSounds === 'true');
-      }
-
-      const savedAudioPreset = localStorage.getItem('audioPreset');
-      if (savedAudioPreset) {
-        setAudioPreset(savedAudioPreset);
       }
 
       // Check if Document Picture-in-Picture API is supported
@@ -1510,6 +1538,8 @@ export default function Home() {
         setTickVolume={setTickVolume}
         announcementVolume={announcementVolume}
         setAnnouncementVolume={setAnnouncementVolume}
+        transitionVolume={transitionVolume}
+        setTransitionVolume={setTransitionVolume}
         muteBreak={muteBreak}
         setMuteBreak={setMuteBreak}
         enableConfetti={enableConfetti}

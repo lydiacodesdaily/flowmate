@@ -1,124 +1,6 @@
 "use client";
 
-type AudioPresetId = 'full' | 'gentle' | 'minimal' | 'transitions' | 'silent' | 'custom';
-
-interface AudioPresetConfig {
-  tickVolume: number;
-  tickSound: string;
-  announcementVolume: number;
-  minuteAnnouncementInterval: number;
-  enableFinalCountdown: boolean;
-  enableDingCheckpoints: boolean;
-  enableTransitionSounds: boolean;
-  muteBreak: boolean;
-}
-
-interface AudioPreset {
-  id: AudioPresetId;
-  name: string;
-  icon: string;
-  description: string;
-  config: AudioPresetConfig;
-}
-
-const AUDIO_PRESETS: AudioPreset[] = [
-  {
-    id: 'full',
-    name: 'Full',
-    icon: '🔊',
-    description: 'Ticks + voice every minute + countdown',
-    config: {
-      tickVolume: 0.15,
-      tickSound: 'tick-tok-alternate.mp3',
-      announcementVolume: 0.5,
-      minuteAnnouncementInterval: 1,
-      enableFinalCountdown: true,
-      enableDingCheckpoints: true,
-      enableTransitionSounds: true,
-      muteBreak: false,
-    },
-  },
-  {
-    id: 'gentle',
-    name: 'Gentle',
-    icon: '🔉',
-    description: 'Soft ticks, voice every 5 min',
-    config: {
-      tickVolume: 0.05,
-      tickSound: 'tick-tok-alternate.mp3',
-      announcementVolume: 0.35,
-      minuteAnnouncementInterval: 5,
-      enableFinalCountdown: false,
-      enableDingCheckpoints: true,
-      enableTransitionSounds: true,
-      muteBreak: false,
-    },
-  },
-  {
-    id: 'minimal',
-    name: 'Minimal',
-    icon: '🔈',
-    description: 'Voice only, every 10 min',
-    config: {
-      tickVolume: 0,
-      tickSound: 'tick-tok-alternate.mp3',
-      announcementVolume: 0.35,
-      minuteAnnouncementInterval: 10,
-      enableFinalCountdown: false,
-      enableDingCheckpoints: false,
-      enableTransitionSounds: true,
-      muteBreak: false,
-    },
-  },
-  {
-    id: 'transitions',
-    name: 'Transitions',
-    icon: '🔔',
-    description: 'Session start/end only',
-    config: {
-      tickVolume: 0,
-      tickSound: 'tick-tok-alternate.mp3',
-      announcementVolume: 0,
-      minuteAnnouncementInterval: 10,
-      enableFinalCountdown: false,
-      enableDingCheckpoints: false,
-      enableTransitionSounds: true,
-      muteBreak: false,
-    },
-  },
-  {
-    id: 'silent',
-    name: 'Silent',
-    icon: '🔇',
-    description: 'No audio',
-    config: {
-      tickVolume: 0,
-      tickSound: 'tick-tok-alternate.mp3',
-      announcementVolume: 0,
-      minuteAnnouncementInterval: 1,
-      enableFinalCountdown: false,
-      enableDingCheckpoints: false,
-      enableTransitionSounds: false,
-      muteBreak: false,
-    },
-  },
-  {
-    id: 'custom',
-    name: 'Custom',
-    icon: '🎨',
-    description: 'Your settings',
-    config: {
-      tickVolume: 0,
-      tickSound: 'tick-tok-alternate.mp3',
-      announcementVolume: 0.5,
-      minuteAnnouncementInterval: 1,
-      enableFinalCountdown: true,
-      enableDingCheckpoints: true,
-      enableTransitionSounds: true,
-      muteBreak: false,
-    },
-  },
-];
+import { AUDIO_PRESETS } from '../constants/audioPresets';
 
 interface SettingsModalProps {
   showSettings: boolean;
@@ -129,6 +11,8 @@ interface SettingsModalProps {
   setTickVolume: (volume: number) => void;
   announcementVolume: number;
   setAnnouncementVolume: (volume: number) => void;
+  transitionVolume: number;
+  setTransitionVolume: (volume: number) => void;
   muteBreak: boolean;
   setMuteBreak: (mute: boolean) => void;
   enableConfetti: boolean;
@@ -157,6 +41,8 @@ export const SettingsModal = ({
   setTickVolume,
   announcementVolume,
   setAnnouncementVolume,
+  transitionVolume,
+  setTransitionVolume,
   muteBreak,
   setMuteBreak,
   enableConfetti,
@@ -177,8 +63,9 @@ export const SettingsModal = ({
 }: SettingsModalProps) => {
   if (!showSettings) return null;
 
-  const applyPreset = (preset: AudioPreset) => {
-    if (preset.id === 'custom') {
+  const applyPreset = (presetId: string) => {
+    const preset = AUDIO_PRESETS.find(p => p.id === presetId);
+    if (!preset || preset.id === 'custom') {
       setAudioPreset('custom');
       localStorage.setItem('audioPreset', 'custom');
       return;
@@ -190,6 +77,8 @@ export const SettingsModal = ({
     localStorage.setItem('tickSound', c.tickSound);
     setAnnouncementVolume(c.announcementVolume);
     localStorage.setItem('announcementVolume', String(c.announcementVolume));
+    setTransitionVolume(c.transitionVolume);
+    localStorage.setItem('transitionVolume', String(c.transitionVolume));
     setMinuteAnnouncementInterval(c.minuteAnnouncementInterval);
     localStorage.setItem('minuteAnnouncementInterval', String(c.minuteAnnouncementInterval));
     setEnableFinalCountdown(c.enableFinalCountdown);
@@ -243,7 +132,7 @@ export const SettingsModal = ({
                 {AUDIO_PRESETS.map((preset) => (
                   <button
                     key={preset.id}
-                    onClick={() => applyPreset(preset)}
+                    onClick={() => applyPreset(preset.id)}
                     className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border-2 text-xs font-medium transition-all duration-200 ${
                       audioPreset === preset.id
                         ? 'border-blue-600 dark:border-cyan-500 bg-blue-50 dark:bg-cyan-950 text-blue-700 dark:text-cyan-300'
@@ -282,83 +171,83 @@ export const SettingsModal = ({
                   )}
                 </div>
                 <button
-                    id="tick-sound-enabled"
-                    onClick={() => {
-                      markCustom();
-                      if (tickVolume > 0) {
-                        localStorage.setItem('lastTickVolume', String(tickVolume));
-                        setTickVolume(0);
-                        localStorage.setItem('tickVolume', '0');
-                      } else {
-                        const savedVolume = localStorage.getItem('lastTickVolume');
-                        const newVolume = savedVolume ? parseFloat(savedVolume) : 0.05;
-                        setTickVolume(newVolume);
-                        localStorage.setItem('tickVolume', String(newVolume));
-                      }
-                    }}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
-                      tickVolume > 0 ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
+                  id="tick-sound-enabled"
+                  onClick={() => {
+                    markCustom();
+                    if (tickVolume > 0) {
+                      localStorage.setItem('lastTickVolume', String(tickVolume));
+                      setTickVolume(0);
+                      localStorage.setItem('tickVolume', '0');
+                    } else {
+                      const savedVolume = localStorage.getItem('lastTickVolume');
+                      const newVolume = savedVolume ? parseFloat(savedVolume) : 0.05;
+                      setTickVolume(newVolume);
+                      localStorage.setItem('tickVolume', String(newVolume));
+                    }
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
+                    tickVolume > 0 ? 'bg-blue-600 dark:bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      tickVolume > 0 ? 'translate-x-6' : 'translate-x-1'
                     }`}
+                  />
+                </button>
+              </div>
+
+              <div className={`ml-6 space-y-3 transition-opacity duration-200 ${tickVolume === 0 ? 'opacity-40 pointer-events-none' : ''}`}>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    Style
+                  </label>
+                  <select
+                    value={tickSound}
+                    onChange={(e) => {
+                      markCustom();
+                      const newSound = e.target.value;
+                      setTickSound(newSound);
+                      localStorage.setItem('tickSound', newSound);
+                    }}
+                    disabled={tickVolume === 0}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200 disabled:cursor-not-allowed"
                   >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        tickVolume > 0 ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
+                    <option value="single_tick.wav">Single</option>
+                    <option value="tick-tok-alternate.mp3">Alternating</option>
+                    <option value="tick-tok-alternate-2.wav">Alternating 2</option>
+                    <option value="tick.m4a">Classic</option>
+                    <option value="beep.wav">Beep</option>
+                    <option value="beep1.mp3">High Beep</option>
+                    <option value="beep2.mp3">Low Beep</option>
+                  </select>
                 </div>
 
-                <div className={`ml-6 space-y-3 transition-opacity duration-200 ${tickVolume === 0 ? 'opacity-40 pointer-events-none' : ''}`}>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
-                      Style
-                    </label>
-                    <select
-                      value={tickSound}
-                      onChange={(e) => {
-                        markCustom();
-                        const newSound = e.target.value;
-                        setTickSound(newSound);
-                        localStorage.setItem('tickSound', newSound);
-                      }}
-                      disabled={tickVolume === 0}
-                      className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200 disabled:cursor-not-allowed"
-                    >
-                      <option value="single_tick.wav">Single</option>
-                      <option value="tick-tok-alternate.mp3">Alternating</option>
-                      <option value="tick-tok-alternate-2.wav">Alternating 2</option>
-                      <option value="tick.m4a">Classic</option>
-                      <option value="beep.wav">Beep</option>
-                      <option value="beep1.mp3">High Beep</option>
-                      <option value="beep2.mp3">Low Beep</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
-                      <span>Volume</span>
-                      <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(tickVolume * 100)}%</span>
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={tickVolume}
-                      onChange={(e) => {
-                        markCustom();
-                        const newVolume = parseFloat(e.target.value);
-                        setTickVolume(newVolume);
-                        localStorage.setItem('tickVolume', String(newVolume));
-                      }}
-                      disabled={tickVolume === 0}
-                      className="w-full h-2 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all disabled:cursor-not-allowed"
-                      style={{
-                        background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${tickVolume * 100}%, rgb(203, 213, 225) ${tickVolume * 100}%, rgb(203, 213, 225) 100%)`,
-                      }}
-                    />
-                  </div>
+                <div>
+                  <label className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                    <span>Volume</span>
+                    <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(tickVolume * 100)}%</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={tickVolume}
+                    onChange={(e) => {
+                      markCustom();
+                      const newVolume = parseFloat(e.target.value);
+                      setTickVolume(newVolume);
+                      localStorage.setItem('tickVolume', String(newVolume));
+                    }}
+                    disabled={tickVolume === 0}
+                    className="w-full h-2 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all disabled:cursor-not-allowed"
+                    style={{
+                      background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${tickVolume * 100}%, rgb(203, 213, 225) ${tickVolume * 100}%, rgb(203, 213, 225) 100%)`,
+                    }}
+                  />
                 </div>
+              </div>
             </div>
 
             {/* Voice Announcements Section */}
@@ -397,7 +286,7 @@ export const SettingsModal = ({
                       localStorage.setItem('announcementVolume', '0');
                     } else {
                       const savedVolume = localStorage.getItem('lastAnnouncementVolume');
-                      const newVolume = savedVolume ? parseFloat(savedVolume) : 0.20;
+                      const newVolume = savedVolume ? parseFloat(savedVolume) : 0.35;
                       setAnnouncementVolume(newVolume);
                       localStorage.setItem('announcementVolume', String(newVolume));
                     }
@@ -416,7 +305,6 @@ export const SettingsModal = ({
 
               {announcementVolume > 0 && (
                 <div className="ml-6 space-y-4">
-                  {/* Volume Slider */}
                   <div>
                     <label className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
                       <span>Volume</span>
@@ -441,7 +329,6 @@ export const SettingsModal = ({
                     />
                   </div>
 
-                  {/* Minute Announcements */}
                   <div>
                     <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
                       Interval
@@ -465,7 +352,6 @@ export const SettingsModal = ({
                     </select>
                   </div>
 
-                  {/* Seconds Countdown */}
                   <div className="flex items-center justify-between py-1.5">
                     <label htmlFor="seconds-countdown" className="text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
                       Seconds countdown (50, 40...1)
@@ -489,7 +375,6 @@ export const SettingsModal = ({
                     </button>
                   </div>
 
-                  {/* Ding Checkpoints */}
                   <div className="flex items-center justify-between py-1.5">
                     <div className="flex items-center gap-1.5">
                       <label htmlFor="ding-checkpoints" className="text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
@@ -527,7 +412,7 @@ export const SettingsModal = ({
 
               {/* Session start/end sounds — shown when voice announcements are off */}
               {announcementVolume === 0 && (
-                <div className="ml-6 mt-2">
+                <div className="ml-6 mt-2 space-y-3">
                   <div className="flex items-center justify-between py-1.5">
                     <div className="flex items-center gap-1.5">
                       <label htmlFor="transition-sounds" className="text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer">
@@ -538,7 +423,7 @@ export const SettingsModal = ({
                           <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
                         </svg>
                         <div className="absolute left-0 top-full mt-1 w-52 p-2 bg-slate-800 dark:bg-slate-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
-                          Plays a short chime when a focus or break session starts and ends — no minute-by-minute updates
+                          Plays a short chime when a focus or break session starts and ends
                         </div>
                       </div>
                     </div>
@@ -560,6 +445,32 @@ export const SettingsModal = ({
                       />
                     </button>
                   </div>
+
+                  {enableTransitionSounds && (
+                    <div>
+                      <label className="flex items-center justify-between text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+                        <span>Volume</span>
+                        <span className="font-mono text-blue-600 dark:text-cyan-400 font-semibold">{Math.round(transitionVolume * 100)}%</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={transitionVolume}
+                        onChange={(e) => {
+                          markCustom();
+                          const newVolume = parseFloat(e.target.value);
+                          setTransitionVolume(newVolume);
+                          localStorage.setItem('transitionVolume', String(newVolume));
+                        }}
+                        className="w-full h-2 bg-slate-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-cyan-400 transition-all"
+                        style={{
+                          background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${transitionVolume * 100}%, rgb(203, 213, 225) ${transitionVolume * 100}%, rgb(203, 213, 225) 100%)`,
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -602,7 +513,6 @@ export const SettingsModal = ({
           <div>
             <h3 className="text-lg font-semibold text-slate-700 dark:text-cyan-400 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">Visual</h3>
 
-            {/* Theme Selection */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                 Theme
@@ -650,7 +560,6 @@ export const SettingsModal = ({
               </div>
             </div>
 
-            {/* Confetti Toggle */}
             <div className="flex items-center justify-between py-2 border-t border-slate-200 dark:border-slate-700 pt-4">
               <label htmlFor="enable-confetti" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
                 Confetti celebration
