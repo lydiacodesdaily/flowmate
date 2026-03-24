@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Image, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
+import { Animated, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
 
 const PARTICLE_COUNT = 8;
 const PARTICLE_COLORS = [
@@ -34,15 +34,11 @@ const STAGE_REFS: Record<number, number> = {
 interface FlowmatoAnimatedProps {
   imageSrc: ImageSourcePropType;
   label: string;
-  isPaused: boolean;
-  currentSessionType: string | undefined;
 }
 
 export function FlowmatoAnimated({
   imageSrc,
   label,
-  isPaused,
-  currentSessionType,
 }: FlowmatoAnimatedProps) {
   const rawStage = srcToStage(imageSrc);
   const mountStage = rawStage === 6 ? 0 : rawStage;
@@ -55,28 +51,6 @@ export function FlowmatoAnimated({
       : imageSrc
   );
   const [isCelebrating, setIsCelebrating] = useState(false);
-
-  const isFloating = !isPaused && currentSessionType === 'focus';
-
-  // ── Float animation ──────────────────────────────────────────────────────
-  const floatY = useRef(new Animated.Value(0)).current;
-  const floatAnimRef = useRef<Animated.CompositeAnimation | null>(null);
-
-  useEffect(() => {
-    floatAnimRef.current?.stop();
-    if (isFloating) {
-      floatAnimRef.current = Animated.loop(
-        Animated.sequence([
-          Animated.timing(floatY, { toValue: -7, duration: 1400, useNativeDriver: true }),
-          Animated.timing(floatY, { toValue: 0, duration: 1400, useNativeDriver: true }),
-        ])
-      );
-      floatAnimRef.current.start();
-    } else {
-      Animated.spring(floatY, { toValue: 0, useNativeDriver: true, damping: 12 }).start();
-    }
-    return () => floatAnimRef.current?.stop();
-  }, [isFloating]);
 
   // ── Stage image crossfade ────────────────────────────────────────────────
   const [prevDisplaySrc, setPrevDisplaySrc] = useState<ImageSourcePropType | null>(null);
@@ -161,8 +135,7 @@ export function FlowmatoAnimated({
   return (
     <View style={styles.wrapper}>
       <View style={styles.container}>
-        {/* Float wrapper */}
-        <Animated.View style={[styles.imageContainer, { transform: [{ translateY: floatY }] }]}>
+        <View style={styles.imageContainer}>
           {/* Outgoing image (fades out during crossfade) */}
           {prevDisplaySrc && (
             <Animated.Image
@@ -180,7 +153,7 @@ export function FlowmatoAnimated({
             ]}
             resizeMode="contain"
           />
-        </Animated.View>
+        </View>
 
         {/* "+growing!" pop */}
         {showGrowPop && (

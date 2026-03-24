@@ -35,7 +35,7 @@ const PremiumContext = createContext<PremiumContextValue | undefined>(
 );
 
 export function PremiumProvider({ children }: { children: ReactNode }) {
-  const [isPremium, setIsPremium] = useState(false);
+  const [isPremium, setIsPremium] = useState(true); // TODO: re-enable premium gate before launch
   const [isLoading, setIsLoading] = useState(true);
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [paywallVisible, setPaywallVisible] = useState(false);
