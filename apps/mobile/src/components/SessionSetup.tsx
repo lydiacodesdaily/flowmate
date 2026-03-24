@@ -45,15 +45,15 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
 
   useEffect(() => {
     if (visible) {
-      console.log('SessionSetup visible, initialDraft:', JSON.stringify(initialDraft));
+      if (__DEV__) console.log('SessionSetup visible, initialDraft:', JSON.stringify(initialDraft));
       setHasGenerated(false);
       // Only populate with initialDraft if it has meaningful content
       if (initialDraft && (initialDraft.intent || initialDraft.steps.length > 0)) {
-        console.log('Populating with existing draft');
+        if (__DEV__) console.log('Populating with existing draft');
         setIntent(initialDraft.intent);
         setSteps(initialDraft.steps);
       } else {
-        console.log('Resetting to empty state');
+        if (__DEV__) console.log('Resetting to empty state');
         // Reset to empty state when modal opens without a draft
         setIntent('');
         setSteps([]);

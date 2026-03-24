@@ -172,7 +172,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 
   // Initialize timer with route sessions on mount (only if not already started)
   useEffect(() => {
-    console.log('Init effect - setupInitialized:', setupInitialized, 'status:', status, 'timerType:', timerType);
+    if (__DEV__) console.log('Init effect - setupInitialized:', setupInitialized, 'status:', status, 'timerType:', timerType);
     if (!setupInitialized && routeSessions && routeSessions.length > 0) {
       // Infer mode from session structure
       const hasSettleWrap = routeSessions.some(s => s.type === 'settle' || s.type === 'wrap');
@@ -184,22 +184,22 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         inferredMode = 'pomodoro';
       }
 
-      console.log('Inferred mode:', inferredMode, 'timerType:', timerType, 'status:', status);
+      if (__DEV__) console.log('Inferred mode:', inferredMode, 'timerType:', timerType, 'status:', status);
 
       // Check if this is a focus session that needs setup (custom, pomodoro, or guided)
       // Skip setup for Quick Start or if user has disabled focus prompt in settings
       const isFocusSession = (inferredMode === 'custom' || inferredMode === 'pomodoro' || inferredMode === 'guided') && timerType === 'focus';
       const shouldShowSetup = isFocusSession && !isQuickStart && !skipFocusPrompt;
 
-      console.log('shouldShowSetup:', shouldShowSetup, 'isQuickStart:', isQuickStart, 'skipFocusPrompt:', skipFocusPrompt);
+      if (__DEV__) console.log('shouldShowSetup:', shouldShowSetup, 'isQuickStart:', isQuickStart, 'skipFocusPrompt:', skipFocusPrompt);
 
       if (shouldShowSetup && status === 'idle') {
         // Show setup modal for focus sessions (unless quick start or setting disabled)
-        console.log('Setting showSetupModal to true');
+        if (__DEV__) console.log('Setting showSetupModal to true');
         setShowSetupModal(true);
       } else if (status === 'idle') {
         // For break sessions, start immediately
-        console.log('Starting timer immediately with sessionDraft:', sessionDraft);
+        if (__DEV__) console.log('Starting timer immediately with sessionDraft:', sessionDraft);
         startTimer(routeSessions, inferredMode, timerType, sessionDraft);
       }
       setSetupInitialized(true);
@@ -633,7 +633,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     }
 
     // Clear session draft for next session
-    console.log('handleSessionSave: Clearing sessionDraft and resetting timer');
+    if (__DEV__) console.log('handleSessionSave: Clearing sessionDraft and resetting timer');
     await clearActiveSession();
     setSessionDraft({ intent: '', steps: [] });
     reset(); // Reset timer status to idle
@@ -643,7 +643,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 
   const handleSessionDismiss = async () => {
     // Session is already auto-saved - just close the modal and navigate
-    console.log('handleSessionDismiss: Session already saved, closing modal');
+    if (__DEV__) console.log('handleSessionDismiss: Session already saved, closing modal');
 
     // Track focus session completion for review prompt eligibility
     // (session was auto-saved as "completed" before showing the modal)

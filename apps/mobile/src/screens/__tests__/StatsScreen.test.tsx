@@ -3,6 +3,13 @@ import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { StatsScreen } from '../StatsScreen';
 import * as sessionService from '../../services/sessionService';
 
+// Mock useFocusEffect to call the callback immediately in tests
+jest.mock('@react-navigation/native', () => ({
+  useFocusEffect: (callback: () => void) => {
+    callback();
+  },
+}));
+
 // Mock the theme hook
 jest.mock('../../theme', () => ({
   useTheme: () => ({

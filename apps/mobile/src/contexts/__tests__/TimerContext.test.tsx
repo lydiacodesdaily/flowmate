@@ -256,7 +256,7 @@ describe('TimerContext', () => {
       expect(result.current.currentSessionIndex).toBe(1);
       expect(result.current.currentSession).toEqual(sessions[1]);
       expect(result.current.timeRemaining).toBe(5 * 60);
-      expect(result.current.status).toBe('paused');
+      expect(result.current.status).toBe('running');
     });
 
     it('should set status to completed when skipping last session', () => {

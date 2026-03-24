@@ -151,7 +151,7 @@ export async function requestNativeReview(): Promise<boolean> {
   try {
     const isAvailable = await StoreReview.isAvailableAsync();
     if (!isAvailable) {
-      console.log('Store review not available on this device');
+      if (__DEV__) console.log('Store review not available on this device');
       return false;
     }
 

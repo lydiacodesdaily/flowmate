@@ -31,7 +31,7 @@ describe('AudioService', () => {
       expect(ExpoAudio.setAudioModeAsync).toHaveBeenCalledWith({
         playsInSilentMode: true,
         shouldPlayInBackground: true,
-        interruptionMode: 'duckOthers',
+        interruptionMode: 'mixWithOthers',
       });
     });
 
@@ -59,6 +59,8 @@ describe('AudioService', () => {
         muteDuringBreaks: false,
         announcementInterval: 1,
         secondsCountdown: true,
+        transitionWarningEnabled: true,
+        transitionChimeEnabled: false,
       });
     });
 

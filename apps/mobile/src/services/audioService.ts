@@ -125,7 +125,7 @@ class AudioService {
         shouldPlayInBackground: true,
         interruptionMode: 'mixWithOthers',
       });
-      console.log(`Audio session reactivated (state: ${nextAppState})`);
+      if (__DEV__) console.log(`Audio session reactivated (state: ${nextAppState})`);
     } catch (error) {
       console.error('Failed to reactivate audio session:', error);
     }
