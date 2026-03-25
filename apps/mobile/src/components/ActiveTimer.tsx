@@ -1017,6 +1017,7 @@ const styles = StyleSheet.create({
   },
   circularFlowmatoSection: {
     alignItems: 'center',
+    alignSelf: 'stretch',
   },
   // 104×104 box: ring (104px SVG) and character (96px) share the same center
   characterRingContainer: {
