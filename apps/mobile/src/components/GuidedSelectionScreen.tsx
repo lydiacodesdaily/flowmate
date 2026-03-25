@@ -8,24 +8,14 @@ import { useTimerContext } from '../contexts/TimerContext';
 import { hapticService } from '../services/hapticService';
 import { useResponsive } from '../hooks/useResponsive';
 import { FOCUS_RECIPES, type FocusRecipe } from '../constants/recipes';
-import { usePremium } from '../contexts/PremiumContext';
-
 export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps) {
   const { theme } = useTheme();
   const { isActive, reset } = useTimerContext();
   const { contentStyle } = useResponsive();
   const insets = useSafeAreaInsets();
-  const { isPremium, openPaywall } = usePremium();
-
-  const PREMIUM_DURATIONS = [90, 120, 180];
 
   const handleRecipeSelect = async (recipe: FocusRecipe) => {
     await hapticService.light();
-
-    if (PREMIUM_DURATIONS.includes(recipe.duration) && !isPremium) {
-      openPaywall();
-      return;
-    }
 
     if (isActive) {
       Alert.alert(
@@ -64,7 +54,6 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
         <Text style={[styles.subtitle, { color: theme.colors.textTertiary }]}>pick a focus recipe</Text>
 
         {FOCUS_RECIPES.map((recipe) => {
-          const isPremiumRecipe = PREMIUM_DURATIONS.includes(recipe.duration) && !isPremium;
           return (
             <TouchableOpacity
               key={recipe.id}
@@ -72,8 +61,7 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
                 styles.recipeCard,
                 {
                   backgroundColor: theme.colors.surface,
-                  borderColor: isPremiumRecipe ? theme.colors.primary : theme.colors.border,
-                  opacity: isPremiumRecipe ? 0.8 : 1,
+                  borderColor: theme.colors.border,
                 },
               ]}
               onPress={() => handleRecipeSelect(recipe)}
@@ -84,14 +72,9 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
                   <Text style={styles.recipeIcon}>{recipe.icon}</Text>
                   <Text style={[styles.recipeName, { color: theme.colors.text }]}>{recipe.name}</Text>
                 </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  {isPremiumRecipe && (
-                    <Text style={{ fontSize: 11, color: theme.colors.primary, fontWeight: '600' }}>✦ Premium</Text>
-                  )}
-                  <Text style={[styles.recipeDuration, { color: theme.colors.textSecondary }]}>
-                    {recipe.duration}m
-                  </Text>
-                </View>
+                <Text style={[styles.recipeDuration, { color: theme.colors.textSecondary }]}>
+                  {recipe.duration}m
+                </Text>
               </View>
               <Text style={[styles.recipeDescription, { color: theme.colors.textSecondary }]}>
                 {recipe.description}

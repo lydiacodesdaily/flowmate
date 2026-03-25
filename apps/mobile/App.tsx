@@ -18,8 +18,6 @@ import {
   CelebrationSettingsProvider,
   ReviewPromptProvider,
 } from './src/contexts';
-import { PremiumProvider } from './src/contexts/PremiumContext';
-import { PaywallScreen } from './src/screens/PaywallScreen';
 import { FloatingTimerMini } from './src/components/FloatingTimerMini';
 import { hasCompletedOnboarding } from './src/utils/storage';
 
@@ -82,22 +80,19 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <PremiumProvider>
-          <AccessibilityProvider>
-            <TimerDisplaySettingsProvider>
-              <TimerVisualProvider>
-                <CelebrationSettingsProvider>
-                  <ReviewPromptProvider>
-                    <TimerProvider>
-                      <AppContent />
-                      <PaywallScreen />
-                    </TimerProvider>
-                  </ReviewPromptProvider>
-                </CelebrationSettingsProvider>
-              </TimerVisualProvider>
-            </TimerDisplaySettingsProvider>
-          </AccessibilityProvider>
-        </PremiumProvider>
+        <AccessibilityProvider>
+          <TimerDisplaySettingsProvider>
+            <TimerVisualProvider>
+              <CelebrationSettingsProvider>
+                <ReviewPromptProvider>
+                  <TimerProvider>
+                    <AppContent />
+                  </TimerProvider>
+                </ReviewPromptProvider>
+              </CelebrationSettingsProvider>
+            </TimerVisualProvider>
+          </TimerDisplaySettingsProvider>
+        </AccessibilityProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

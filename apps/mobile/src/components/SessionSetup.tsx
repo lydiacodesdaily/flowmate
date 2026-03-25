@@ -16,8 +16,6 @@ import { SessionDraft, PrepStep } from '@flowmate/shared/types';
 import { createPrepStep } from '../services/sessionService';
 import { useTheme } from '../theme/ThemeContext';
 import { useResponsive } from '../hooks/useResponsive';
-import { usePremium } from '../contexts/PremiumContext';
-import { PremiumGate } from './PremiumGate';
 
 const WEB_BASE_URL =
   process.env.EXPO_PUBLIC_WEB_BASE_URL ?? 'https://flowmate.club';
@@ -36,7 +34,6 @@ const MAX_STEPS = 5;
 export function SessionSetup({ visible, onStart, onSkip, initialDraft }: SessionSetupProps) {
   const { theme } = useTheme();
   const { sheetStyle } = useResponsive();
-  const { isPremium, openPaywall } = usePremium();
   const [intent, setIntent] = useState('');
   const [steps, setSteps] = useState<PrepStep[]>([]);
   const [newStepText, setNewStepText] = useState('');
@@ -194,19 +191,15 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
                 autoFocus={false}
               />
               {intent.trim().length >= 3 && steps.length < MAX_STEPS && (
-                isPremium ? (
-                  <TouchableOpacity
-                    onPress={generateSteps}
-                    disabled={isGenerating}
-                    style={styles.generateButton}
-                  >
-                    <Text style={[styles.generateButtonText, { color: theme.colors.primary, opacity: isGenerating ? 0.5 : 1 }]}>
-                      {isGenerating ? 'Generating…' : hasGenerated ? '↻ Regenerate' : '✨ Generate steps'}
-                    </Text>
-                  </TouchableOpacity>
-                ) : (
-                  <PremiumGate feature="AI step generation" />
-                )
+                <TouchableOpacity
+                  onPress={generateSteps}
+                  disabled={isGenerating}
+                  style={styles.generateButton}
+                >
+                  <Text style={[styles.generateButtonText, { color: theme.colors.primary, opacity: isGenerating ? 0.5 : 1 }]}>
+                    {isGenerating ? 'Generating…' : hasGenerated ? '↻ Regenerate' : '✨ Generate steps'}
+                  </Text>
+                </TouchableOpacity>
               )}
             </View>
 
