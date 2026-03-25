@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy Policy - FlowMate",
-  description: "Privacy Policy for FlowMate focus timer app",
+  description: "FlowMate is 100% private. No account, no tracking — your focus data stays on your device.",
 };
 
 export default function PrivacyPage() {

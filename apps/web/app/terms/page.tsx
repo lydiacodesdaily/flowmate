@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Terms of Service - FlowMate",
-  description: "Terms of Service for FlowMate focus timer app",
+  description: "Terms of Service for FlowMate, the free audio focus timer for ADHD and deep work.",
 };
 
 export default function TermsPage() {

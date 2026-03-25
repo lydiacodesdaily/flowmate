@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Support - Flowmate",
-  description: "Get help and support for Flowmate",
+  description: "Get help with FlowMate, the audio-guided focus timer for ADHD and deep work.",
 };
 
 export default function SupportPage() {

@@ -1,7 +1,7 @@
 {
-  "name": "Flowmate",
-  "short_name": "Flowmate",
-  "description": "A gentle, audio-guided focus and countdown timer.",
+  "name": "FlowMate",
+  "short_name": "FlowMate",
+  "description": "Audio-guided focus timer for ADHD, time blindness, and deep work. Hear time pass — no clock-watching needed.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
