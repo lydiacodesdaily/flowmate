@@ -18,7 +18,7 @@ export function CircularTimer({ progress, isBreakSession, size = DEFAULT_SIZE, s
   // At progress=1 (end), the circle should be empty
   const strokeDashoffset = CIRCUMFERENCE * clampedProgress;
 
-  const fillColor = isBreakSession ? theme.colors.breakAccent : theme.colors.primary;
+  const fillColor = isBreakSession ? theme.colors.breakAccent : '#52a875';
   const bgColor = theme.colors.border;
 
   return (
