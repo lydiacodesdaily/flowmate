@@ -365,7 +365,7 @@ export interface TimerVisualSettings {
 const TIMER_VISUAL_KEY = '@flowmate:timer-visual';
 
 export const getDefaultTimerVisualSettings = (): TimerVisualSettings => ({
-  selectedStyle: 'thin',
+  selectedStyle: 'circular',
 });
 
 export const loadTimerVisualSettings = async (): Promise<TimerVisualSettings> => {

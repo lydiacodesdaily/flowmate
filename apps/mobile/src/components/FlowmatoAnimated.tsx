@@ -37,11 +37,13 @@ interface FlowmatoAnimatedProps {
   label: string;
   isPaused?: boolean;
   currentSessionType?: SessionType;
+  hideLabel?: boolean;
 }
 
 export function FlowmatoAnimated({
   imageSrc,
   label,
+  hideLabel = false,
 }: FlowmatoAnimatedProps) {
   const rawStage = srcToStage(imageSrc);
   const mountStage = rawStage === 6 ? 0 : rawStage;
@@ -191,7 +193,7 @@ export function FlowmatoAnimated({
           ))}
       </View>
 
-      <Text style={styles.label}>{label}</Text>
+      {!hideLabel && <Text allowFontScaling={false} style={styles.label}>{label}</Text>}
     </View>
   );
 }
@@ -199,6 +201,7 @@ export function FlowmatoAnimated({
 const styles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
+    alignSelf: 'stretch',
   },
   container: {
     width: 96,

@@ -4,14 +4,14 @@ import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '../../theme';
 import type { TimerVisualProps } from './types';
 
-const SIZE = 160;
-const STROKE_WIDTH = 12;
-const RADIUS = (SIZE - STROKE_WIDTH) / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const DEFAULT_SIZE = 160;
+const DEFAULT_STROKE_WIDTH = 12;
 
-export function CircularTimer({ progress, isBreakSession }: TimerVisualProps) {
+export function CircularTimer({ progress, isBreakSession, size = DEFAULT_SIZE, strokeWidth = DEFAULT_STROKE_WIDTH }: TimerVisualProps & { size?: number; strokeWidth?: number }) {
   const { theme } = useTheme();
   const clampedProgress = Math.max(0, Math.min(1, progress));
+  const RADIUS = (size - strokeWidth) / 2;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
   // Progress goes from 0 (start) to 1 (end), but we want to show time remaining
   // So at progress=0 (start), the circle should be full
@@ -23,29 +23,29 @@ export function CircularTimer({ progress, isBreakSession }: TimerVisualProps) {
 
   return (
     <View style={styles.container}>
-      <Svg width={SIZE} height={SIZE} style={styles.svg}>
+      <Svg width={size} height={size} style={styles.svg}>
         {/* Background circle */}
         <Circle
-          cx={SIZE / 2}
-          cy={SIZE / 2}
+          cx={size / 2}
+          cy={size / 2}
           r={RADIUS}
           stroke={bgColor}
-          strokeWidth={STROKE_WIDTH}
+          strokeWidth={strokeWidth}
           fill="none"
         />
         {/* Progress circle */}
         <Circle
-          cx={SIZE / 2}
-          cy={SIZE / 2}
+          cx={size / 2}
+          cy={size / 2}
           r={RADIUS}
           stroke={fillColor}
-          strokeWidth={STROKE_WIDTH}
+          strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={CIRCUMFERENCE}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
           rotation={-90}
-          origin={`${SIZE / 2}, ${SIZE / 2}`}
+          origin={`${size / 2}, ${size / 2}`}
         />
       </Svg>
     </View>

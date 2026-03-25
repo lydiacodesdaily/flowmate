@@ -7,13 +7,14 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTimerContext, useReviewPrompt } from '../contexts';
+import { useTimerContext, useReviewPrompt, useTimerVisual } from '../contexts';
 import { useKeepAwake } from '../hooks/useKeepAwake';
 import { TimerDisplay } from './TimerDisplay';
 import { TimerControls } from './TimerControls';
 import { TimerAdjustments } from './TimerAdjustments';
 import { AudioControls } from './AudioControls';
 import { TimerVisual } from './timer-visuals';
+import { CircularTimer } from './timer-visuals/CircularTimer';
 import { SessionIndicators } from './SessionIndicators';
 import { SessionSetup } from './SessionSetup';
 import { SessionComplete } from './SessionComplete';
@@ -58,6 +59,8 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
   const { theme, isDark } = useTheme();
   const { reduceMotion, skipFocusPrompt } = useAccessibility();
   const { contentStyle, sheetStyle } = useResponsive();
+  const { selectedStyle } = useTimerVisual();
+  const isCircularVisual = selectedStyle === 'circular';
   const audioInitializedRef = useRef(false);
   const timerInitializedRef = useRef(false);
 
@@ -746,14 +749,42 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
           />
 
           <View style={styles.timerContainer}>
-          {/* Flowmato character */}
-          <FlowmatoAnimated
-            key={currentSessionIndex}
-            imageSrc={getFlowmatoImageSrc()}
-            label={getFlowmatoLabel()}
-            isPaused={status === 'paused'}
-            currentSessionType={currentSession?.type}
-          />
+          {/* Flowmato character, optionally ringed by circular progress */}
+          {isCircularVisual ? (
+            <View style={styles.circularFlowmatoSection}>
+              {/* Fixed-size area so ring and character share the same center */}
+              <View style={styles.characterRingContainer}>
+                <View style={styles.circularRingOverlay} pointerEvents="none">
+                  <CircularTimer
+                    progress={progress}
+                    isBreakSession={isBreakSession}
+                    reduceMotion={reduceMotion}
+                    size={104}
+                    strokeWidth={8}
+                  />
+                </View>
+                <FlowmatoAnimated
+                  key={currentSessionIndex}
+                  imageSrc={getFlowmatoImageSrc()}
+                  label={getFlowmatoLabel()}
+                  hideLabel
+                  isPaused={status === 'paused'}
+                  currentSessionType={currentSession?.type}
+                />
+              </View>
+              <Text allowFontScaling={false} style={styles.circularFlowmatoLabel}>
+                {getFlowmatoLabel()}
+              </Text>
+            </View>
+          ) : (
+            <FlowmatoAnimated
+              key={currentSessionIndex}
+              imageSrc={getFlowmatoImageSrc()}
+              label={getFlowmatoLabel()}
+              isPaused={status === 'paused'}
+              currentSessionType={currentSession?.type}
+            />
+          )}
 
           <TimerDisplay
             timeRemaining={timeRemaining}
@@ -804,12 +835,14 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
             sessionType={currentSession?.type || null}
           />
 
-          <View style={styles.progressContainer}>
-            <TimerVisual
-              progress={progress}
-              isBreakSession={isBreakSession}
-            />
-          </View>
+          {!isCircularVisual && (
+            <View style={styles.progressContainer}>
+              <TimerVisual
+                progress={progress}
+                isBreakSession={isBreakSession}
+              />
+            </View>
+          )}
 
           {!isLocked && (
             <TimerAdjustments
@@ -981,6 +1014,26 @@ const styles = StyleSheet.create({
   timerContainer: {
     alignItems: 'center',
     paddingHorizontal: 24,
+  },
+  circularFlowmatoSection: {
+    alignItems: 'center',
+  },
+  // 104×104 box: ring (104px SVG) and character (96px) share the same center
+  characterRingContainer: {
+    width: 104,
+    height: 104,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  circularRingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  circularFlowmatoLabel: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginTop: 8,
   },
   intentContainer: {
     marginTop: 12,
