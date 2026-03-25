@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
+import type { SessionType } from '@flowmate/shared';
 
 const PARTICLE_COUNT = 8;
 const PARTICLE_COLORS = [
@@ -34,6 +35,8 @@ const STAGE_REFS: Record<number, number> = {
 interface FlowmatoAnimatedProps {
   imageSrc: ImageSourcePropType;
   label: string;
+  isPaused?: boolean;
+  currentSessionType?: SessionType;
 }
 
 export function FlowmatoAnimated({
