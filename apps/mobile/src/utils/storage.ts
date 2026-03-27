@@ -193,7 +193,7 @@ const ACCESSIBILITY_SETTINGS_KEY = '@flowmate:accessibility-settings';
 export const getDefaultAccessibilitySettings = (): AccessibilitySettings => ({
   reduceMotion: false,
   hapticsEnabled: true,
-  skipFocusPrompt: true, // Default to skipping - reduces friction for ADHD users
+  skipFocusPrompt: false,
 });
 
 export const loadAccessibilitySettings = async (): Promise<AccessibilitySettings> => {

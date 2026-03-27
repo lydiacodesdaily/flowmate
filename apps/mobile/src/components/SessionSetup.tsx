@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -39,6 +39,7 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
   const [newStepText, setNewStepText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+  const stepInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (visible) {
@@ -94,6 +95,7 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
       const newStep = createPrepStep(newStepText.trim());
       setSteps([...steps, newStep]);
       setNewStepText('');
+      stepInputRef.current?.focus();
     }
   };
 
@@ -262,6 +264,7 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
               {steps.length < MAX_STEPS && (
                 <View style={styles.addStepContainer}>
                   <TextInput
+                    ref={stepInputRef}
                     style={[
                       styles.stepInput,
                       {
@@ -355,7 +358,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   scrollView: {
-    flex: 1,
+    flexShrink: 1,
   },
   scrollContent: {
     paddingHorizontal: 24,

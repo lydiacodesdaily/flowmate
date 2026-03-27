@@ -321,6 +321,25 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
       </View>
 
       <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Focus</Text>
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingLabelContainer}>
+            <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Focus Prompt</Text>
+            <Text style={[styles.settingDescription, { color: theme.colors.textTertiary }]}>
+              Set an intention and break it into steps before each session
+            </Text>
+          </View>
+          <Switch
+            value={!skipFocusPrompt}
+            onValueChange={(value) => setSkipFocusPrompt(!value)}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#FFFFFF"
+          />
+        </View>
+      </View>
+
+      <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
         <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Accessibility</Text>
 
         <View style={styles.settingRow}>
@@ -363,21 +382,6 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           <Switch
             value={showElapsedTime}
             onValueChange={setShowElapsedTime}
-            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-            thumbColor="#FFFFFF"
-          />
-        </View>
-
-        <View style={styles.settingRow}>
-          <View style={styles.settingLabelContainer}>
-            <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Skip Focus Prompt</Text>
-            <Text style={[styles.settingDescription, { color: theme.colors.textTertiary }]}>
-              Start sessions immediately without the "Let's focus" screen
-            </Text>
-          </View>
-          <Switch
-            value={skipFocusPrompt}
-            onValueChange={setSkipFocusPrompt}
             trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
             thumbColor="#FFFFFF"
           />
