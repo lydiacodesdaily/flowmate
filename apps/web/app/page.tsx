@@ -1715,7 +1715,7 @@ export default function Home() {
                   <a href="https://play.google.com/store/apps/details?id=club.flowmate.app" target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 dark:text-cyan-200/50 hover:text-slate-700 dark:hover:text-cyan-300 transition-colors">Android App</a>
                 </li>
                 <li>
-                  <span className="text-xs text-slate-300 dark:text-cyan-200/25 transition-colors duration-500">iOS — coming soon</span>
+                  <a href="https://apps.apple.com/us/app/flowmate-focus-timer/id6758559973" target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 dark:text-cyan-200/50 hover:text-slate-700 dark:hover:text-cyan-300 transition-colors">iOS App</a>
                 </li>
               </ul>
             </div>
