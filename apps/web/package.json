@@ -11,6 +11,8 @@
   "dependencies": {
     "@flowmate/shared": "*",
     "@revenuecat/purchases-js": "^1.28.0",
+    "@supabase/ssr": "^0.10.0",
+    "@supabase/supabase-js": "^2.101.1",
     "@vercel/analytics": "^1.6.1",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.38.0",
