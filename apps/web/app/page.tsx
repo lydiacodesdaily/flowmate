@@ -14,10 +14,13 @@ import { SessionComplete } from "./components/SessionComplete";
 import { EarlyStopModal } from "./components/EarlyStopModal";
 import { ProgressModal } from "./components/ProgressModal";
 import { PaywallModal } from "./components/PaywallModal";
+import { AuthModal } from "./components/AuthModal";
+import { PublicStats } from "./components/PublicStats";
 import { usePremium } from "./hooks/usePremium";
+import { useAuth } from "./hooks/useAuth";
 import { loadStats, saveStats, addFocusSession } from "./utils/statsUtils";
 import { AUDIO_PRESETS, getPresetById } from "./constants/audioPresets";
-import { getDraft, saveDraft, clearDraft, createSessionRecord, appendHistory, createPrepStep, getActiveSession, setActiveSession, clearActiveSession, isResumable, sessionToDraft } from "./utils/sessionUtils";
+import { getDraft, saveDraft, clearDraft, createSessionRecord, appendHistory, createPrepStep, getActiveSession, setActiveSession, clearActiveSession, isResumable, sessionToDraft, reportSessionToAggregateStats, syncSessionToServer } from "./utils/sessionUtils";
 
 export default function Home() {
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
@@ -64,7 +67,10 @@ export default function Home() {
   const [resumingFromId, setResumingFromId] = useState<string | null>(null);
   const [crashRecovery, setCrashRecovery] = useState<ActiveSession | null>(null);
 
-  // Premium
+  // Auth
+  const { user, signInWithMagicLink, signInWithGoogle } = useAuth();
+
+  // Premium — pass Supabase user ID so RC is tied to a real account when signed in
   const {
     isPremium,
     isLoading: isPremiumLoading,
@@ -74,7 +80,20 @@ export default function Home() {
     offering,
     purchasePackage,
     restorePurchases,
-  } = usePremium();
+  } = usePremium(user?.id ?? null);
+
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingPurchaseOnAuth, setPendingPurchaseOnAuth] = useState(false);
+
+  // Wrap openPaywall: require sign-in before showing paywall
+  const handleOpenPaywall = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      setPendingPurchaseOnAuth(true);
+    } else {
+      openPaywall();
+    }
+  };
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const tickAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -697,6 +716,11 @@ export default function Home() {
       resumingFromId ?? undefined
     );
     appendHistory(record);
+
+    // Report to public aggregate clock (all users, anonymous and authenticated)
+    reportSessionToAggregateStats(record);
+    // Sync full session to Supabase for logged-in users
+    if (user) syncSessionToServer(record);
 
     // Update old stats system for backward compatibility
     if (userStats && completedFocusMinutes > 0 && (status === 'completed' || status === 'partial')) {
@@ -1574,7 +1598,7 @@ export default function Home() {
           onStart={handleStartTimer}
           onSkipSetup={handleSkipSetup}
           isPremium={isPremium}
-          onUpgrade={openPaywall}
+          onUpgrade={handleOpenPaywall}
         />
       )}
 
@@ -1594,6 +1618,7 @@ export default function Home() {
             Flowmate
           </h1>
         </div>
+        <PublicStats />
 
         {/* Crash recovery banner — shown when the app restarted mid-session */}
         {crashRecovery && !isRunning && (
@@ -1686,7 +1711,7 @@ export default function Home() {
             muteBreak={muteBreak}
             setMuteBreak={setMuteBreak}
             isPiPSupported={isPremium && isPiPSupported}
-            openPiP={isPremium ? openPiP : openPaywall}
+            openPiP={isPremium ? openPiP : handleOpenPaywall}
             sessionDraft={sessionDraft}
             onUpdateIntent={handleUpdateIntent}
             onToggleStep={handleToggleStep}
@@ -1752,6 +1777,18 @@ export default function Home() {
       offering={offering}
       purchasePackage={purchasePackage}
       restorePurchases={restorePurchases}
+    />
+    <AuthModal
+      isVisible={showAuthModal}
+      onClose={() => { setShowAuthModal(false); setPendingPurchaseOnAuth(false); }}
+      onAuthSuccess={() => {
+        setShowAuthModal(false);
+        if (pendingPurchaseOnAuth) openPaywall();
+        setPendingPurchaseOnAuth(false);
+      }}
+      user={user}
+      signInWithMagicLink={signInWithMagicLink}
+      signInWithGoogle={signInWithGoogle}
     />
     </>
   );

@@ -363,6 +363,44 @@ export interface DailySummary {
   breakCount: number;
 }
 
+// ===== Server Sync Helpers =====
+
+/**
+ * Reports a completed/partial focus session to the aggregate stats endpoint.
+ * Called for all users (anonymous and authenticated) on every session save.
+ * Fire-and-forget — localStorage remains the source of truth.
+ */
+export function reportSessionToAggregateStats(record: SessionRecord): void {
+  if (typeof window === 'undefined') return;
+  if (record.timerType !== 'focus') return;
+  if (record.status !== 'completed' && record.status !== 'partial') return;
+  if (record.completedSeconds <= 0) return;
+
+  fetch('/api/stats/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      timerType: record.timerType,
+      status: record.status,
+      completedSeconds: record.completedSeconds,
+    }),
+  }).catch(() => {});
+}
+
+/**
+ * Syncs a session record to Supabase for logged-in users.
+ * Call only when user is authenticated. Fire-and-forget.
+ */
+export function syncSessionToServer(record: SessionRecord): void {
+  if (typeof window === 'undefined') return;
+
+  fetch('/api/sessions/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessions: [record] }),
+  }).catch(() => {});
+}
+
 export function groupSessionsByDay(): DailySummary[] {
   const history = getHistory();
   const grouped = new Map<string, SessionRecord[]>();

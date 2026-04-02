@@ -7,7 +7,7 @@ const RC_API_KEY = process.env.NEXT_PUBLIC_REVENUECAT_API_KEY ?? "";
 const ENTITLEMENT_ID = "premium";
 const USER_ID_KEY = "flowmate:v1:rcUserId";
 
-function getOrCreateUserId(): string {
+function getOrCreateAnonUserId(): string {
   if (typeof window === "undefined") return "anon";
   let id = localStorage.getItem(USER_ID_KEY);
   if (!id) {
@@ -28,20 +28,33 @@ export interface PremiumState {
   restorePurchases: () => Promise<boolean>;
 }
 
-export function usePremium(): PremiumState {
+/**
+ * @param supabaseUserId - When provided, RC is configured with the authenticated
+ *   user's Supabase ID so purchases persist across devices. Falls back to the
+ *   anonymous UUID stored in localStorage.
+ */
+export function usePremium(supabaseUserId?: string | null): PremiumState {
   const [isPremium, setIsPremium] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [offering, setOffering] = useState<Offering | null>(null);
   const [paywallVisible, setPaywallVisible] = useState(false);
   const purchasesRef = useRef<Purchases | null>(null);
+  const configuredUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!RC_API_KEY) {
-      setIsPremium(true); // no key = free/dev mode, all features open
+      setIsPremium(true); // no key = dev mode, all features open
       setIsLoading(false);
       return;
     }
-    const userId = getOrCreateUserId();
+
+    // Use the Supabase user ID when available, otherwise the anonymous UUID
+    const userId = supabaseUserId ?? getOrCreateAnonUserId();
+
+    // Only reconfigure RC if the user ID changed (avoids duplicate configure calls)
+    if (configuredUserIdRef.current === userId) return;
+    configuredUserIdRef.current = userId;
+
     const purchases = Purchases.configure(RC_API_KEY, userId);
     purchasesRef.current = purchases;
 
@@ -61,7 +74,7 @@ export function usePremium(): PremiumState {
         setIsLoading(false);
       }
     })();
-  }, []);
+  }, [supabaseUserId]);
 
   const openPaywall = useCallback(() => setPaywallVisible(true), []);
   const closePaywall = useCallback(() => setPaywallVisible(false), []);
@@ -79,6 +92,17 @@ export function usePremium(): PremiumState {
         const active =
           customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
         setIsPremium(active);
+
+        // Link RC customer ID to the Supabase user profile (fire-and-forget)
+        const rcCustomerId = customerInfo.originalAppUserId;
+        if (rcCustomerId) {
+          fetch("/api/users/link-rc", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rcCustomerId }),
+          }).catch(() => {});
+        }
+
         return active;
       } catch {
         return false;

@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import type { SessionRecord, TimerMode, TimerType, SessionType, SessionStatus } from "@flowmato/shared";
+import type { SessionRecord, TimerMode, TimerType, SessionType, SessionStatus } from "@flowmate/shared";
 
 type DbSession = {
   id: string;
