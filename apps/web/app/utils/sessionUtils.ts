@@ -425,6 +425,27 @@ export function syncSessionToServer(record: SessionRecord): void {
   }).catch(() => {});
 }
 
+/**
+ * Bulk-syncs all local history to Supabase on sign-in.
+ * Idempotent — the server upserts on id, so re-sending existing sessions is safe.
+ * Call only when user is authenticated. Fire-and-forget.
+ */
+export function syncLocalHistoryToServer(): void {
+  if (typeof window === 'undefined') return;
+
+  const sessions = getHistory();
+  if (sessions.length === 0) return;
+
+  // API accepts max 500 per request; slice to the most recent 500 if needed
+  const batch = sessions.length > 500 ? sessions.slice(0, 500) : sessions;
+
+  fetch('/api/sessions/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessions: batch }),
+  }).catch(() => {});
+}
+
 export function groupSessionsByDay(): DailySummary[] {
   const history = getHistory();
   const grouped = new Map<string, SessionRecord[]>();

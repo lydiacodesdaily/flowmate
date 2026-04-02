@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
-import { mergeServerSessions } from "@/app/utils/sessionUtils";
+import { mergeServerSessions, syncLocalHistoryToServer } from "@/app/utils/sessionUtils";
 
 const RC_USER_ID_KEY = "flowmate:v1:rcUserId";
 
@@ -58,6 +58,9 @@ export function useAuth(): AuthState {
             }
           })
           .catch(() => {});
+
+        // Upload any local sessions accumulated before sign-in. Fire-and-forget.
+        syncLocalHistoryToServer();
       }
     });
 
