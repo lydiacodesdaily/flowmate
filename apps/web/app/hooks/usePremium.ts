@@ -64,12 +64,26 @@ export function usePremium(supabaseUserId?: string | null): PremiumState {
           purchases.getCustomerInfo(),
           purchases.getOfferings(),
         ]);
-        setIsPremium(
-          info.entitlements.active[ENTITLEMENT_ID] !== undefined
-        );
+        const isRcPremium =
+          info.entitlements.active[ENTITLEMENT_ID] !== undefined;
+        setIsPremium(isRcPremium);
         if (offerings.current) setOffering(offerings.current);
+
+        // Sync RC→Supabase when RC confirms premium (fire-and-forget)
+        if (isRcPremium && supabaseUserId) {
+          fetch("/api/users/premium", { method: "PATCH" }).catch(() => {});
+        }
       } catch (e) {
         console.warn("RevenueCat init error:", e);
+        // RC unavailable — fall back to Supabase premium status
+        if (supabaseUserId) {
+          fetch("/api/users/premium")
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data) => {
+              if (data?.isPremium) setIsPremium(true);
+            })
+            .catch(() => {});
+        }
       } finally {
         setIsLoading(false);
       }
@@ -101,6 +115,11 @@ export function usePremium(supabaseUserId?: string | null): PremiumState {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ rcCustomerId }),
           }).catch(() => {});
+        }
+
+        // Sync premium status to Supabase (fire-and-forget)
+        if (active) {
+          fetch("/api/users/premium", { method: "PATCH" }).catch(() => {});
         }
 
         return active;
