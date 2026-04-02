@@ -25,7 +25,7 @@ import { EarlyCompletionBanner } from './EarlyCompletionBanner';
 import { ContextualTip } from './tips';
 import { FlowmatoAnimated } from './FlowmatoAnimated';
 import { audioService } from '../services/audioService';
-import { createSessionRecord, appendHistory, updateHistoryRecord, setActiveSession, clearActiveSession } from '../services/sessionService';
+import { createSessionRecord, appendHistory, updateHistoryRecord, setActiveSession, clearActiveSession, reportSessionToAggregateStats } from '../services/sessionService';
 import { hapticService } from '../services/hapticService';
 import { notificationService } from '../services/notificationService';
 import { useTheme } from '../theme';
@@ -242,6 +242,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         );
 
         await appendHistory(record);
+        reportSessionToAggregateStats(record);
         setAutoSavedRecordId(record.id);
       }
 
@@ -326,6 +327,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       );
 
       await appendHistory(record);
+      reportSessionToAggregateStats(record);
     });
   }, [sessions, currentSession, setSessionCompleteCallback, setAllSessionsCompleteCallback, setSessionSkipCallback, setSessionDraft, reset, navigation]);
 
@@ -440,6 +442,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       );
 
       await appendHistory(record);
+      reportSessionToAggregateStats(record);
       setAutoSavedRecordId(record.id);
 
       // Show enhancement modal for partial focus sessions with intent or steps
@@ -527,6 +530,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
       );
 
       await appendHistory(record);
+      reportSessionToAggregateStats(record);
       setAutoSavedRecordId(record.id);
 
       // Show the completion modal for focus sessions with intent/steps
@@ -627,6 +631,7 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         );
 
         await appendHistory(record);
+        reportSessionToAggregateStats(record);
       }
     }
 

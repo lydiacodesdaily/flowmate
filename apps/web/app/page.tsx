@@ -1589,6 +1589,8 @@ export default function Home() {
           onClose={() => setShowProgress(false)}
           onResume={handleResume}
           onContinueToday={handleContinueToday}
+          isPremium={isPremium}
+          onUpgrade={handleOpenPaywall}
         />
       )}
 

@@ -596,3 +596,30 @@ export function formatDate(timestamp: number): string {
 
   return `${month} ${day}`;
 }
+
+// ===== Aggregate Stats Reporting =====
+
+const PRODUCTION_API_URL = 'https://flowmate.club';
+
+/**
+ * Reports a completed/partial focus session to the FlowMate aggregate stats endpoint.
+ * Contributes to the public running clock on the homepage.
+ * Fire-and-forget — no await, silent on error.
+ */
+export function reportSessionToAggregateStats(record: SessionRecord): void {
+  if (record.timerType !== 'focus') return;
+  if (record.status !== 'completed' && record.status !== 'partial') return;
+  if (record.completedSeconds <= 0) return;
+
+  fetch(`${PRODUCTION_API_URL}/api/stats/session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      timerType: record.timerType,
+      status: record.status,
+      completedSeconds: record.completedSeconds,
+    }),
+  }).catch(() => {
+    // Intentionally silent — mobile does not retry
+  });
+}
