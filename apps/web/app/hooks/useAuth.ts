@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { mergeServerSessions } from "@/app/utils/sessionUtils";
 
 const RC_USER_ID_KEY = "flowmate:v1:rcUserId";
 
@@ -46,6 +47,17 @@ export function useAuth(): AuthState {
             body: JSON.stringify({ rcCustomerId: rcId }),
           }).catch(() => {});
         }
+
+        // Hydrate localStorage with any sessions stored on the server
+        // (e.g. from a previous device or browser). Fire-and-forget.
+        fetch("/api/sessions")
+          .then((r) => (r.ok ? r.json() : null))
+          .then((data) => {
+            if (data?.sessions?.length) {
+              mergeServerSessions(data.sessions);
+            }
+          })
+          .catch(() => {});
       }
     });
 

@@ -388,6 +388,30 @@ export function reportSessionToAggregateStats(record: SessionRecord): void {
 }
 
 /**
+ * Merges sessions fetched from the server into localStorage.
+ * Additive only — server sessions fill gaps, never overwrite existing local data.
+ * Call on sign-in to hydrate history from a previous device or browser.
+ */
+export function mergeServerSessions(serverSessions: SessionRecord[]): void {
+  try {
+    const local = getHistory();
+    const localIds = new Set(local.map(s => s.id));
+    const cutoffDate = Date.now() - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
+
+    const newSessions = serverSessions.filter(
+      s => !localIds.has(s.id) && s.startedAt >= cutoffDate
+    );
+
+    if (newSessions.length === 0) return;
+
+    const merged = [...local, ...newSessions].sort((a, b) => b.startedAt - a.startedAt);
+    localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(merged));
+  } catch (error) {
+    console.error('Error merging server sessions:', error);
+  }
+}
+
+/**
  * Syncs a session record to Supabase for logged-in users.
  * Call only when user is authenticated. Fire-and-forget.
  */
