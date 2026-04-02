@@ -1,5 +1,6 @@
 import * as StoreReview from 'expo-store-review';
 import Constants from 'expo-constants';
+import { Linking } from 'react-native';
 import {
   loadReviewPromptSettings,
   saveReviewPromptSettings,
@@ -145,20 +146,22 @@ export async function markReviewDismissed(): Promise<void> {
 }
 
 /**
- * Check if native review API is available and request review
+ * Open the store review page directly.
+ * Uses Linking.openURL instead of the OS-controlled StoreReview.requestReview(),
+ * which can silently suppress the dialog even when available.
  */
 export async function requestNativeReview(): Promise<boolean> {
   try {
-    const isAvailable = await StoreReview.isAvailableAsync();
-    if (!isAvailable) {
-      if (__DEV__) console.log('Store review not available on this device');
-      return false;
+    const storeUrl = StoreReview.storeUrl();
+    if (storeUrl) {
+      await Linking.openURL(storeUrl);
+      return true;
     }
 
-    await StoreReview.requestReview();
-    return true;
+    if (__DEV__) console.log('Store URL not available on this device');
+    return false;
   } catch (error) {
-    console.error('Failed to request store review:', error);
+    console.error('Failed to open store review page:', error);
     return false;
   }
 }
