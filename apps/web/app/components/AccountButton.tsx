@@ -9,6 +9,7 @@ interface AccountButtonProps {
   onSignOut: () => void;
   onSignIn: () => void;
   onManageSubscription?: () => void;
+  onUpgrade?: () => void;
 }
 
 function getFirstName(user: User): string {
@@ -27,7 +28,7 @@ function getInitials(user: User): string {
   return (user.email?.[0] ?? '?').toUpperCase();
 }
 
-export function AccountButton({ user, isPremium, onSignOut, onSignIn, onManageSubscription }: AccountButtonProps) {
+export function AccountButton({ user, isPremium, onSignOut, onSignIn, onManageSubscription, onUpgrade }: AccountButtonProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -114,7 +115,12 @@ export function AccountButton({ user, isPremium, onSignOut, onSignIn, onManageSu
                       Premium · Manage
                     </button>
                   ) : (
-                    <span className="text-xs text-slate-400 dark:text-slate-500">Free</span>
+                    <button
+                      onClick={() => { setOpen(false); onUpgrade?.(); }}
+                      className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline"
+                    >
+                      Free · Upgrade ✦
+                    </button>
                   )}
                 </div>
               </div>

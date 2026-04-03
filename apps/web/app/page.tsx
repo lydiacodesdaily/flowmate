@@ -1558,6 +1558,7 @@ export default function Home() {
           onSignOut={signOut}
           onSignIn={() => setShowAuthModal(true)}
           onManageSubscription={() => restorePurchases()}
+          onUpgrade={handleOpenPaywall}
         />
       </div>
 

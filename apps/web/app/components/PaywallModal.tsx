@@ -38,8 +38,8 @@ export function PaywallModal({
       await purchasePackage(plan);
       // purchasePackage redirects on success — if we're still here something went wrong
       setError("Could not start checkout. Please try again.");
-    } catch {
-      setError("Purchase failed. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Purchase failed. Please try again.");
     } finally {
       setPurchasing(null);
     }
