@@ -81,8 +81,8 @@ export function PaywallModal({
             FlowMate Premium
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
-            Your history is stored for 30 days on this device.<br />
-            Upgrade to keep it forever and sync across devices.
+            Your history shows the last 30 days.<br />
+            Upgrade for unlimited history and more.
           </p>
         </div>
 

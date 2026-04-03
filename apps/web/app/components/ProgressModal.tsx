@@ -691,7 +691,7 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
               {!isPremium && (
                 <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 px-4 py-3">
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Showing last 30 days · this device only
+                    Showing last 30 days
                   </p>
                   {onUpgrade && (
                     <button

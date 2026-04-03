@@ -66,7 +66,7 @@ export const StatsDisplay = ({ stats, isPremium = false, onUpgrade }: StatsDispl
       {!isPremium && (
         <div className="mt-4 flex items-center justify-between gap-3">
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Last 30 days · this device only
+            Last 30 days
           </p>
           {onUpgrade && (
             <button

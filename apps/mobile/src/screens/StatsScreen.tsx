@@ -186,7 +186,7 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
           </View>
         </View>
         <Text style={[styles.retentionNote, { color: theme.colors.textTertiary }]}>
-          30-day history · this device only
+          30-day history
         </Text>
       </View>
         </ScrollView>
