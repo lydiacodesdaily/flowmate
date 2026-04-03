@@ -81,7 +81,8 @@ export function PaywallModal({
             FlowMate Premium
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
-            Unlock your full focus potential
+            Your history is stored for 30 days on this device.<br />
+            Upgrade to keep it forever and sync across devices.
           </p>
         </div>
 

@@ -185,6 +185,9 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
             <Text style={[styles.allTimeLabel, { color: theme.colors.textTertiary }]}>days</Text>
           </View>
         </View>
+        <Text style={[styles.retentionNote, { color: theme.colors.textTertiary }]}>
+          30-day history · this device only
+        </Text>
       </View>
         </ScrollView>
       ) : (
@@ -322,5 +325,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '400',
     letterSpacing: 0.3,
+  },
+  retentionNote: {
+    fontSize: 11,
+    fontWeight: '400',
+    letterSpacing: 0.3,
+    marginTop: 10,
+    textAlign: 'center',
   },
 });

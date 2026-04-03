@@ -1703,6 +1703,8 @@ export default function Home() {
             actualMinutes={completedFocusMinutes}
             reset={reset}
             userStats={userStats}
+            isPremium={isPremium}
+            openPaywall={handleOpenPaywall}
           />
         ) : (
           <TimerDisplay

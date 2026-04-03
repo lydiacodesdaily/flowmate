@@ -5,9 +5,11 @@ import { getTodayStats, formatFocusTime } from "../utils/statsUtils";
 
 interface StatsDisplayProps {
   stats: UserStats;
+  isPremium?: boolean;
+  onUpgrade?: () => void;
 }
 
-export const StatsDisplay = ({ stats }: StatsDisplayProps) => {
+export const StatsDisplay = ({ stats, isPremium = false, onUpgrade }: StatsDisplayProps) => {
   const todayStats = getTodayStats(stats);
 
   return (
@@ -60,6 +62,22 @@ export const StatsDisplay = ({ stats }: StatsDisplayProps) => {
           </div>
         </div>
       </div>
+
+      {!isPremium && (
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Last 30 days · this device only
+          </p>
+          {onUpgrade && (
+            <button
+              onClick={onUpgrade}
+              className="text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline shrink-0"
+            >
+              Upgrade for full history →
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

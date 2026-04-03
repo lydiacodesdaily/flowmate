@@ -123,9 +123,9 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
   const refresh = () => forceRefresh(n => n + 1);
 
   const todayStats = getTodayStats();
-  const allTimeMinutes = getAllTimeTotalMinutes();
-  const allTimeSessions = getAllTimeSavedSessions();
-  const dailySummaries = groupSessionsByDay();
+  const allTimeMinutes = getAllTimeTotalMinutes(isPremium);
+  const allTimeSessions = getAllTimeSavedSessions(isPremium);
+  const dailySummaries = groupSessionsByDay(isPremium);
 
   const currentStreak = isPremium ? computeCurrentStreak(dailySummaries) : null;
   const completionRate = isPremium ? computeCompletionRate(dailySummaries) : null;
@@ -688,6 +688,21 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
                 ) : renderLogForm()}
               </div>
               {dailySummaries.map(renderDayGroup)}
+              {!isPremium && (
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 px-4 py-3">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Showing last 30 days · this device only
+                  </p>
+                  {onUpgrade && (
+                    <button
+                      onClick={onUpgrade}
+                      className="shrink-0 text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline"
+                    >
+                      Upgrade for full history
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

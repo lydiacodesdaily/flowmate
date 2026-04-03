@@ -20,8 +20,10 @@ const STORAGE_KEYS = {
 
 const RESUME_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// Retention period in days (time-based, not count-based)
-export const RETENTION_DAYS = 90;
+// Retention period in days for free users (time-based, not count-based).
+// When premium/auth is added, this should become FREE_RETENTION_DAYS with a longer
+// STORAGE_RETENTION_DAYS so upgrading can restore older history.
+export const RETENTION_DAYS = 30;
 
 // ===== Draft Management =====
 

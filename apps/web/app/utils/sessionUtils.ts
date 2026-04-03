@@ -8,8 +8,13 @@ const STORAGE_KEYS = {
 
 const RESUME_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// Retention period in days (time-based, not count-based)
-export const RETENTION_DAYS = 90;
+// Free users see the last 30 days; premium users see the full stored window.
+export const FREE_RETENTION_DAYS = 30;
+// How long we keep sessions in localStorage (longer than the free display window so
+// upgrading can restore older history).
+const STORAGE_RETENTION_DAYS = 90;
+// Legacy export — equals the free window; kept so any stale imports don't break.
+export const RETENTION_DAYS = FREE_RETENTION_DAYS;
 
 // ===== Draft Storage =====
 
@@ -44,23 +49,18 @@ export function clearDraft(): void {
 
 // ===== History Storage =====
 
-export function getHistory(): SessionRecord[] {
+// Private: reads all stored sessions within the storage retention window.
+// Mutations and non-display callers should use this so they operate on full stored data.
+function loadRawHistory(): SessionRecord[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.HISTORY);
-    if (!stored) {
-      return [];
-    }
+    if (!stored) return [];
     const history = JSON.parse(stored);
-
-    // Filter to retention period and add backward compatibility
-    const cutoffDate = Date.now() - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const cutoffDate = Date.now() - (STORAGE_RETENTION_DAYS * 24 * 60 * 60 * 1000);
     return history
       .filter((session: any) => session.startedAt >= cutoffDate)
       .map((session: any) => {
-        // Migrate old sessions without timerType field (backward compatibility)
-        if (!session.timerType) {
-          return { ...session, timerType: 'focus' };
-        }
+        if (!session.timerType) return { ...session, timerType: 'focus' };
         return session;
       });
   } catch (error) {
@@ -69,15 +69,20 @@ export function getHistory(): SessionRecord[] {
   }
 }
 
+// Public: returns sessions visible to the user.
+// Free users see 30 days; premium users see the full stored window.
+export function getHistory(isPremium = false): SessionRecord[] {
+  const raw = loadRawHistory();
+  if (isPremium) return raw;
+  const cutoffDate = Date.now() - (FREE_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  return raw.filter(s => s.startedAt >= cutoffDate);
+}
+
 export function appendHistory(record: SessionRecord): void {
   try {
-    const history = getHistory();
-
-    // Filter to keep only sessions within retention period (time-based)
-    const cutoffDate = Date.now() - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
-    const filteredHistory = history.filter(session => session.startedAt >= cutoffDate);
-
-    const updatedHistory = [record, ...filteredHistory];
+    // Use loadRawHistory so we preserve sessions older than the free display window;
+    // upgrading to premium can then restore them.
+    const updatedHistory = [record, ...loadRawHistory()];
     localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updatedHistory));
   } catch (error) {
     console.error('Error appending to session history:', error);
@@ -97,7 +102,7 @@ export function updateHistoryRecord(
   updates: Partial<Pick<SessionRecord, 'status' | 'note' | 'steps' | 'intent' | 'completedSeconds' | 'editedAt' | 'originalCompletedSeconds' | 'plannedSeconds'>>
 ): boolean {
   try {
-    const history = getHistory();
+    const history = loadRawHistory();
     const index = history.findIndex((record) => record.id === id);
     if (index === -1) return false;
     history[index] = { ...history[index], ...updates };
@@ -111,7 +116,7 @@ export function updateHistoryRecord(
 
 export function deleteHistoryRecord(id: string): boolean {
   try {
-    const history = getHistory();
+    const history = loadRawHistory();
     const filtered = history.filter((record) => record.id !== id);
     if (filtered.length === history.length) return false;
     localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(filtered));
@@ -317,8 +322,8 @@ export function getTodayStats(): {
   };
 }
 
-export function getAllTimeTotalMinutes(): number {
-  const history = getHistory();
+export function getAllTimeTotalMinutes(isPremium = false): number {
+  const history = getHistory(isPremium);
   return history.reduce((sum, session) => {
     if ((session.status === 'completed' || session.status === 'partial') && session.timerType === 'focus') {
       return sum + Math.floor(session.completedSeconds / 60);
@@ -327,8 +332,8 @@ export function getAllTimeTotalMinutes(): number {
   }, 0);
 }
 
-export function getAllTimeBreakMinutes(): number {
-  const history = getHistory();
+export function getAllTimeBreakMinutes(isPremium = false): number {
+  const history = getHistory(isPremium);
   return history.reduce((sum, session) => {
     if ((session.status === 'completed' || session.status === 'partial') && session.timerType === 'break') {
       return sum + Math.floor(session.completedSeconds / 60);
@@ -337,15 +342,15 @@ export function getAllTimeBreakMinutes(): number {
   }, 0);
 }
 
-export function getAllTimeSavedSessions(): number {
-  const history = getHistory();
+export function getAllTimeSavedSessions(isPremium = false): number {
+  const history = getHistory(isPremium);
   return history.filter(
     s => (s.status === 'completed' || s.status === 'partial') && s.timerType === 'focus'
   ).length;
 }
 
-export function getAllTimeSavedBreaks(): number {
-  const history = getHistory();
+export function getAllTimeSavedBreaks(isPremium = false): number {
+  const history = getHistory(isPremium);
   return history.filter(
     s => (s.status === 'completed' || s.status === 'partial') && s.timerType === 'break'
   ).length;
@@ -399,8 +404,8 @@ export function formatDate(timestamp: number): string {
   }
 }
 
-export function getSessionHistory(): SessionRecord[] {
-  return getHistory();
+export function getSessionHistory(isPremium = false): SessionRecord[] {
+  return getHistory(isPremium);
 }
 
 // ===== Daily Summary Helpers =====
@@ -448,9 +453,9 @@ export function reportSessionToAggregateStats(record: SessionRecord): void {
  */
 export function mergeServerSessions(serverSessions: SessionRecord[]): void {
   try {
-    const local = getHistory();
+    const local = loadRawHistory();
     const localIds = new Set(local.map(s => s.id));
-    const cutoffDate = Date.now() - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
+    const cutoffDate = Date.now() - (STORAGE_RETENTION_DAYS * 24 * 60 * 60 * 1000);
 
     const newSessions = serverSessions.filter(
       s => !localIds.has(s.id) && s.startedAt >= cutoffDate
@@ -487,7 +492,7 @@ export function syncSessionToServer(record: SessionRecord): void {
 export function syncLocalHistoryToServer(): void {
   if (typeof window === 'undefined') return;
 
-  const sessions = getHistory();
+  const sessions = loadRawHistory();
   if (sessions.length === 0) return;
 
   // API accepts max 500 per request; slice to the most recent 500 if needed
@@ -500,8 +505,8 @@ export function syncLocalHistoryToServer(): void {
   }).catch(() => {});
 }
 
-export function groupSessionsByDay(): DailySummary[] {
-  const history = getHistory();
+export function groupSessionsByDay(isPremium = false): DailySummary[] {
+  const history = getHistory(isPremium);
   const grouped = new Map<string, SessionRecord[]>();
 
   // Group sessions by date (use local date components to avoid UTC offset issues)

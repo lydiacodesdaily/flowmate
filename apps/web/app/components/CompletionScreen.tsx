@@ -7,6 +7,8 @@ interface CompletionScreenProps {
   actualMinutes?: number;
   reset: () => void;
   userStats: UserStats | null;
+  isPremium?: boolean;
+  openPaywall?: () => void;
 }
 
 export const CompletionScreen = ({
@@ -15,6 +17,8 @@ export const CompletionScreen = ({
   actualMinutes,
   reset,
   userStats,
+  isPremium = false,
+  openPaywall,
 }: CompletionScreenProps) => {
   // Use actual minutes if available, otherwise fall back to selected duration
   const displayMinutes = actualMinutes && actualMinutes > 0 ? actualMinutes : selectedDuration;
@@ -69,7 +73,7 @@ export const CompletionScreen = ({
       </div>
 
       {/* Stats Display */}
-      {userStats && <StatsDisplay stats={userStats} />}
+      {userStats && <StatsDisplay stats={userStats} isPremium={isPremium} onUpgrade={openPaywall} />}
     </div>
   );
 };
