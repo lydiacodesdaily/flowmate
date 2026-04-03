@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -14,18 +14,25 @@ import { useTheme } from '../theme/ThemeContext';
 import { useResponsive } from '../hooks/useResponsive';
 import { useTimerContext } from '../contexts/TimerContext';
 import type { TabParamList } from '../navigation/types';
+import { EditSessionModal } from './EditSessionModal';
+import { LogSessionModal } from './LogSessionModal';
 
 type RootNavigationProp = NavigationProp<TabParamList>;
 
 interface SessionHistoryProps {
   dailySummaries: DailySummary[];
+  onRefresh?: () => void;
+  isPremium?: boolean;
 }
 
-export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
+export function SessionHistory({ dailySummaries, onRefresh, isPremium = false }: SessionHistoryProps) {
   const { theme } = useTheme();
   const { contentStyle } = useResponsive();
   const navigation = useNavigation<RootNavigationProp>();
   const { setSessionDraft } = useTimerContext();
+
+  const [editingSession, setEditingSession] = useState<SessionRecord | null>(null);
+  const [showLogModal, setShowLogModal] = useState(false);
 
   const handleResume = async (session: SessionRecord) => {
     const remainingSeconds = session.plannedSeconds - session.completedSeconds;
@@ -53,16 +60,49 @@ export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
     navigation.navigate('FocusTab');
   };
 
+  const handleSessionSaved = () => {
+    onRefresh?.();
+  };
+
+  const logButton = (
+    <TouchableOpacity
+      style={[styles.logButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+      onPress={() => setShowLogModal(true)}
+      activeOpacity={0.7}
+    >
+      <Text style={[styles.logButtonText, { color: theme.colors.textSecondary }]}>
+        + Log a session I forgot to track
+      </Text>
+    </TouchableOpacity>
+  );
+
   if (dailySummaries.length === 0) {
     return (
-      <View style={styles.emptyState}>
-        <Text allowFontScaling={false} style={styles.emptyStateEmoji}>📊</Text>
-        <Text style={[styles.emptyStateText, { color: theme.colors.text }]}>
-          No sessions yet
-        </Text>
-        <Text style={[styles.emptyStateSubtext, { color: theme.colors.textSecondary }]}>
-          Complete a focus session to see it here
-        </Text>
+      <View style={styles.emptyContainer}>
+        <View style={styles.emptyState}>
+          <Text allowFontScaling={false} style={styles.emptyStateEmoji}>📊</Text>
+          <Text style={[styles.emptyStateText, { color: theme.colors.text }]}>
+            Your sessions will show up here
+          </Text>
+          <Text style={[styles.emptyStateSubtext, { color: theme.colors.textSecondary }]}>
+            Complete a focus session to start tracking your progress.
+          </Text>
+        </View>
+        <View style={[styles.contentContainer, contentStyle]}>
+          {logButton}
+        </View>
+        <EditSessionModal
+          visible={editingSession !== null}
+          session={editingSession}
+          onClose={() => setEditingSession(null)}
+          onSaved={handleSessionSaved}
+        />
+        <LogSessionModal
+          visible={showLogModal}
+          onClose={() => setShowLogModal(false)}
+          onSaved={handleSessionSaved}
+          isPremium={isPremium}
+        />
       </View>
     );
   }
@@ -73,6 +113,8 @@ export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
       contentContainerStyle={[styles.contentContainer, contentStyle]}
       showsVerticalScrollIndicator={false}
     >
+      {logButton}
+
       {dailySummaries.map((summary) => (
         <DailySummaryCard
           key={summary.date}
@@ -80,6 +122,7 @@ export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
           theme={theme}
           onResume={handleResume}
           onContinueToday={handleContinueToday}
+          onEditSession={setEditingSession}
         />
       ))}
 
@@ -89,6 +132,19 @@ export function SessionHistory({ dailySummaries }: SessionHistoryProps) {
           Showing last {RETENTION_DAYS} days of sessions
         </Text>
       </View>
+
+      <EditSessionModal
+        visible={editingSession !== null}
+        session={editingSession}
+        onClose={() => setEditingSession(null)}
+        onSaved={handleSessionSaved}
+      />
+      <LogSessionModal
+        visible={showLogModal}
+        onClose={() => setShowLogModal(false)}
+        onSaved={handleSessionSaved}
+        isPremium={isPremium}
+      />
     </ScrollView>
   );
 }
@@ -98,6 +154,7 @@ interface DailySummaryCardProps {
   theme: any;
   onResume: (session: SessionRecord) => void;
   onContinueToday: (session: SessionRecord) => void;
+  onEditSession: (session: SessionRecord) => void;
 }
 
 function getSessionActionButton(
@@ -153,11 +210,13 @@ function SessionRow({
   theme,
   onResume,
   onContinueToday,
+  onEdit,
 }: {
   session: SessionRecord;
   theme: any;
   onResume: (session: SessionRecord) => void;
   onContinueToday: (session: SessionRecord) => void;
+  onEdit: (session: SessionRecord) => void;
 }) {
   const statusIcon =
     session.status === 'completed' ? '✓' :
@@ -171,16 +230,31 @@ function SessionRow({
   const plannedMin = Math.floor(session.plannedSeconds / 60);
 
   const actionButton = getSessionActionButton(session, onResume, onContinueToday, theme);
+  const isAdjusted = !!session.editedAt || !!session.isManual;
 
   return (
-    <View style={[styles.sessionRow, { borderTopColor: theme.colors.border }]}>
+    <TouchableOpacity
+      style={[styles.sessionRow, { borderTopColor: theme.colors.border }]}
+      onPress={() => onEdit(session)}
+      activeOpacity={0.6}
+      accessibilityLabel={`Edit session: ${completedMin} minutes${session.intent ? ', ' + session.intent : ''}`}
+    >
       <View style={styles.sessionRowMain}>
         <Text style={[styles.sessionStatusIcon, { color: statusColor }]}>{statusIcon}</Text>
         <View style={styles.sessionRowContent}>
-          <Text style={[styles.sessionTime, { color: theme.colors.textSecondary }]}>
-            {formatTime(session.startedAt)}
-            {session.timerType === 'break' ? ' · break' : ''}
-          </Text>
+          <View style={styles.sessionTimeRow}>
+            <Text style={[styles.sessionTime, { color: theme.colors.textSecondary }]}>
+              {session.isManual ? 'manual · ' : ''}{formatTime(session.startedAt)}
+              {session.timerType === 'break' ? ' · break' : ''}
+            </Text>
+            {isAdjusted && (
+              <View style={[styles.adjustedBadge, { backgroundColor: theme.colors.surfaceSecondary }]}>
+                <Text style={[styles.adjustedBadgeText, { color: theme.colors.textTertiary }]}>
+                  {session.isManual ? 'manual' : 'adjusted'}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={[styles.sessionDuration, { color: theme.colors.text }]}>
             {completedMin}m{session.status !== 'completed' ? `/${plannedMin}m` : ''}
           </Text>
@@ -190,17 +264,19 @@ function SessionRow({
             </Text>
           ) : null}
         </View>
-        {actionButton && (
+        {actionButton ? (
           <View style={styles.sessionActionContainer}>
             {actionButton}
           </View>
+        ) : (
+          <Text style={[styles.editChevron, { color: theme.colors.textTertiary }]}>›</Text>
         )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
-function DailySummaryCard({ summary, theme, onResume, onContinueToday }: DailySummaryCardProps) {
+function DailySummaryCard({ summary, theme, onResume, onContinueToday, onEditSession }: DailySummaryCardProps) {
   const sessionCount = summary.completedCount + summary.partialCount;
   const hasBreaks = summary.breakMinutes > 0;
 
@@ -254,6 +330,7 @@ function DailySummaryCard({ summary, theme, onResume, onContinueToday }: DailySu
           theme={theme}
           onResume={onResume}
           onContinueToday={onContinueToday}
+          onEdit={onEditSession}
         />
       ))}
     </View>
@@ -262,6 +339,9 @@ function DailySummaryCard({ summary, theme, onResume, onContinueToday }: DailySu
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  emptyContainer: {
     flex: 1,
   },
   contentContainer: {
@@ -274,6 +354,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 40,
+    minHeight: 260,
   },
   emptyStateEmoji: {
     fontSize: 64,
@@ -288,6 +369,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  logButton: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  logButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   card: {
     borderRadius: 16,
@@ -353,9 +446,23 @@ const styles = StyleSheet.create({
   sessionRowContent: {
     flex: 1,
   },
+  sessionTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
   sessionTime: {
     fontSize: 11,
-    marginBottom: 2,
+  },
+  adjustedBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  adjustedBadgeText: {
+    fontSize: 10,
+    fontWeight: '500',
   },
   sessionDuration: {
     fontSize: 14,
@@ -368,6 +475,11 @@ const styles = StyleSheet.create({
   },
   sessionActionContainer: {
     flexShrink: 0,
+  },
+  editChevron: {
+    fontSize: 20,
+    fontWeight: '300',
+    paddingHorizontal: 4,
   },
   actionButton: {
     borderRadius: 8,

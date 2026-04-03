@@ -15,7 +15,7 @@ import {
 import { SessionRecord } from '@flowmate/shared/types';
 import { useTheme } from '../theme/ThemeContext';
 import { useAccessibility } from '../contexts';
-import { updateHistoryRecord, deleteHistoryRecord, formatDuration } from '../services/sessionService';
+import { updateHistoryRecord, deleteHistoryRecord } from '../services/sessionService';
 
 interface EditSessionModalProps {
   visible: boolean;

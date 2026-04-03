@@ -189,7 +189,7 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
         </ScrollView>
       ) : (
         <View style={styles.scrollView}>
-          <SessionHistory dailySummaries={dailySummaries} />
+          <SessionHistory dailySummaries={dailySummaries} onRefresh={loadStats} />
         </View>
       )}
     </View>
