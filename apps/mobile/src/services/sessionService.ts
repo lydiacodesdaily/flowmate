@@ -114,7 +114,7 @@ export async function clearHistory(): Promise<void> {
 
 export async function updateHistoryRecord(
   id: string,
-  updates: Partial<Pick<SessionRecord, 'status' | 'note' | 'steps'>>
+  updates: Partial<Pick<SessionRecord, 'status' | 'note' | 'steps' | 'intent' | 'completedSeconds' | 'editedAt' | 'originalCompletedSeconds' | 'plannedSeconds'>>
 ): Promise<boolean> {
   try {
     const history = await getHistory();
@@ -130,6 +130,43 @@ export async function updateHistoryRecord(
     console.error('Error updating history record:', error);
     return false;
   }
+}
+
+export async function deleteHistoryRecord(id: string): Promise<boolean> {
+  try {
+    const history = await getHistory();
+    const filtered = history.filter((record) => record.id !== id);
+    if (filtered.length === history.length) return false;
+    await AsyncStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(filtered));
+    return true;
+  } catch (error) {
+    console.error('Error deleting history record:', error);
+    return false;
+  }
+}
+
+export async function addManualSession(
+  durationMinutes: number,
+  intent?: string,
+  startedAt?: number
+): Promise<SessionRecord> {
+  const now = startedAt ?? Date.now();
+  const completedSeconds = Math.round(durationMinutes * 60);
+  const record: SessionRecord = {
+    id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    startedAt: now,
+    endedAt: now + completedSeconds * 1000,
+    plannedSeconds: completedSeconds,
+    completedSeconds,
+    mode: 'custom',
+    timerType: 'focus',
+    type: 'focus',
+    status: 'completed',
+    isManual: true,
+    ...(intent ? { intent } : {}),
+  };
+  await appendHistory(record);
+  return record;
 }
 
 // ===== Session Record Creation =====
