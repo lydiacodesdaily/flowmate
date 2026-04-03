@@ -1695,6 +1695,8 @@ export default function Home() {
             setCustomMinutes={setCustomMinutes}
             startSession={startSession}
             startCustomSession={startCustomSession}
+            isPremium={isPremium}
+            openPaywall={handleOpenPaywall}
           />
         ) : isCompleted ? (
           <CompletionScreen

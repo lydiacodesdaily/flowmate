@@ -14,8 +14,19 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
   const { contentStyle } = useResponsive();
   const insets = useSafeAreaInsets();
 
+  const PREMIUM_MIN_DURATION = 90;
+
   const handleRecipeSelect = async (recipe: FocusRecipe) => {
     await hapticService.light();
+
+    if (recipe.duration >= PREMIUM_MIN_DURATION) {
+      Alert.alert(
+        'Premium Feature',
+        'Sessions 90 minutes and longer are available on the premium plan. Upgrade on the web app to unlock.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
 
     if (isActive) {
       Alert.alert(
@@ -54,6 +65,7 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
         <Text style={[styles.subtitle, { color: theme.colors.textTertiary }]}>pick a focus recipe</Text>
 
         {FOCUS_RECIPES.map((recipe) => {
+          const isLocked = recipe.duration >= PREMIUM_MIN_DURATION;
           return (
             <TouchableOpacity
               key={recipe.id}
@@ -62,6 +74,7 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
                 {
                   backgroundColor: theme.colors.surface,
                   borderColor: theme.colors.border,
+                  opacity: isLocked ? 0.6 : 1,
                 },
               ]}
               onPress={() => handleRecipeSelect(recipe)}
@@ -72,9 +85,14 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
                   <Text style={styles.recipeIcon}>{recipe.icon}</Text>
                   <Text style={[styles.recipeName, { color: theme.colors.text }]}>{recipe.name}</Text>
                 </View>
-                <Text style={[styles.recipeDuration, { color: theme.colors.textSecondary }]}>
-                  {recipe.duration}m
-                </Text>
+                <View style={styles.recipeRight}>
+                  <Text style={[styles.recipeDuration, { color: theme.colors.textSecondary }]}>
+                    {recipe.duration}m
+                  </Text>
+                  {isLocked && (
+                    <Text style={[styles.premiumBadge, { color: theme.colors.primary }]}>✦</Text>
+                  )}
+                </View>
               </View>
               <Text style={[styles.recipeDescription, { color: theme.colors.textSecondary }]}>
                 {recipe.description}
@@ -160,5 +178,13 @@ const styles = StyleSheet.create({
     fontWeight: '300',
     letterSpacing: 0.2,
     marginLeft: 36,
+  },
+  recipeRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  premiumBadge: {
+    fontSize: 12,
   },
 });

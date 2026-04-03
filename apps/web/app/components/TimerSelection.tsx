@@ -12,6 +12,8 @@ interface TimerSelectionProps {
   setCustomMinutes: (minutes: string) => void;
   startSession: (duration: SessionDuration) => void;
   startCustomSession: (minutes: number) => void;
+  isPremium: boolean;
+  openPaywall: () => void;
 }
 
 export const TimerSelection = ({
@@ -25,6 +27,8 @@ export const TimerSelection = ({
   setCustomMinutes,
   startSession,
   startCustomSession,
+  isPremium,
+  openPaywall,
 }: TimerSelectionProps) => {
   return (
     <div>
@@ -186,6 +190,8 @@ export const TimerSelection = ({
               ? Math.floor((duration + 5) / 30)
               : 0;
 
+            const isLocked = timerMode === "guided" && duration >= 90 && !isPremium;
+
             const colors = timerMode === "pomodoro"
               ? [
                   "bg-blue-400/85 hover:bg-blue-500/90 dark:bg-cyan-400/80 dark:hover:bg-cyan-500/90",
@@ -227,10 +233,13 @@ export const TimerSelection = ({
             return (
               <button
                 key={duration}
-                onClick={() => startSession(duration as SessionDuration)}
-                className={`${colors[index]} backdrop-blur-sm text-white font-bold py-3 sm:py-5 px-4 sm:px-6 rounded-xl sm:rounded-2xl transition-all duration-200 transform hover:scale-[1.03] hover:shadow-2xl border border-white/20`}
+                onClick={() => isLocked ? openPaywall() : startSession(duration as SessionDuration)}
+                className={`${isLocked ? "bg-slate-400/60 hover:bg-slate-500/70 dark:bg-slate-600/50 dark:hover:bg-slate-600/70" : colors[index]} backdrop-blur-sm text-white font-bold py-3 sm:py-5 px-4 sm:px-6 rounded-xl sm:rounded-2xl transition-all duration-200 transform hover:scale-[1.03] hover:shadow-2xl border border-white/20 relative`}
                 style={{ boxShadow: '0px 6px 20px rgba(0,0,0,0.12)' }}
               >
+                {isLocked && (
+                  <div className="absolute top-1.5 right-2 text-[10px] opacity-80">✦</div>
+                )}
                 {timerMode === "pomodoro" && (
                   <div className="flex items-center justify-center gap-1 sm:gap-1.5 mb-1 sm:mb-1.5">
                     {Array.from({ length: pomodoroCount }).map((_, i) => (
@@ -240,7 +249,7 @@ export const TimerSelection = ({
                 )}
                 <div className="text-xl sm:text-2xl md:text-3xl mb-0.5 sm:mb-1">{duration} min</div>
                 <div className="text-[9px] sm:text-[10px] opacity-75">
-                  {taglines[index]}
+                  {isLocked ? "Premium" : taglines[index]}
                 </div>
               </button>
             );
