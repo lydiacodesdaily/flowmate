@@ -76,7 +76,7 @@ export function PaywallModal({
           >
             ✕
           </button>
-          <div className="text-6xl mb-3">🍅</div>
+          <img src="/flowmato/state/flowmato_celebrating.png" alt="Flowmato" className="w-20 h-20 mx-auto mb-3 object-contain" />
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
             FlowMate Premium
           </h2>

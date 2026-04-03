@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { AUDIO_PRESETS } from '../constants/audioPresets';
 
 interface SettingsModalProps {
@@ -31,6 +31,8 @@ interface SettingsModalProps {
   theme: 'light' | 'dark' | 'system';
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   isMobile: boolean;
+  isPremium: boolean;
+  openPaywall: () => void;
 }
 
 export const SettingsModal = ({
@@ -61,8 +63,29 @@ export const SettingsModal = ({
   theme,
   setTheme,
   isMobile,
+  isPremium,
+  openPaywall,
 }: SettingsModalProps) => {
   const [activeTab, setActiveTab] = useState<'audio' | 'visual'>('audio');
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const previewTickSound = (soundValue: string) => {
+    // Stop any in-progress preview
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    // Map sound values to their audio file paths (mirrors page.tsx logic)
+    const path = soundValue === 'tick-tok-alternate.mp3'
+      ? '/audio/effects/tick1.mp3'
+      : soundValue === 'tick-tok-alternate-2.wav'
+      ? '/audio/effects/tick2.wav'
+      : `/audio/effects/${soundValue}`;
+    const audio = new Audio(path);
+    audio.volume = tickVolume > 0 ? tickVolume : 0.3;
+    previewAudioRef.current = audio;
+    audio.play().catch(() => {});
+  };
 
   if (!showSettings) return null;
 
@@ -229,24 +252,52 @@ export const SettingsModal = ({
                 <div className={`ml-4 space-y-3 transition-opacity duration-200 ${tickVolume === 0 ? 'opacity-40 pointer-events-none' : ''}`}>
                   <div>
                     <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Style</label>
-                    <select
-                      value={tickSound}
-                      onChange={(e) => {
-                        markCustom();
-                        setTickSound(e.target.value);
-                        localStorage.setItem('tickSound', e.target.value);
-                      }}
-                      disabled={tickVolume === 0}
-                      className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 dark:focus:ring-cyan-500 focus:border-transparent transition-all duration-200 disabled:cursor-not-allowed"
-                    >
-                      <option value="single_tick.wav">Single</option>
-                      <option value="tick-tok-alternate.mp3">Alternating</option>
-                      <option value="tick-tok-alternate-2.wav">Alternating 2</option>
-                      <option value="tick.m4a">Classic</option>
-                      <option value="beep.wav">Beep</option>
-                      <option value="beep1.mp3">High Beep</option>
-                      <option value="beep2.mp3">Low Beep</option>
-                    </select>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: 'tick-tok-alternate.mp3', label: 'Alternating', premium: false },
+                        { value: 'single_tick.wav', label: 'Single', premium: true },
+                        { value: 'tick-tok-alternate-2.wav', label: 'Alternating 2', premium: true },
+                        { value: 'tick.m4a', label: 'Classic', premium: true },
+                        { value: 'beep.wav', label: 'Beep', premium: true },
+                        { value: 'beep1.mp3', label: 'High Beep', premium: true },
+                        { value: 'beep2.mp3', label: 'Low Beep', premium: true },
+                      ].map((opt) => {
+                        const locked = opt.premium && !isPremium;
+                        const selected = tickSound === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => {
+                              previewTickSound(opt.value);
+                              if (locked) return;
+                              markCustom();
+                              setTickSound(opt.value);
+                              localStorage.setItem('tickSound', opt.value);
+                            }}
+                            disabled={tickVolume === 0}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border-2 transition-all duration-150 flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed ${
+                              selected
+                                ? 'bg-blue-600 dark:bg-cyan-500 border-blue-600 dark:border-cyan-500 text-white'
+                                : locked
+                                ? 'border-slate-200 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:border-slate-300 dark:hover:border-slate-500'
+                                : 'border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-blue-400 dark:hover:border-cyan-500'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {!isPremium && (
+                      <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+                        Tap any sound to preview.{' '}
+                        <button type="button" onClick={openPaywall} className="underline hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                          Upgrade
+                        </button>
+                        {' '}to unlock all.
+                      </p>
+                    )}
                   </div>
 
                   <div>

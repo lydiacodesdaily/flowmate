@@ -1591,6 +1591,8 @@ export default function Home() {
         theme={theme}
         setTheme={handleThemeChange}
         isMobile={isMobile}
+        isPremium={isPremium}
+        openPaywall={handleOpenPaywall}
       />
 
       {/* Progress Modal - combines Daily Summary and Stats */}
