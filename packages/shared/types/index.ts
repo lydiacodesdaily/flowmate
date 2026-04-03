@@ -58,6 +58,9 @@ export interface SessionRecord {
   stepsDetail?: PrepStep[]; // Full step list, used for Continue Today / Repeat
   note?: string;
   resumedFromId?: string; // ID of the partial session this continues (lineage only)
+  isManual?: boolean; // true if retroactively logged (never went through the timer)
+  editedAt?: number; // Unix timestamp of last user edit post-save
+  originalCompletedSeconds?: number; // preserved on first duration edit
 }
 
 // Active session written to storage when timer starts; cleared on normal completion.

@@ -92,11 +92,65 @@ export function clearHistory(): void {
   }
 }
 
+export function updateHistoryRecord(
+  id: string,
+  updates: Partial<Pick<SessionRecord, 'status' | 'note' | 'steps' | 'intent' | 'completedSeconds' | 'editedAt' | 'originalCompletedSeconds' | 'plannedSeconds'>>
+): boolean {
+  try {
+    const history = getHistory();
+    const index = history.findIndex((record) => record.id === id);
+    if (index === -1) return false;
+    history[index] = { ...history[index], ...updates };
+    localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+    return true;
+  } catch (error) {
+    console.error('Error updating history record:', error);
+    return false;
+  }
+}
+
+export function deleteHistoryRecord(id: string): boolean {
+  try {
+    const history = getHistory();
+    const filtered = history.filter((record) => record.id !== id);
+    if (filtered.length === history.length) return false;
+    localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(filtered));
+    return true;
+  } catch (error) {
+    console.error('Error deleting history record:', error);
+    return false;
+  }
+}
+
+export function addManualSession(
+  durationMinutes: number,
+  intent?: string,
+  startedAt?: number
+): SessionRecord {
+  const now = startedAt ?? Date.now();
+  const completedSeconds = Math.round(durationMinutes * 60);
+  const record: SessionRecord = {
+    id: `session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+    startedAt: now,
+    endedAt: now + completedSeconds * 1000,
+    plannedSeconds: completedSeconds,
+    completedSeconds,
+    mode: 'custom',
+    timerType: 'focus',
+    type: 'focus',
+    status: 'completed',
+    isManual: true,
+    ...(intent ? { intent } : {}),
+  };
+  appendHistory(record);
+  return record;
+}
+
 // ===== Helper Functions =====
 
 export function createPrepStep(text: string): PrepStep {
   return {
-    id: `step-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    id: `step-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
     text: text.trim(),
     done: false,
   };
