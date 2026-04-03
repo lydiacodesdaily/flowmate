@@ -85,5 +85,21 @@ export async function POST(request: Request) {
     return Response.json({ error: "Failed to sync sessions." }, { status: 500 });
   }
 
+  // For free users, delete sessions older than 30 days from the server.
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("is_premium")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.is_premium) {
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    await supabase
+      .from("sessions")
+      .delete()
+      .eq("user_id", user.id)
+      .lt("started_at", cutoff);
+  }
+
   return Response.json({ synced: rows.length });
 }
