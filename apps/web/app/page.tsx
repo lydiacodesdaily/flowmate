@@ -15,6 +15,7 @@ import { EarlyStopModal } from "./components/EarlyStopModal";
 import { ProgressModal } from "./components/ProgressModal";
 import { PaywallModal } from "./components/PaywallModal";
 import { AuthModal } from "./components/AuthModal";
+import { AccountButton } from "./components/AccountButton";
 import { PublicStats } from "./components/PublicStats";
 import { usePremium } from "./hooks/usePremium";
 import { useAuth } from "./hooks/useAuth";
@@ -68,7 +69,7 @@ export default function Home() {
   const [crashRecovery, setCrashRecovery] = useState<ActiveSession | null>(null);
 
   // Auth
-  const { user, signInWithMagicLink, signInWithGoogle } = useAuth();
+  const { user, signInWithMagicLink, signInWithGoogle, signOut } = useAuth();
 
   // Premium — pass Supabase user ID so RC is tied to a real account when signed in
   const {
@@ -1550,6 +1551,14 @@ export default function Home() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </button>
+
+        {/* Account button */}
+        <AccountButton
+          user={user}
+          isPremium={isPremium}
+          onSignOut={signOut}
+          onSignIn={() => setShowAuthModal(true)}
+        />
       </div>
 
       {/* Settings Modal */}
