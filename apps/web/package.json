@@ -19,7 +19,8 @@
     "next": "^16.0.0",
     "openai": "^4.0.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "stripe": "^22.0.0"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",

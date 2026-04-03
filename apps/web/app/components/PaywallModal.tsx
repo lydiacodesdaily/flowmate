@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { PackageType, type Package } from "@revenuecat/purchases-js";
 import type { PremiumState } from "../hooks/usePremium";
 
 const PREMIUM_FEATURES = [
@@ -17,37 +16,28 @@ const PREMIUM_FEATURES = [
 interface PaywallModalProps
   extends Pick<
     PremiumState,
-    | "paywallVisible"
-    | "closePaywall"
-    | "offering"
-    | "purchasePackage"
-    | "restorePurchases"
+    "paywallVisible" | "closePaywall" | "purchasePackage" | "restorePurchases"
   > {}
 
 export function PaywallModal({
   paywallVisible,
   closePaywall,
-  offering,
   purchasePackage,
   restorePurchases,
 }: PaywallModalProps) {
-  const [purchasing, setPurchasing] = useState<string | null>(null);
+  const [purchasing, setPurchasing] = useState<"monthly" | "annual" | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [restored, setRestored] = useState(false);
 
   if (!paywallVisible) return null;
 
-  const packages: Package[] = offering?.availablePackages ?? [];
-  const monthlyPkg = packages.find((p) => p.packageType === PackageType.Monthly);
-  const annualPkg = packages.find((p) => p.packageType === PackageType.Annual);
-
-  const handlePurchase = async (pkgId: string) => {
+  const handlePurchase = async (plan: "monthly" | "annual") => {
     setError(null);
-    setPurchasing(pkgId);
+    setPurchasing(plan);
     try {
-      const success = await purchasePackage(pkgId);
-      if (success) closePaywall();
+      await purchasePackage(plan);
+      // purchasePackage redirects on success — if we're still here something went wrong
+      setError("Could not start checkout. Please try again.");
     } catch {
       setError("Purchase failed. Please try again.");
     } finally {
@@ -59,14 +49,11 @@ export function PaywallModal({
     setError(null);
     setRestoring(true);
     try {
-      const success = await restorePurchases();
-      if (success) {
-        closePaywall();
-      } else {
-        setRestored(true);
-      }
+      await restorePurchases();
+      // restorePurchases redirects to the portal — if still here, no customer found
+      setError("No subscription found for this account.");
     } catch {
-      setError("Restore failed. Please try again.");
+      setError("Could not open billing portal. Please try again.");
     } finally {
       setRestoring(false);
     }
@@ -120,52 +107,36 @@ export function PaywallModal({
 
         {/* Pricing */}
         <div className="px-6 pb-2 space-y-3">
-          {annualPkg && (
-            <button
-              onClick={() => handlePurchase(annualPkg.identifier)}
-              disabled={purchasing !== null}
-              className="relative w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white rounded-2xl py-4 px-5 transition-colors"
-            >
-              <span className="absolute -top-2.5 right-4 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
-                Best Value
-              </span>
-              <div className="font-semibold text-base">Annual</div>
-              <div className="font-bold text-xl">
-                {purchasing === annualPkg.identifier
-                  ? "Processing…"
-                  : annualPkg.webBillingProduct.currentPrice.formattedPrice + " / year"}
-              </div>
-            </button>
-          )}
-
-          {monthlyPkg && (
-            <button
-              onClick={() => handlePurchase(monthlyPkg.identifier)}
-              disabled={purchasing !== null}
-              className="w-full border-2 border-slate-200 dark:border-slate-700 hover:border-sky-400 disabled:opacity-60 rounded-2xl py-4 px-5 transition-colors text-slate-800 dark:text-white"
-            >
-              <div className="font-semibold text-base">Monthly</div>
-              <div className="font-bold text-xl">
-                {purchasing === monthlyPkg.identifier
-                  ? "Processing…"
-                  : monthlyPkg.webBillingProduct.currentPrice.formattedPrice + " / month"}
-              </div>
-            </button>
-          )}
-
-          {!annualPkg && !monthlyPkg && (
-            <div className="text-center py-6 text-slate-400">
-              Loading pricing…
+          {/* Annual */}
+          <button
+            onClick={() => handlePurchase("annual")}
+            disabled={purchasing !== null}
+            className="relative w-full bg-sky-500 hover:bg-sky-600 disabled:opacity-60 text-white rounded-2xl py-4 px-5 transition-colors"
+          >
+            <span className="absolute -top-2.5 right-4 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+              Best Value
+            </span>
+            <div className="font-semibold text-base">Annual</div>
+            <div className="font-bold text-xl">
+              {purchasing === "annual" ? "Redirecting…" : "$40 / year"}
             </div>
-          )}
+            <div className="text-sky-100 text-xs mt-0.5">$3.33 / month — save 33%</div>
+          </button>
+
+          {/* Monthly */}
+          <button
+            onClick={() => handlePurchase("monthly")}
+            disabled={purchasing !== null}
+            className="w-full border-2 border-slate-200 dark:border-slate-700 hover:border-sky-400 disabled:opacity-60 rounded-2xl py-4 px-5 transition-colors text-slate-800 dark:text-white"
+          >
+            <div className="font-semibold text-base">Monthly</div>
+            <div className="font-bold text-xl">
+              {purchasing === "monthly" ? "Redirecting…" : "$5 / month"}
+            </div>
+          </button>
 
           {error && (
             <p className="text-red-500 text-sm text-center">{error}</p>
-          )}
-          {restored && !error && (
-            <p className="text-slate-500 text-sm text-center">
-              No active subscription found for this account.
-            </p>
           )}
         </div>
 
@@ -176,7 +147,7 @@ export function PaywallModal({
             disabled={restoring}
             className="text-sm text-slate-400 hover:text-slate-600 underline"
           >
-            {restoring ? "Restoring…" : "Restore purchases"}
+            {restoring ? "Opening billing portal…" : "Manage subscription"}
           </button>
           <p className="text-xs text-slate-400">
             Subscription renews automatically. Cancel anytime.

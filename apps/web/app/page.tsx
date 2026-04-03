@@ -78,7 +78,6 @@ export default function Home() {
     paywallVisible,
     openPaywall,
     closePaywall,
-    offering,
     purchasePackage,
     restorePurchases,
   } = usePremium(user?.id ?? null);
@@ -1558,6 +1557,7 @@ export default function Home() {
           isPremium={isPremium}
           onSignOut={signOut}
           onSignIn={() => setShowAuthModal(true)}
+          onManageSubscription={() => restorePurchases()}
         />
       </div>
 
@@ -1785,7 +1785,6 @@ export default function Home() {
     <PaywallModal
       paywallVisible={paywallVisible}
       closePaywall={closePaywall}
-      offering={offering}
       purchasePackage={purchasePackage}
       restorePurchases={restorePurchases}
     />

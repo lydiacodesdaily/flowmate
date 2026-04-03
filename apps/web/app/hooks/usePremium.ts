@@ -1,153 +1,64 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Purchases, type Offering } from "@revenuecat/purchases-js";
-
-const RC_API_KEY = process.env.NEXT_PUBLIC_REVENUECAT_API_KEY ?? "";
-const ENTITLEMENT_ID = "premium";
-const USER_ID_KEY = "flowmate:v1:rcUserId";
-
-function getOrCreateAnonUserId(): string {
-  if (typeof window === "undefined") return "anon";
-  let id = localStorage.getItem(USER_ID_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(USER_ID_KEY, id);
-  }
-  return id;
-}
+import { useState, useEffect, useCallback } from "react";
 
 export interface PremiumState {
   isPremium: boolean;
   isLoading: boolean;
-  offering: Offering | null;
   paywallVisible: boolean;
   openPaywall: () => void;
   closePaywall: () => void;
-  purchasePackage: (rcPackageId: string) => Promise<boolean>;
-  restorePurchases: () => Promise<boolean>;
+  purchasePackage: (plan: "monthly" | "annual") => Promise<void>;
+  restorePurchases: () => Promise<void>;
 }
 
 /**
- * @param supabaseUserId - When provided, RC is configured with the authenticated
- *   user's Supabase ID so purchases persist across devices. Falls back to the
- *   anonymous UUID stored in localStorage.
+ * @param supabaseUserId - When provided, fetches premium status from Supabase.
+ *   Falls back to free when not signed in.
  */
 export function usePremium(supabaseUserId?: string | null): PremiumState {
   const [isPremium, setIsPremium] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [offering, setOffering] = useState<Offering | null>(null);
   const [paywallVisible, setPaywallVisible] = useState(false);
-  const purchasesRef = useRef<Purchases | null>(null);
-  const configuredUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!RC_API_KEY) {
-      setIsPremium(true); // no key = dev mode, all features open
+    if (!supabaseUserId) {
+      setIsPremium(false);
       setIsLoading(false);
       return;
     }
 
-    // Use the Supabase user ID when available, otherwise the anonymous UUID
-    const userId = supabaseUserId ?? getOrCreateAnonUserId();
-
-    // Only reconfigure RC if the user ID changed (avoids duplicate configure calls)
-    if (configuredUserIdRef.current === userId) return;
-    configuredUserIdRef.current = userId;
-
-    const purchases = Purchases.configure(RC_API_KEY, userId);
-    purchasesRef.current = purchases;
-
-    (async () => {
-      try {
-        const [info, offerings] = await Promise.all([
-          purchases.getCustomerInfo(),
-          purchases.getOfferings(),
-        ]);
-        const isRcPremium =
-          info.entitlements.active[ENTITLEMENT_ID] !== undefined;
-        setIsPremium(isRcPremium);
-        if (offerings.current) setOffering(offerings.current);
-
-        // Sync RC→Supabase when RC confirms premium (fire-and-forget)
-        if (isRcPremium && supabaseUserId) {
-          fetch("/api/users/premium", { method: "PATCH" }).catch(() => {});
-        }
-      } catch (e) {
-        console.warn("RevenueCat init error:", e);
-        // RC unavailable — fall back to Supabase premium status
-        if (supabaseUserId) {
-          fetch("/api/users/premium")
-            .then((r) => (r.ok ? r.json() : null))
-            .then((data) => {
-              if (data?.isPremium) setIsPremium(true);
-            })
-            .catch(() => {});
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    })();
+    fetch("/api/users/premium")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.isPremium) setIsPremium(true);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, [supabaseUserId]);
 
   const openPaywall = useCallback(() => setPaywallVisible(true), []);
   const closePaywall = useCallback(() => setPaywallVisible(false), []);
 
-  const purchasePackage = useCallback(
-    async (rcPackageId: string): Promise<boolean> => {
-      const purchases = purchasesRef.current;
-      if (!purchases) return false;
-      const pkg = offering?.availablePackages.find(
-        (p: { identifier: string }) => p.identifier === rcPackageId
-      );
-      if (!pkg) return false;
-      try {
-        const { customerInfo } = await purchases.purchase({ rcPackage: pkg });
-        const active =
-          customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
-        setIsPremium(active);
+  const purchasePackage = useCallback(async (plan: "monthly" | "annual") => {
+    const res = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  }, []);
 
-        // Link RC customer ID to the Supabase user profile (fire-and-forget)
-        const rcCustomerId = customerInfo.originalAppUserId;
-        if (rcCustomerId) {
-          fetch("/api/users/link-rc", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ rcCustomerId }),
-          }).catch(() => {});
-        }
-
-        // Sync premium status to Supabase (fire-and-forget)
-        if (active) {
-          fetch("/api/users/premium", { method: "PATCH" }).catch(() => {});
-        }
-
-        return active;
-      } catch {
-        return false;
-      }
-    },
-    [offering]
-  );
-
-  const restorePurchases = useCallback(async (): Promise<boolean> => {
-    const purchases = purchasesRef.current;
-    if (!purchases) return false;
-    try {
-      const info = await purchases.getCustomerInfo();
-      const active =
-        info.entitlements.active[ENTITLEMENT_ID] !== undefined;
-      setIsPremium(active);
-      return active;
-    } catch {
-      return false;
-    }
+  const restorePurchases = useCallback(async () => {
+    const res = await fetch("/api/stripe/portal", { method: "POST" });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
   }, []);
 
   return {
     isPremium,
     isLoading,
-    offering,
     paywallVisible,
     openPaywall,
     closePaywall,

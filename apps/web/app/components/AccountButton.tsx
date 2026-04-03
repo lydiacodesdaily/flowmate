@@ -8,6 +8,7 @@ interface AccountButtonProps {
   isPremium: boolean;
   onSignOut: () => void;
   onSignIn: () => void;
+  onManageSubscription?: () => void;
 }
 
 function getFirstName(user: User): string {
@@ -26,7 +27,7 @@ function getInitials(user: User): string {
   return (user.email?.[0] ?? '?').toUpperCase();
 }
 
-export function AccountButton({ user, isPremium, onSignOut, onSignIn }: AccountButtonProps) {
+export function AccountButton({ user, isPremium, onSignOut, onSignIn, onManageSubscription }: AccountButtonProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -106,7 +107,12 @@ export function AccountButton({ user, isPremium, onSignOut, onSignIn }: AccountB
                     <span className="text-xs text-slate-600 dark:text-slate-300">Plan</span>
                   </div>
                   {isPremium ? (
-                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Premium</span>
+                    <button
+                      onClick={() => { setOpen(false); onManageSubscription?.(); }}
+                      className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline"
+                    >
+                      Premium · Manage
+                    </button>
                   ) : (
                     <span className="text-xs text-slate-400 dark:text-slate-500">Free</span>
                   )}
