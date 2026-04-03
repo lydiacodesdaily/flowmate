@@ -10,6 +10,9 @@ import {
   formatTime,
   groupSessionsByDay,
   isResumable,
+  updateHistoryRecord,
+  deleteHistoryRecord,
+  addManualSession,
   DailySummary
 } from "../utils/sessionUtils";
 import { formatFocusTime } from "../utils/statsUtils";
@@ -109,6 +112,15 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set([todayKey]));
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const [showHeatmap, setShowHeatmap] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editMinutes, setEditMinutes] = useState(0);
+  const [editIntent, setEditIntent] = useState('');
+  const [showLogForm, setShowLogForm] = useState(false);
+  const [logMinutes, setLogMinutes] = useState(25);
+  const [logIntent, setLogIntent] = useState('');
+  const [, forceRefresh] = useState(0);
+
+  const refresh = () => forceRefresh(n => n + 1);
 
   const todayStats = getTodayStats();
   const allTimeMinutes = getAllTimeTotalMinutes();
@@ -132,6 +144,44 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
+
+  const startEdit = (session: SessionRecord) => {
+    setEditingId(session.id);
+    setEditMinutes(Math.max(1, Math.round(session.completedSeconds / 60)));
+    setEditIntent(session.intent ?? '');
+  };
+
+  const cancelEdit = () => setEditingId(null);
+
+  const saveEdit = (session: SessionRecord) => {
+    const newSeconds = editMinutes * 60;
+    const updates: Parameters<typeof updateHistoryRecord>[1] = { editedAt: Date.now() };
+    if (newSeconds !== session.completedSeconds) {
+      if (!session.originalCompletedSeconds) updates.originalCompletedSeconds = session.completedSeconds;
+      updates.completedSeconds = newSeconds;
+      updates.plannedSeconds = newSeconds;
+    }
+    const trimmedIntent = editIntent.trim();
+    if (trimmedIntent !== (session.intent ?? '')) updates.intent = trimmedIntent || undefined;
+    updateHistoryRecord(session.id, updates);
+    setEditingId(null);
+    refresh();
+  };
+
+  const handleDelete = (id: string) => {
+    if (!confirm('Remove this session?')) return;
+    deleteHistoryRecord(id);
+    refresh();
+  };
+
+  const handleLogSession = () => {
+    if (logMinutes < 1) return;
+    addManualSession(logMinutes, logIntent.trim() || undefined);
+    setShowLogForm(false);
+    setLogMinutes(25);
+    setLogIntent('');
+    refresh();
   };
 
   const getStatusColor = (status: string) => {
@@ -165,6 +215,8 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
     const isBreak = session.timerType === 'break';
     const stepsExpanded = expandedSteps.has(session.id);
     const hasStepDetail = (session.stepsDetail?.length ?? 0) > 0;
+    const isEditing = editingId === session.id;
+    const isAdjusted = !!session.editedAt || !!session.isManual;
 
     return (
       <div
@@ -183,7 +235,7 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
                 {getStatusIcon(session.status)}
               </span>
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex-shrink-0">
-                {formatTime(session.startedAt)}
+                {session.isManual ? 'manual · ' : ''}{formatTime(session.startedAt)}
               </span>
               <span className="text-xs text-slate-400 dark:text-slate-500 flex-shrink-0">
                 {getModeLabel(session.mode)}
@@ -193,28 +245,117 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
                   Break
                 </span>
               )}
+              {isAdjusted && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 font-medium flex-shrink-0">
+                  {session.isManual ? 'manual' : 'adjusted'}
+                </span>
+              )}
             </div>
-            <div className="flex-shrink-0 text-right">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 {formatDuration(session.completedSeconds)}
               </span>
-              {session.plannedSeconds !== session.completedSeconds && (
+              {session.plannedSeconds !== session.completedSeconds && !session.isManual && (
                 <span className="text-xs text-slate-400 ml-1">
                   / {formatDuration(session.plannedSeconds)}
                 </span>
               )}
+              {!isEditing && (
+                <button
+                  onClick={() => startEdit(session)}
+                  className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors px-1"
+                  title="Edit session"
+                >
+                  Edit
+                </button>
+              )}
             </div>
           </div>
 
+          {/* Inline edit form */}
+          {isEditing && (
+            <div className="mt-2 mb-1 p-3 rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/40 space-y-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Adjust anything that doesn't look right.
+              </p>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide w-16 flex-shrink-0">
+                  Duration
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setEditMinutes(m => Math.max(1, m - 5))}
+                    className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 text-base font-light hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"
+                  >−</button>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      value={editMinutes}
+                      onChange={e => setEditMinutes(Math.max(1, Math.min(1440, parseInt(e.target.value) || 1)))}
+                      className="w-14 text-center text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg py-1 text-slate-800 dark:text-slate-200"
+                      min={1}
+                      max={1440}
+                    />
+                    <span className="text-xs text-slate-400">min</span>
+                  </div>
+                  <button
+                    onClick={() => setEditMinutes(m => Math.min(1440, m + 5))}
+                    className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 text-base font-light hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"
+                  >+</button>
+                </div>
+                {session.originalCompletedSeconds && (
+                  <span className="text-xs text-slate-400 dark:text-slate-500">
+                    (was {Math.round(session.originalCompletedSeconds / 60)}m)
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide w-16 flex-shrink-0">
+                  Intent
+                </label>
+                <input
+                  type="text"
+                  value={editIntent}
+                  onChange={e => setEditIntent(e.target.value)}
+                  placeholder="e.g. writing, reading…"
+                  maxLength={120}
+                  className="flex-1 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-1 text-slate-800 dark:text-slate-200 placeholder-slate-400"
+                />
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  onClick={() => handleDelete(session.id)}
+                  className="text-xs text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                >
+                  Remove session
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={cancelEdit}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => saveEdit(session)}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-white transition-colors font-semibold"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Intent */}
-          {session.intent && (
+          {!isEditing && session.intent && (
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed pl-5 mb-1">
               {session.intent}
             </p>
           )}
 
           {/* Steps toggle (if stepsDetail available) */}
-          {hasStepDetail && (
+          {!isEditing && hasStepDetail && (
             <button
               onClick={() => toggleSteps(session.id)}
               className="flex items-center gap-1 pl-5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
@@ -234,14 +375,14 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
           )}
 
           {/* Steps count only (no detail stored) */}
-          {!hasStepDetail && session.steps && session.steps.total > 0 && (
+          {!isEditing && !hasStepDetail && session.steps && session.steps.total > 0 && (
             <div className="pl-5 text-xs text-slate-500 dark:text-slate-400">
               {session.steps.done}/{session.steps.total} steps
             </div>
           )}
 
           {/* Expanded step list */}
-          {stepsExpanded && session.stepsDetail && (
+          {!isEditing && stepsExpanded && session.stepsDetail && (
             <div className="pl-5 mt-1.5 space-y-1">
               {session.stepsDetail.map(step => (
                 <div key={step.id} className="flex items-start gap-1.5 text-xs">
@@ -257,51 +398,119 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
           )}
 
           {/* Note */}
-          {session.note && (
+          {!isEditing && session.note && (
             <div className="pl-5 mt-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/40 rounded-lg p-2">
               {session.note}
             </div>
           )}
 
           {/* Status badge + action button */}
-          <div className="flex items-center justify-between mt-2 pl-5">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${
-              session.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-              session.status === 'partial' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-              'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-500'
-            }`}>
-              {session.status}
-            </span>
+          {!isEditing && (
+            <div className="flex items-center justify-between mt-2 pl-5">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${
+                session.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                session.status === 'partial' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-500'
+              }`}>
+                {session.status}
+              </span>
 
-            {session.timerType === 'focus' && session.status !== 'skipped' && (
-              session.status === 'partial' && isResumable(session) ? (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onResume?.(session); }}
-                  className="text-xs font-semibold px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-white transition-colors"
-                >
-                  Resume
-                </button>
-              ) : session.status === 'partial' ? (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onContinueToday?.(session); }}
-                  className="text-xs font-semibold px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors"
-                >
-                  Continue Today
-                </button>
-              ) : session.status === 'completed' ? (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onContinueToday?.(session); }}
-                  className="text-xs font-semibold px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors"
-                >
-                  Repeat
-                </button>
-              ) : null
-            )}
-          </div>
+              {session.timerType === 'focus' && session.status !== 'skipped' && (
+                session.status === 'partial' && isResumable(session) ? (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onResume?.(session); }}
+                    className="text-xs font-semibold px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-white transition-colors"
+                  >
+                    Resume
+                  </button>
+                ) : session.status === 'partial' ? (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onContinueToday?.(session); }}
+                    className="text-xs font-semibold px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors"
+                  >
+                    Continue Today
+                  </button>
+                ) : session.status === 'completed' ? (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onContinueToday?.(session); }}
+                    className="text-xs font-semibold px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors"
+                  >
+                    Repeat
+                  </button>
+                ) : null
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
   };
+
+  const renderLogForm = () => (
+    <div className="mt-1 mb-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600/40 space-y-3">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Did some focused work but forgot to start the timer? Add it here — it counts.
+      </p>
+      <div className="flex items-center gap-2">
+        <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide w-16 flex-shrink-0">
+          Duration
+        </label>
+        <div className="flex items-center gap-1.5">
+          {[15, 25, 45, 60].map(m => (
+            <button
+              key={m}
+              onClick={() => setLogMinutes(m)}
+              className={`text-xs px-2.5 py-1 rounded-full font-semibold transition-colors ${
+                logMinutes === m
+                  ? 'bg-cyan-500 text-white'
+                  : 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-500'
+              }`}
+            >
+              {m}m
+            </button>
+          ))}
+          <div className="flex items-center gap-1 ml-1">
+            <input
+              type="number"
+              value={logMinutes}
+              onChange={e => setLogMinutes(Math.max(1, Math.min(1440, parseInt(e.target.value) || 1)))}
+              className="w-14 text-center text-sm font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg py-1 text-slate-800 dark:text-slate-200"
+              min={1}
+              max={1440}
+            />
+            <span className="text-xs text-slate-400">min</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide w-16 flex-shrink-0">
+          Intent
+        </label>
+        <input
+          type="text"
+          value={logIntent}
+          onChange={e => setLogIntent(e.target.value)}
+          placeholder="e.g. writing, reading… (optional)"
+          maxLength={120}
+          className="flex-1 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-1 text-slate-800 dark:text-slate-200 placeholder-slate-400"
+        />
+      </div>
+      <div className="flex justify-end gap-2 pt-1">
+        <button
+          onClick={() => { setShowLogForm(false); setLogMinutes(25); setLogIntent(''); }}
+          className="text-xs px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors font-medium"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleLogSession}
+          className="text-xs px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-white transition-colors font-semibold"
+        >
+          Log session
+        </button>
+      </div>
+    </div>
+  );
 
   const renderDayGroup = (summary: DailySummary) => {
     const isExpanded = expandedDays.has(summary.date);
@@ -351,6 +560,15 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
         {isExpanded && (
           <div className="space-y-2 mt-1 mb-2">
             {summary.sessions.map(renderSessionCard)}
+            {summary.date === todayKey && !showLogForm && (
+              <button
+                onClick={() => setShowLogForm(true)}
+                className="w-full text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors py-2 border border-dashed border-slate-200 dark:border-slate-600 rounded-xl"
+              >
+                + Log a session I forgot to track
+              </button>
+            )}
+            {summary.date === todayKey && showLogForm && renderLogForm()}
           </div>
         )}
       </div>
@@ -442,10 +660,20 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
         {/* Timeline */}
         <div className="flex-1 overflow-y-auto px-5 py-2">
           {dailySummaries.length === 0 ? (
-            <div className="text-center py-16 text-slate-500 dark:text-slate-400">
-              <div className="text-5xl mb-3">🎯</div>
-              <p className="text-sm font-medium">No sessions yet</p>
-              <p className="text-xs mt-2">Start a focus session to begin tracking!</p>
+            <div className="py-10 text-slate-500 dark:text-slate-400">
+              <div className="text-center mb-6">
+                <div className="text-5xl mb-3">🎯</div>
+                <p className="text-sm font-medium">Your sessions will show up here</p>
+                <p className="text-xs mt-2 text-slate-400">Start a focus session to begin tracking your progress.</p>
+              </div>
+              {!showLogForm ? (
+                <button
+                  onClick={() => setShowLogForm(true)}
+                  className="w-full text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors py-2.5 border border-dashed border-slate-200 dark:border-slate-600 rounded-xl"
+                >
+                  + Log a session I forgot to track
+                </button>
+              ) : renderLogForm()}
             </div>
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
