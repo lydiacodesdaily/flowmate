@@ -565,7 +565,7 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
                 onClick={() => setShowLogForm(true)}
                 className="w-full text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors py-2 border border-dashed border-slate-200 dark:border-slate-600 rounded-xl"
               >
-                + Log a session I forgot to track
+                + Add a session
               </button>
             )}
             {summary.date === todayKey && showLogForm && renderLogForm()}
@@ -671,7 +671,7 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
                   onClick={() => setShowLogForm(true)}
                   className="w-full text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors py-2.5 border border-dashed border-slate-200 dark:border-slate-600 rounded-xl"
                 >
-                  + Log a session I forgot to track
+                  + Add a session
                 </button>
               ) : renderLogForm()}
             </div>
@@ -683,7 +683,7 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
                     onClick={() => setShowLogForm(true)}
                     className="w-full text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors py-2 border border-dashed border-slate-200 dark:border-slate-600 rounded-xl"
                   >
-                    + Log a session I forgot to track
+                    + Add a session
                   </button>
                 ) : renderLogForm()}
               </div>

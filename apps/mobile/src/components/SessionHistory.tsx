@@ -71,7 +71,7 @@ export function SessionHistory({ dailySummaries, onRefresh, isPremium = false }:
       activeOpacity={0.7}
     >
       <Text style={[styles.logButtonText, { color: theme.colors.textSecondary }]}>
-        + Log a session I forgot to track
+        + Add a session
       </Text>
     </TouchableOpacity>
   );
