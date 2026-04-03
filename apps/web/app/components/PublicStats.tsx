@@ -24,23 +24,6 @@ export function PublicStats() {
     return () => clearInterval(interval);
   }, []);
 
-  if (!stats || (stats.totalUsers === 0 && stats.totalFocusSeconds === 0)) {
-    return null;
-  }
-
-  const hours = Math.floor(stats.totalFocusSeconds / 3600);
-  const userCount = stats.totalUsers;
-
-  // Don't show until there's meaningful data
-  if (userCount === 0 && hours === 0) return null;
-
-  const parts: string[] = [];
-  if (userCount > 0) parts.push(`${userCount.toLocaleString()} users`);
-  if (hours > 0) parts.push(`${hours.toLocaleString()} hours focused`);
-
-  return (
-    <p className="text-xs text-slate-400 dark:text-slate-500 text-center mt-1">
-      {parts.join(" · ")}
-    </p>
-  );
+  // Hidden for now — re-enable once numbers are meaningful
+  return null;
 }
