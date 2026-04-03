@@ -677,6 +677,16 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
             </div>
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+              <div className="py-1">
+                {!showLogForm ? (
+                  <button
+                    onClick={() => setShowLogForm(true)}
+                    className="w-full text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors py-2 border border-dashed border-slate-200 dark:border-slate-600 rounded-xl"
+                  >
+                    + Log a session I forgot to track
+                  </button>
+                ) : renderLogForm()}
+              </div>
               {dailySummaries.map(renderDayGroup)}
             </div>
           )}
