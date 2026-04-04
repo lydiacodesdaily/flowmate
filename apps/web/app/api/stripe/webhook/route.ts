@@ -45,7 +45,9 @@ export async function POST(request: Request) {
           is_premium: true,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
+          subscription_source: "stripe",
           subscription_status: "active",
+          premium_updated_at: new Date().toISOString(),
         })
         .eq("id", supabaseUserId);
 
@@ -63,8 +65,10 @@ export async function POST(request: Request) {
         .from("user_profiles")
         .update({
           is_premium: isActive,
+          subscription_source: "stripe",
           subscription_status: sub.status,
           stripe_subscription_id: sub.id,
+          premium_updated_at: new Date().toISOString(),
         })
         .eq("id", supabaseUserId);
 
@@ -80,7 +84,9 @@ export async function POST(request: Request) {
         .from("user_profiles")
         .update({
           is_premium: false,
+          subscription_source: "stripe",
           subscription_status: "canceled",
+          premium_updated_at: new Date().toISOString(),
         })
         .eq("id", supabaseUserId);
 
