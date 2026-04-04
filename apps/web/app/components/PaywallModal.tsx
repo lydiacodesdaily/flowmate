@@ -119,9 +119,9 @@ export function PaywallModal({
             </span>
             <div className="font-semibold text-base">Annual</div>
             <div className="font-bold text-xl">
-              {purchasing === "annual" ? "Redirecting…" : "$40 / year"}
+              {purchasing === "annual" ? "Redirecting…" : "$48 / year"}
             </div>
-            <div className="text-sky-100 text-xs mt-0.5">$3.33 / month — save 33%</div>
+            <div className="text-sky-100 text-xs mt-0.5">$4 / month — save 43%</div>
           </button>
 
           {/* Monthly */}
@@ -132,7 +132,7 @@ export function PaywallModal({
           >
             <div className="font-semibold text-base">Monthly</div>
             <div className="font-bold text-xl">
-              {purchasing === "monthly" ? "Redirecting…" : "$5 / month"}
+              {purchasing === "monthly" ? "Redirecting…" : "$7 / month"}
             </div>
           </button>
 
