@@ -188,6 +188,9 @@ export function StatsScreen({ navigation }: StatsScreenProps) {
         <Text style={[styles.retentionNote, { color: theme.colors.textTertiary }]}>
           30-day history
         </Text>
+        <Text style={[styles.retentionNote, { color: theme.colors.textTertiary, marginTop: 4 }]}>
+          To export your data as CSV, visit flowmate.club on the web
+        </Text>
       </View>
         </ScrollView>
       ) : (

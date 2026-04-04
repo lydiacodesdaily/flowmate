@@ -591,3 +591,36 @@ export function groupSessionsByDay(isPremium = false): DailySummary[] {
 
   return summaries;
 }
+
+export function exportSessionsToCSV(isPremium = false): void {
+  const sessions = getHistory(isPremium);
+  const rows: string[] = [
+    ['date', 'time', 'type', 'mode', 'status', 'planned_minutes', 'completed_minutes', 'intent', 'note'].join(','),
+  ];
+
+  for (const s of sessions) {
+    const dt = new Date(s.startedAt);
+    const date = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const time = `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+    const escapeCsv = (v: string | undefined) => v ? `"${v.replace(/"/g, '""')}"` : '';
+    rows.push([
+      date,
+      time,
+      s.timerType,
+      s.mode,
+      s.status,
+      String(Math.round(s.plannedSeconds / 60)),
+      String(Math.round(s.completedSeconds / 60)),
+      escapeCsv(s.intent),
+      escapeCsv(s.note),
+    ].join(','));
+  }
+
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `flowmate-sessions-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
