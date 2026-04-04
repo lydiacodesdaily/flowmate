@@ -556,7 +556,6 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
             {formatFocusTime(summary.totalMinutes)}
           </span>
         </button>
-
         {/* Expanded sessions */}
         {isExpanded && (
           <div className="space-y-2 mt-1 mb-2">
@@ -582,7 +581,7 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full mx-4 border border-slate-200 dark:border-slate-700 animate-scaleIn"
+        className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full mx-4 border border-slate-200 dark:border-slate-700 animate-scaleIn flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -598,6 +597,9 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
             </svg>
           </button>
         </div>
+
+        {/* Scrollable body: stats strip + heatmap + timeline */}
+        <div className="overflow-y-auto flex-1">
 
         {/* Stats strip */}
         <div className="flex items-center gap-4 px-6 py-3 border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
@@ -719,6 +721,7 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
             </div>
           )}
         </div>
+        </div>{/* end scrollable body */}
       </div>
     </div>
   );
