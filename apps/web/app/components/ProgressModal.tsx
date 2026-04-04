@@ -582,7 +582,7 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full mx-4 border border-slate-200 dark:border-slate-700 animate-scaleIn max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full mx-4 border border-slate-200 dark:border-slate-700 animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -671,7 +671,7 @@ export const ProgressModal = ({ onClose, onResume, onContinueToday, isPremium = 
         )}
 
         {/* Timeline */}
-        <div className="flex-1 overflow-y-auto px-5 py-2">
+        <div className="px-5 py-2">
           {dailySummaries.length === 0 ? (
             <div className="py-10 text-slate-500 dark:text-slate-400">
               <div className="text-center mb-6">
