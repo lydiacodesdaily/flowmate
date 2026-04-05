@@ -11,7 +11,10 @@ import {
   Platform,
   Pressable,
   Alert,
+  Dimensions,
 } from 'react-native';
+
+const WINDOW_HEIGHT = Dimensions.get('window').height;
 import { SessionDraft, PrepStep } from '@flowmate/shared/types';
 import { createPrepStep } from '../services/sessionService';
 import { useTheme } from '../theme/ThemeContext';
@@ -338,7 +341,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   bottomSheet: {
-    maxHeight: '92%',
+    maxHeight: WINDOW_HEIGHT * 0.92,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     shadowColor: '#000',
@@ -359,6 +362,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flexShrink: 1,
+    flexGrow: 1,
   },
   scrollContent: {
     paddingHorizontal: 24,
