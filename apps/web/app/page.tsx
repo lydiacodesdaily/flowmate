@@ -618,7 +618,6 @@ export default function Home() {
   // Add a new step during an active session
   const handleAddStep = (text: string) => {
     setSessionDraft(prev => {
-      if (prev.steps.length >= 5) return prev;
       const newStep = createPrepStep(text);
       const updatedDraft = { ...prev, steps: [...prev.steps, newStep] };
       saveDraft(updatedDraft);

@@ -6,7 +6,6 @@ import { ProgressBar } from "./ProgressBar";
 import { TomatoIcon } from "./TomatoIcon";
 import { FlowmatoAnimated } from "./FlowmatoAnimated";
 
-const MAX_STEPS = 5;
 const MAX_STEP_LENGTH = 60;
 
 interface TimerDisplayProps {
@@ -554,8 +553,7 @@ export const TimerDisplay = ({
                         );
                       })}
 
-                    {sessionDraft.steps.length < MAX_STEPS && (
-                      isAddingStep ? (
+                    {isAddingStep ? (
                         <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg border border-dashed border-slate-200 dark:border-slate-600">
                           <div className="flex-shrink-0 w-4 h-4 rounded border-2 border-slate-200 dark:border-slate-600" />
                           <input
@@ -580,7 +578,7 @@ export const TimerDisplay = ({
                           + add a step
                         </button>
                       )
-                    )}
+                    }
                   </div>
                 )}
               </>

@@ -13,7 +13,6 @@ interface SessionSetupProps {
 
 const MAX_INTENT_LENGTH = 80;
 const MAX_STEP_LENGTH = 60;
-const MAX_STEPS = 5;
 
 export const SessionSetup = ({ onStart, onSkipSetup, isPremium = false, onUpgrade }: SessionSetupProps) => {
   const [intent, setIntent] = useState("");
@@ -38,7 +37,7 @@ export const SessionSetup = ({ onStart, onSkipSetup, isPremium = false, onUpgrad
   }, [intent, steps]);
 
   const handleAddStep = () => {
-    if (newStepText.trim() && steps.length < MAX_STEPS) {
+    if (newStepText.trim()) {
       const newStep = createPrepStep(newStepText);
       setSteps([...steps, newStep]);
       setNewStepText("");
@@ -71,7 +70,7 @@ export const SessionSetup = ({ onStart, onSkipSetup, isPremium = false, onUpgrad
         return;
       }
       const newSteps = data.steps ?? [];
-      setSteps(newSteps.slice(0, MAX_STEPS).map((text) => createPrepStep(text)));
+      setSteps(newSteps.map((text) => createPrepStep(text)));
       setHasGenerated(true);
     } catch {
       setGenerateError("Network error. Please check your connection.");
@@ -89,7 +88,7 @@ export const SessionSetup = ({ onStart, onSkipSetup, isPremium = false, onUpgrad
 
   const handleStart = () => {
     // If there's text in the new step input, add it before starting
-    if (newStepText.trim() && steps.length < MAX_STEPS) {
+    if (newStepText.trim()) {
       const newStep = createPrepStep(newStepText);
       const updatedSteps = [...steps, newStep];
       // Save the draft with the final step included
@@ -140,7 +139,7 @@ export const SessionSetup = ({ onStart, onSkipSetup, isPremium = false, onUpgrad
               {MAX_INTENT_LENGTH - intent.length} characters remaining
             </div>
           )}
-          {intent.trim().length >= 3 && steps.length < MAX_STEPS && (
+          {intent.trim().length >= 3 && (
             isPremium ? (
               <button
                 onClick={generateSteps}
@@ -172,7 +171,7 @@ export const SessionSetup = ({ onStart, onSkipSetup, isPremium = false, onUpgrad
             </label>
             {steps.length > 0 && (
               <span className="text-xs text-slate-400">
-                {steps.length} of {MAX_STEPS}
+                {steps.length} {steps.length === 1 ? 'step' : 'steps'}
               </span>
             )}
           </div>
@@ -264,8 +263,7 @@ export const SessionSetup = ({ onStart, onSkipSetup, isPremium = false, onUpgrad
           )}
 
           {/* Add New Step - Simplified */}
-          {steps.length < MAX_STEPS && (
-            <div
+          <div
               onClick={() => {
                 // Focus the input when clicking the wrapper
                 document.getElementById('new-step-input')?.focus();
@@ -283,8 +281,7 @@ export const SessionSetup = ({ onStart, onSkipSetup, isPremium = false, onUpgrad
                 maxLength={MAX_STEP_LENGTH}
                 className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-300 focus:outline-none placeholder-slate-400 text-left"
               />
-            </div>
-          )}
+          </div>
 
           {steps.length === 0 && (
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 px-3">

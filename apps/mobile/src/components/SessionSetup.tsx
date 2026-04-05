@@ -32,7 +32,6 @@ interface SessionSetupProps {
 
 const MAX_INTENT_LENGTH = 80;
 const MAX_STEP_LENGTH = 60;
-const MAX_STEPS = 5;
 
 export function SessionSetup({ visible, onStart, onSkip, initialDraft }: SessionSetupProps) {
   const { theme } = useTheme();
@@ -79,10 +78,7 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
       const newSteps = data.steps ?? [];
       setSteps((prev) => {
         const filled = prev.filter((s) => s.text.trim());
-        const emptySlots = MAX_STEPS - filled.length;
-        const toAdd = newSteps
-          .slice(0, emptySlots)
-          .map((text) => createPrepStep(text));
+        const toAdd = newSteps.map((text) => createPrepStep(text));
         return [...filled, ...toAdd];
       });
       setHasGenerated(true);
@@ -94,7 +90,7 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
   };
 
   const handleAddStep = () => {
-    if (newStepText.trim() && steps.length < MAX_STEPS) {
+    if (newStepText.trim()) {
       const newStep = createPrepStep(newStepText.trim());
       setSteps([...steps, newStep]);
       setNewStepText('');
@@ -195,7 +191,7 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
                 textAlignVertical="top"
                 autoFocus={false}
               />
-              {intent.trim().length >= 3 && steps.length < MAX_STEPS && (
+              {intent.trim().length >= 3 && (
                 <TouchableOpacity
                   onPress={generateSteps}
                   disabled={isGenerating}
@@ -214,9 +210,11 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
                 <Text style={[styles.label, { color: theme.colors.textSecondary }]}>
                   Break it down (optional)
                 </Text>
-                <Text style={[styles.stepCounter, { color: theme.colors.textTertiary }]}>
-                  {steps.length}/{MAX_STEPS}
-                </Text>
+                {steps.length > 0 && (
+                  <Text style={[styles.stepCounter, { color: theme.colors.textTertiary }]}>
+                    {steps.length} {steps.length === 1 ? 'step' : 'steps'}
+                  </Text>
+                )}
               </View>
 
               {/* Existing Steps */}
@@ -264,8 +262,7 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
               ))}
 
               {/* Add New Step */}
-              {steps.length < MAX_STEPS && (
-                <View style={styles.addStepContainer}>
+              <View style={styles.addStepContainer}>
                   <TextInput
                     ref={stepInputRef}
                     style={[
@@ -296,7 +293,6 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
                     <Text style={styles.addButtonText}>Add</Text>
                   </TouchableOpacity>
                 </View>
-              )}
             </View>
 
             {/* Bottom spacing for better scrolling */}
