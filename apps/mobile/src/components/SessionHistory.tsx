@@ -22,10 +22,9 @@ type RootNavigationProp = NavigationProp<TabParamList>;
 interface SessionHistoryProps {
   dailySummaries: DailySummary[];
   onRefresh?: () => void;
-  isPremium?: boolean;
 }
 
-export function SessionHistory({ dailySummaries, onRefresh, isPremium = false }: SessionHistoryProps) {
+export function SessionHistory({ dailySummaries, onRefresh }: SessionHistoryProps) {
   const { theme } = useTheme();
   const { contentStyle } = useResponsive();
   const navigation = useNavigation<RootNavigationProp>();
@@ -101,7 +100,6 @@ export function SessionHistory({ dailySummaries, onRefresh, isPremium = false }:
           visible={showLogModal}
           onClose={() => setShowLogModal(false)}
           onSaved={handleSessionSaved}
-          isPremium={isPremium}
         />
       </View>
     );
@@ -143,7 +141,6 @@ export function SessionHistory({ dailySummaries, onRefresh, isPremium = false }:
         visible={showLogModal}
         onClose={() => setShowLogModal(false)}
         onSaved={handleSessionSaved}
-        isPremium={isPremium}
       />
     </ScrollView>
   );

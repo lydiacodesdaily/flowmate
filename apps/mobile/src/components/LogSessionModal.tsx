@@ -13,13 +13,13 @@ import {
 } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { useAccessibility } from '../contexts';
+import { usePremium } from '../contexts/PremiumContext';
 import { addManualSession } from '../services/sessionService';
 
 interface LogSessionModalProps {
   visible: boolean;
   onClose: () => void;
   onSaved: () => void;
-  isPremium?: boolean;
 }
 
 const MIN_MINUTES = 1;
@@ -27,9 +27,10 @@ const MAX_MINUTES = 24 * 60;
 const STEP_MINUTES = 5;
 const QUICK_DURATIONS = [15, 25, 45, 60];
 
-export function LogSessionModal({ visible, onClose, onSaved, isPremium = false }: LogSessionModalProps) {
+export function LogSessionModal({ visible, onClose, onSaved }: LogSessionModalProps) {
   const { theme } = useTheme();
   const { reduceMotion } = useAccessibility();
+  const { isPremium, showPaywall } = usePremium();
 
   const [durationMinutes, setDurationMinutes] = useState(25);
   const [intent, setIntent] = useState('');
@@ -179,8 +180,8 @@ export function LogSessionModal({ visible, onClose, onSaved, isPremium = false }
             {/* Past-date lock (premium upsell) */}
             <TouchableOpacity
               style={[styles.premiumRow, { backgroundColor: theme.colors.surfaceSecondary }]}
-              activeOpacity={isPremium ? 0.7 : 0.5}
-              disabled={!isPremium}
+              activeOpacity={0.7}
+              onPress={!isPremium ? showPaywall : undefined}
             >
               <View style={styles.premiumRowLeft}>
                 <Text style={[styles.premiumRowLabel, { color: isPremium ? theme.colors.text : theme.colors.textTertiary }]}>

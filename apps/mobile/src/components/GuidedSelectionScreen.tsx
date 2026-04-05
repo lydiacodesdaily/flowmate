@@ -5,12 +5,14 @@ import { GUIDED_CONFIGS } from '@flowmate/shared';
 import type { GuidedSelectionScreenProps } from '../navigation/types';
 import { useTheme } from '../theme';
 import { useTimerContext } from '../contexts/TimerContext';
+import { usePremium } from '../contexts/PremiumContext';
 import { hapticService } from '../services/hapticService';
 import { useResponsive } from '../hooks/useResponsive';
 import { FOCUS_RECIPES, type FocusRecipe } from '../constants/recipes';
 export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps) {
   const { theme } = useTheme();
   const { isActive, reset } = useTimerContext();
+  const { isPremium, showPaywall } = usePremium();
   const { contentStyle } = useResponsive();
   const insets = useSafeAreaInsets();
 
@@ -19,12 +21,8 @@ export function GuidedSelectionScreen({ navigation }: GuidedSelectionScreenProps
   const handleRecipeSelect = async (recipe: FocusRecipe) => {
     await hapticService.light();
 
-    if (recipe.duration >= PREMIUM_MIN_DURATION) {
-      Alert.alert(
-        'Premium Feature',
-        'Sessions 90 minutes and longer are available on the premium plan. Upgrade on the web app to unlock.',
-        [{ text: 'OK' }]
-      );
+    if (recipe.duration >= PREMIUM_MIN_DURATION && !isPremium) {
+      showPaywall();
       return;
     }
 

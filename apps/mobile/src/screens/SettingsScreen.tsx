@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Switch,
   Linking,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
@@ -20,7 +21,9 @@ import {
   useTimerVisual,
   useCelebrationSettings,
   useReviewPrompt,
+  useAuth,
 } from '../contexts';
+import { usePremium } from '../contexts/PremiumContext';
 import { TIMER_VISUAL_PRESETS } from '../constants/timerVisuals';
 import { hapticService } from '../services/hapticService';
 import { useResponsive } from '../hooks/useResponsive';
@@ -41,6 +44,8 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
   const { showElapsedTime, setShowElapsedTime } = useTimerDisplaySettings();
   const { selectedStyle: selectedVisual, selectStyle: selectVisual, isLoading: visualLoading } = useTimerVisual();
   const { forceShowPrompt, getDebugInfo, resetSettings: resetReviewSettings } = useReviewPrompt();
+  const { user, signOut } = useAuth();
+  const { isPremium, showPaywall } = usePremium();
   // Review prompt debug state (development only)
   const [reviewDebugInfo, setReviewDebugInfo] = useState<{
     eligible: boolean;
@@ -388,6 +393,71 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
         </View>
       </View>
 
+      {/* Account */}
+      <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>Account</Text>
+
+        {user ? (
+          <>
+            <View style={styles.settingRow}>
+              <View style={styles.settingLabelContainer}>
+                <Text style={[styles.settingLabel, { color: theme.colors.text }]}>Signed in as</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.textTertiary }]} numberOfLines={1}>
+                  {user.email}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.settingRow}>
+              <View style={styles.settingLabelContainer}>
+                <Text style={[styles.settingLabel, { color: theme.colors.text }]}>FlowMate Premium</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.textTertiary }]}>
+                  {isPremium ? 'Active ✦' : 'Not subscribed'}
+                </Text>
+              </View>
+              {!isPremium && (
+                <TouchableOpacity
+                  style={[styles.upgradeButton, { backgroundColor: theme.colors.primary }]}
+                  onPress={showPaywall}
+                >
+                  <Text style={styles.upgradeButtonText}>Upgrade</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
+              <TouchableOpacity
+                onPress={() =>
+                  Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Sign Out', style: 'destructive', onPress: signOut },
+                  ])
+                }
+              >
+                <Text style={[styles.settingLabel, { color: theme.colors.error ?? '#E53E3E' }]}>
+                  Sign Out
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
+            <View style={styles.settingLabelContainer}>
+              <Text style={[styles.settingLabel, { color: theme.colors.text }]}>FlowMate Premium</Text>
+              <Text style={[styles.settingDescription, { color: theme.colors.textTertiary }]}>
+                Sign in to unlock premium features
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.upgradeButton, { backgroundColor: theme.colors.primary }]}
+              onPress={showPaywall}
+            >
+              <Text style={styles.upgradeButtonText}>Upgrade</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
       <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
         <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>About</Text>
         <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
@@ -637,6 +707,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
+  },
+  upgradeButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  upgradeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   feedbackButtonText: {
     color: '#FFFFFF',

@@ -47,13 +47,7 @@
       ],
       "./plugins/withDisableNotificationsBootActions",
       "expo-apple-authentication",
-      "expo-secure-store",
-      [
-        "react-native-purchases",
-        {
-          "androidPublicApiKey": "REVENUECAT_GOOGLE_PUBLIC_KEY_PLACEHOLDER"
-        }
-      ]
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

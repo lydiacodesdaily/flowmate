@@ -17,9 +17,25 @@ import {
   TimerVisualProvider,
   CelebrationSettingsProvider,
   ReviewPromptProvider,
+  AuthProvider,
+  PremiumProvider,
+  usePremium,
 } from './src/contexts';
 import { FloatingTimerMini } from './src/components/FloatingTimerMini';
+import { AuthModal } from './src/components/AuthModal';
+import { PaywallModal } from './src/components/PaywallModal';
 import { hasCompletedOnboarding } from './src/utils/storage';
+
+// Modals are mounted at the root so they can be triggered from anywhere in the tree
+function RootModals() {
+  const { paywallVisible, hidePaywall, authVisible, hideAuth } = usePremium();
+  return (
+    <>
+      <AuthModal visible={authVisible} onClose={hideAuth} />
+      <PaywallModal visible={paywallVisible} onClose={hidePaywall} />
+    </>
+  );
+}
 
 function NavigationContent() {
   return (
@@ -70,6 +86,7 @@ function AppContent() {
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
           <StatusBar style={isDark ? 'light' : 'dark'} />
           <NavigationContent />
+          <RootModals />
         </View>
       </NavigationContainer>
     </OnboardingGate>
@@ -86,7 +103,11 @@ export default function App() {
               <CelebrationSettingsProvider>
                 <ReviewPromptProvider>
                   <TimerProvider>
-                    <AppContent />
+                    <AuthProvider>
+                      <PremiumProvider>
+                        <AppContent />
+                      </PremiumProvider>
+                    </AuthProvider>
                   </TimerProvider>
                 </ReviewPromptProvider>
               </CelebrationSettingsProvider>

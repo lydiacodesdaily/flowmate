@@ -5,3 +5,5 @@ export { TimerDisplaySettingsProvider, useTimerDisplaySettings } from './TimerDi
 export { TimerVisualProvider, useTimerVisual } from './TimerVisualContext';
 export { CelebrationSettingsProvider, useCelebrationSettings } from './CelebrationSettingsContext';
 export { ReviewPromptProvider, useReviewPrompt } from './ReviewPromptContext';
+export { AuthProvider, useAuth } from './AuthContext';
+export { PremiumProvider, usePremium } from './PremiumContext';
