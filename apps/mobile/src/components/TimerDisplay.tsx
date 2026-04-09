@@ -8,11 +8,13 @@ interface TimerDisplayProps {
   totalTime: number;
   sessionLabel?: string;
   sessionType?: string;
+  compact?: boolean;
 }
 
 export function TimerDisplay({
   timeRemaining,
   totalTime,
+  compact = false,
 }: TimerDisplayProps) {
   const { theme } = useTheme();
   const { showElapsedTime } = useTimerDisplaySettings();
@@ -31,8 +33,10 @@ export function TimerDisplay({
   const displayTime = showElapsedTime ? totalTime - timeRemaining : timeRemaining;
 
   return (
-    <View style={styles.container}>
-      <Text style={[styles.time, { color: theme.colors.text }]}>{formatTime(displayTime)}</Text>
+    <View style={[styles.container, compact && styles.containerCompact]}>
+      <Text style={[styles.time, { color: theme.colors.text }, compact && styles.timeCompact]}>
+        {formatTime(displayTime)}
+      </Text>
     </View>
   );
 }
@@ -43,10 +47,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 20,
   },
+  containerCompact: {
+    paddingVertical: 8,
+  },
   time: {
     fontSize: 72,
     fontWeight: '200',
     fontVariant: ['tabular-nums'],
     letterSpacing: -1.5,
+  },
+  timeCompact: {
+    fontSize: 40,
+    letterSpacing: -1,
   },
 });

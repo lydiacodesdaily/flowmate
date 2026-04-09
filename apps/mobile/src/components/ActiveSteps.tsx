@@ -1,166 +1,465 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native';
+import React, { useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  Platform,
+  UIManager,
+  KeyboardAvoidingView,
+} from 'react-native';
 import { useTheme } from '../theme';
 import { useAccessibility } from '../contexts';
 import type { PrepStep } from '@flowmate/shared/types';
 
-// Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 interface ActiveStepsProps {
   steps: PrepStep[];
-  onToggleStep: (stepId: string) => void;
+  onCollapse: () => void;
+  onToggleStep: (id: string) => void;
+  onEditStep: (id: string, text: string) => void;
+  onDeleteStep: (id: string) => void;
+  onAddStep: (text: string) => void;
+  onMoveStep: (id: string, direction: 'up' | 'down') => void;
 }
 
-export function ActiveSteps({ steps, onToggleStep }: ActiveStepsProps) {
+export function ActiveSteps({
+  steps,
+  onCollapse,
+  onToggleStep,
+  onEditStep,
+  onDeleteStep,
+  onAddStep,
+  onMoveStep,
+}: ActiveStepsProps) {
   const { theme } = useTheme();
-  const { reduceMotion } = useAccessibility();
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  if (steps.length === 0) {
-    return null;
-  }
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
+  const [isAddingStep, setIsAddingStep] = useState(false);
+  const [newStepText, setNewStepText] = useState('');
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const completedCount = steps.filter(s => s.done).length;
-  const allDone = completedCount === steps.length;
+  const allDone = steps.length > 0 && completedCount === steps.length;
 
-  const handleToggleExpand = () => {
-    if (!reduceMotion) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  const handleStartEdit = (step: PrepStep) => {
+    setEditingStepId(step.id);
+    setEditingText(step.text);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingStepId) {
+      const trimmed = editingText.trim();
+      if (trimmed) {
+        onEditStep(editingStepId, trimmed);
+      }
     }
-    setIsExpanded(!isExpanded);
+    setEditingStepId(null);
+    setEditingText('');
+  };
+
+  const handleAddPress = () => {
+    setIsAddingStep(true);
+    setNewStepText('');
+    setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
+  };
+
+  const handleAddConfirm = () => {
+    const trimmed = newStepText.trim();
+    if (trimmed) {
+      onAddStep(trimmed);
+    }
+    setIsAddingStep(false);
+    setNewStepText('');
+  };
+
+  const handleAddCancel = () => {
+    setIsAddingStep(false);
+    setNewStepText('');
+  };
+
+  const handleToggleEditMode = () => {
+    setIsEditMode(prev => !prev);
+    setEditingStepId(null);
+    setEditingText('');
   };
 
   return (
-    <View style={styles.container}>
-      {/* Collapsible header - always visible */}
-      <TouchableOpacity
-        style={[styles.headerPill, { backgroundColor: theme.colors.surfaceSecondary }]}
-        onPress={handleToggleExpand}
-        activeOpacity={0.7}
-      >
-        <View style={styles.headerContent}>
-          {allDone ? (
-            <>
-              <Text allowFontScaling={false} style={[styles.checkIcon, { color: theme.colors.success }]}>✓</Text>
-              <Text style={[styles.headerText, { color: theme.colors.success }]}>
-                All done
-              </Text>
-            </>
-          ) : (
-            <Text style={[styles.headerText, { color: theme.colors.textSecondary }]}>
-              {completedCount}/{steps.length} steps
-            </Text>
-          )}
-          <Text allowFontScaling={false} style={[styles.chevron, { color: theme.colors.textTertiary }]}>
-            {isExpanded ? '▴' : '▾'}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={0}
+    >
+      {/* Panel header */}
+      <View style={[styles.panelHeader, { borderBottomColor: theme.colors.border }]}>
+        <TouchableOpacity onPress={onCollapse} style={styles.collapseButton} activeOpacity={0.6}>
+          <Text allowFontScaling={false} style={[styles.chevronUp, { color: theme.colors.textTertiary }]}>
+            ▴
           </Text>
-        </View>
-      </TouchableOpacity>
+          <Text style={[styles.collapseLabel, { color: theme.colors.textTertiary }]}>Steps</Text>
+        </TouchableOpacity>
 
-      {/* Expanded step list */}
-      {isExpanded && (
-        <View style={styles.stepsList}>
-          {steps.map((step) => (
+        <Text style={[styles.countLabel, { color: allDone ? theme.colors.success : theme.colors.textSecondary }]}>
+          {allDone ? '✓ All done' : `${completedCount} / ${steps.length}`}
+        </Text>
+
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={handleToggleEditMode}
+            style={styles.headerActionButton}
+            activeOpacity={0.6}
+          >
+            <Text
+              style={[
+                styles.headerActionText,
+                { color: isEditMode ? theme.colors.primary : theme.colors.textTertiary },
+              ]}
+            >
+              {isEditMode ? 'Done' : 'Edit'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleAddPress} style={styles.headerActionButton} activeOpacity={0.6}>
+            <Text
+              allowFontScaling={false}
+              style={[styles.addButtonText, { color: theme.colors.textSecondary }]}
+            >
+              +
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Step list */}
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {steps.map((step, index) => (
+          <View
+            key={step.id}
+            style={[styles.stepRow, { borderBottomColor: theme.colors.border }]}
+          >
+            {/* Checkbox */}
             <TouchableOpacity
-              key={step.id}
-              style={styles.stepRow}
               onPress={() => onToggleStep(step.id)}
+              style={styles.checkboxButton}
               activeOpacity={0.6}
             >
               <View
                 style={[
                   styles.checkbox,
-                  { borderColor: theme.colors.border },
-                  step.done && {
-                    backgroundColor: theme.colors.primary,
-                    borderColor: theme.colors.primary,
-                  },
+                  { borderColor: step.done ? theme.colors.primary : theme.colors.border },
+                  step.done && { backgroundColor: theme.colors.primary },
                 ]}
               >
-                {step.done && <Text allowFontScaling={false} style={styles.checkmark}>✓</Text>}
+                {step.done && (
+                  <Text allowFontScaling={false} style={styles.checkmark}>✓</Text>
+                )}
               </View>
-              <Text
+            </TouchableOpacity>
+
+            {/* Step text or edit input */}
+            {editingStepId === step.id ? (
+              <TextInput
                 style={[
-                  styles.stepText,
-                  { color: theme.colors.text },
-                  step.done && {
-                    textDecorationLine: 'line-through',
-                    color: theme.colors.textTertiary,
-                  },
+                  styles.stepInput,
+                  { color: theme.colors.text, borderBottomColor: theme.colors.primary },
                 ]}
-                numberOfLines={1}
+                value={editingText}
+                onChangeText={setEditingText}
+                onBlur={handleSaveEdit}
+                onSubmitEditing={handleSaveEdit}
+                autoFocus
+                returnKeyType="done"
+                maxLength={120}
+                blurOnSubmit
+              />
+            ) : (
+              <TouchableOpacity
+                style={styles.stepTextButton}
+                onPress={() => handleStartEdit(step)}
+                activeOpacity={0.7}
               >
-                {step.text}
+                <Text
+                  style={[
+                    styles.stepText,
+                    { color: step.done ? theme.colors.textTertiary : theme.colors.text },
+                    step.done && styles.stepTextDone,
+                  ]}
+                >
+                  {step.text}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Edit mode controls: reorder + delete */}
+            {isEditMode && editingStepId !== step.id && (
+              <View style={styles.editControls}>
+                <TouchableOpacity
+                  onPress={() => onMoveStep(step.id, 'up')}
+                  disabled={index === 0}
+                  style={styles.moveButton}
+                  activeOpacity={0.6}
+                >
+                  <Text
+                    allowFontScaling={false}
+                    style={[
+                      styles.moveIcon,
+                      {
+                        color:
+                          index === 0
+                            ? theme.colors.textTertiary + '30'
+                            : theme.colors.textTertiary,
+                      },
+                    ]}
+                  >
+                    ▲
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => onMoveStep(step.id, 'down')}
+                  disabled={index === steps.length - 1}
+                  style={styles.moveButton}
+                  activeOpacity={0.6}
+                >
+                  <Text
+                    allowFontScaling={false}
+                    style={[
+                      styles.moveIcon,
+                      {
+                        color:
+                          index === steps.length - 1
+                            ? theme.colors.textTertiary + '30'
+                            : theme.colors.textTertiary,
+                      },
+                    ]}
+                  >
+                    ▼
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => onDeleteStep(step.id)}
+                  style={styles.deleteButton}
+                  activeOpacity={0.6}
+                >
+                  <Text allowFontScaling={false} style={[styles.deleteIcon, { color: theme.colors.error }]}>
+                    ×
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        ))}
+
+        {/* Inline add step row */}
+        {isAddingStep ? (
+          <View style={[styles.addStepRow, { borderBottomColor: theme.colors.border }]}>
+            <View style={[styles.checkbox, styles.checkboxPlaceholder, { borderColor: theme.colors.border }]} />
+            <TextInput
+              style={[
+                styles.stepInput,
+                styles.addStepInput,
+                { color: theme.colors.text, borderBottomColor: theme.colors.primary },
+              ]}
+              placeholder="New step..."
+              placeholderTextColor={theme.colors.textTertiary}
+              value={newStepText}
+              onChangeText={setNewStepText}
+              onBlur={handleAddConfirm}
+              onSubmitEditing={handleAddConfirm}
+              autoFocus
+              returnKeyType="done"
+              maxLength={120}
+              blurOnSubmit
+            />
+            <TouchableOpacity onPress={handleAddCancel} style={styles.cancelAddButton} activeOpacity={0.6}>
+              <Text allowFontScaling={false} style={[styles.cancelAddIcon, { color: theme.colors.textTertiary }]}>
+                ×
               </Text>
             </TouchableOpacity>
-          ))}
-        </View>
-      )}
-    </View>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.addStepHint} onPress={handleAddPress} activeOpacity={0.6}>
+            <Text style={[styles.addStepHintText, { color: theme.colors.textTertiary }]}>
+              + Add a step
+            </Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    paddingHorizontal: 16,
-    marginTop: 12,
-    alignItems: 'center',
+    flex: 1,
+    marginTop: 8,
   },
-  headerPill: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-  },
-  headerContent: {
+  panelHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerText: {
+  collapseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 4,
+    paddingRight: 8,
+  },
+  chevronUp: {
+    fontSize: 10,
+  },
+  collapseLabel: {
     fontSize: 13,
     fontWeight: '500',
     letterSpacing: 0.2,
   },
-  checkIcon: {
-    fontSize: 12,
-    fontWeight: '600',
+  countLabel: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '400',
+    textAlign: 'center',
+    letterSpacing: 0.1,
   },
-  chevron: {
-    fontSize: 10,
-    marginLeft: 2,
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  stepsList: {
-    width: '100%',
-    marginTop: 8,
-    gap: 2,
+  headerActionButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    minWidth: 44,
+    alignItems: 'center',
+  },
+  headerActionText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  addButtonText: {
+    fontSize: 20,
+    fontWeight: '300',
+    lineHeight: 22,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 16,
   },
   stepRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+  },
+  checkboxButton: {
+    padding: 2,
+    flexShrink: 0,
   },
   checkbox: {
-    width: 18,
-    height: 18,
+    width: 20,
+    height: 20,
     borderWidth: 1.5,
-    borderRadius: 4,
+    borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  checkboxPlaceholder: {
+    opacity: 0,
+    flexShrink: 0,
+  },
   checkmark: {
     color: '#ffffff',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 'bold',
   },
+  stepTextButton: {
+    flex: 1,
+  },
   stepText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  stepTextDone: {
+    textDecorationLine: 'line-through',
+  },
+  stepInput: {
     flex: 1,
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 20,
+    borderBottomWidth: 1,
+    paddingVertical: 2,
+  },
+  addStepInput: {
+    flex: 1,
+  },
+  editControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  moveButton: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    minWidth: 28,
+    alignItems: 'center',
+  },
+  moveIcon: {
+    fontSize: 11,
+  },
+  deleteButton: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    minWidth: 28,
+    alignItems: 'center',
+  },
+  deleteIcon: {
+    fontSize: 20,
+    lineHeight: 22,
+    fontWeight: '300',
+  },
+  addStepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+  },
+  cancelAddButton: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    minWidth: 28,
+    alignItems: 'center',
+  },
+  cancelAddIcon: {
+    fontSize: 20,
+    lineHeight: 22,
+    fontWeight: '300',
+  },
+  addStepHint: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: 'flex-start',
+  },
+  addStepHintText: {
+    fontSize: 14,
+    fontWeight: '400',
   },
 });

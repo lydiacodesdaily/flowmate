@@ -134,7 +134,6 @@ export function SessionSetup({ visible, onStart, onSkip, initialDraft }: Session
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        {/* Bottom Sheet Design */}
         <Pressable style={styles.backdrop} onPress={handleSkip}>
           <View style={styles.backdropOverlay} />
         </Pressable>
@@ -337,7 +336,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   bottomSheet: {
-    maxHeight: WINDOW_HEIGHT * 0.92,
+    height: WINDOW_HEIGHT * 0.85,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     shadowColor: '#000',
@@ -357,8 +356,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   scrollView: {
-    flexShrink: 1,
-    flexGrow: 1,
+    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 24,

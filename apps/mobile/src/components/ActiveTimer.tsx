@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Modal, Switch, ScrollView, LayoutAnimation, Platform, UIManager, Pressable } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Modal, Switch, ScrollView, LayoutAnimation, Platform, UIManager, Pressable, TextInput } from 'react-native';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -21,11 +21,12 @@ import { SessionComplete } from './SessionComplete';
 import { EarlyStopModal } from './EarlyStopModal';
 import { TransitionWarning } from './TransitionWarning';
 import { ActiveSteps } from './ActiveSteps';
+import { CurrentStepCard } from './CurrentStepCard';
 import { EarlyCompletionBanner } from './EarlyCompletionBanner';
 import { ContextualTip } from './tips';
 import { FlowmatoAnimated } from './FlowmatoAnimated';
 import { audioService } from '../services/audioService';
-import { createSessionRecord, appendHistory, updateHistoryRecord, setActiveSession, clearActiveSession, reportSessionToAggregateStats } from '../services/sessionService';
+import { createSessionRecord, appendHistory, updateHistoryRecord, setActiveSession, clearActiveSession, reportSessionToAggregateStats, createPrepStep } from '../services/sessionService';
 import { hapticService } from '../services/hapticService';
 import { notificationService } from '../services/notificationService';
 import { useTheme } from '../theme';
@@ -82,6 +83,13 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 
   // Expandable intent state
   const [intentExpanded, setIntentExpanded] = useState(false);
+
+  // Steps panel expanded state
+  const [stepsExpanded, setStepsExpanded] = useState(false);
+
+  // Intent inline editing
+  const [isEditingIntent, setIsEditingIntent] = useState(false);
+  const [intentDraft, setIntentDraft] = useState('');
 
   // Auto-saved record tracking (for enhancement modal flow)
   const [autoSavedRecordId, setAutoSavedRecordId] = useState<string | null>(null);
@@ -211,11 +219,11 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 
   // Set up callbacks for session completion
   useEffect(() => {
-    setSessionCompleteCallback(async (session, sessionIndex) => {
+    setSessionCompleteCallback(async (session, sessionIndex, actualTotalSeconds) => {
       // Calculate timing for THIS individual session
       const sessionEndTime = Date.now();
-      const sessionDurationSeconds = session.durationMinutes * 60;
-      // Approximate start time based on duration (session ran to completion)
+      const sessionDurationSeconds = actualTotalSeconds;
+      // Approximate start time based on actual duration (including any added/subtracted time)
       const sessionStartTime = sessionEndTime - (sessionDurationSeconds * 1000);
 
       // Determine timerType based on session.type (breaks vs focus/settle/wrap)
@@ -299,13 +307,13 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
     });
 
     // Handle skipped sessions - record them with 'skipped' status
-    setSessionSkipCallback(async (session, elapsedSeconds) => {
+    setSessionSkipCallback(async (session, elapsedSeconds, actualTotalSeconds) => {
       const currentMode = timerModeRef.current;
       if (!currentMode) return;
 
       // Calculate timing for the skipped session
       const sessionEndTime = Date.now();
-      const sessionDurationSeconds = session.durationMinutes * 60;
+      const sessionDurationSeconds = actualTotalSeconds;
       const sessionStartTime = sessionEndTime - (elapsedSeconds * 1000);
 
       // Determine timerType based on session.type
@@ -505,6 +513,53 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
 
     // Reset early completion dismissed state when toggling steps
     setEarlyCompletionDismissed(false);
+  };
+
+  // Edit step text during active session
+  const handleEditStep = (stepId: string, newText: string) => {
+    if (!sessionDraft?.steps) return;
+    const updatedSteps = sessionDraft.steps.map((step) =>
+      step.id === stepId ? { ...step, text: newText } : step
+    );
+    updateSessionDraft({ ...sessionDraft, steps: updatedSteps });
+  };
+
+  // Delete a step during active session
+  const handleDeleteStep = async (stepId: string) => {
+    if (!sessionDraft?.steps) return;
+    await hapticService.light();
+    const updatedSteps = sessionDraft.steps.filter((step) => step.id !== stepId);
+    updateSessionDraft({ ...sessionDraft, steps: updatedSteps });
+    setEarlyCompletionDismissed(false);
+  };
+
+  // Add a new step during active session
+  const handleAddStep = async (text: string) => {
+    await hapticService.light();
+    const newStep = createPrepStep(text);
+    const updatedSteps = [...(sessionDraft?.steps ?? []), newStep];
+    updateSessionDraft({ ...(sessionDraft ?? { intent: '' }), steps: updatedSteps });
+    setEarlyCompletionDismissed(false);
+  };
+
+  // Reorder a step up or down
+  const handleMoveStep = async (stepId: string, direction: 'up' | 'down') => {
+    if (!sessionDraft?.steps) return;
+    await hapticService.selection();
+    const steps = [...sessionDraft.steps];
+    const index = steps.findIndex((s) => s.id === stepId);
+    if (index < 0) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= steps.length) return;
+    [steps[index], steps[targetIndex]] = [steps[targetIndex], steps[index]];
+    updateSessionDraft({ ...sessionDraft, steps });
+  };
+
+  // Save edited intent text
+  const handleSaveIntent = () => {
+    const trimmed = intentDraft.trim();
+    updateSessionDraft({ ...(sessionDraft ?? { steps: [] }), intent: trimmed });
+    setIsEditingIntent(false);
   };
 
   // Early completion handlers
@@ -745,122 +800,206 @@ export function ActiveTimer({ route, navigation }: ActiveTimerScreenProps) {
         </View>
       </View>
 
-      {/* Main content - no scroll, everything fits on screen */}
+      {/* Main content */}
       <View style={[styles.content, contentStyle]}>
-        <View style={styles.mainArea}>
+        <View style={[styles.mainArea, stepsExpanded && styles.mainAreaExpanded]}>
           <SessionIndicators
             sessions={sessions}
             currentSessionIndex={currentSessionIndex}
           />
 
-          <View style={styles.timerContainer}>
-          {/* Flowmato character, optionally ringed by circular progress */}
-          {isCircularVisual ? (
-            <View style={styles.circularFlowmatoSection}>
-              {/* Fixed-size area so ring and character share the same center */}
-              <View style={styles.characterRingContainer}>
-                <View style={styles.circularRingOverlay} pointerEvents="none">
-                  <CircularTimer
-                    progress={progress}
-                    isBreakSession={isBreakSession}
-                    reduceMotion={reduceMotion}
-                    size={104}
-                    strokeWidth={8}
-                  />
+          {stepsExpanded ? (
+            /* ── EXPANDED: compact timer header + full steps panel ── */
+            <>
+              {/* Compact timer row */}
+              <View style={styles.compactTimerRow}>
+                <TimerDisplay
+                  timeRemaining={timeRemaining}
+                  totalTime={totalTime}
+                  compact
+                />
+              </View>
+
+              {/* Intent - single line with inline edit */}
+              {(sessionDraft?.intent || isEditingIntent) && (
+                <View style={styles.intentRowCompact}>
+                  {isEditingIntent ? (
+                    <TextInput
+                      style={[styles.intentInput, { color: theme.colors.text, borderBottomColor: theme.colors.primary }]}
+                      value={intentDraft}
+                      onChangeText={setIntentDraft}
+                      onBlur={handleSaveIntent}
+                      autoFocus
+                      multiline
+                      maxLength={120}
+                      returnKeyType="done"
+                    />
+                  ) : (
+                    <>
+                      <Text
+                        style={[styles.intentTextCompact, { color: theme.colors.textSecondary }]}
+                        numberOfLines={1}
+                      >
+                        {sessionDraft?.intent}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => { setIntentDraft(sessionDraft?.intent ?? ''); setIsEditingIntent(true); }}
+                        style={styles.pencilButton}
+                        activeOpacity={0.6}
+                      >
+                        <Text allowFontScaling={false} style={[styles.pencilIcon, { color: theme.colors.textTertiary }]}>✏</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
                 </View>
+              )}
+
+              {/* Full editable steps panel — fills remaining space */}
+              <ActiveSteps
+                steps={sessionDraft?.steps ?? []}
+                onCollapse={() => setStepsExpanded(false)}
+                onToggleStep={handleToggleStep}
+                onEditStep={handleEditStep}
+                onDeleteStep={handleDeleteStep}
+                onAddStep={handleAddStep}
+                onMoveStep={handleMoveStep}
+              />
+            </>
+          ) : (
+            /* ── COLLAPSED: full normal timer view ── */
+            <View style={styles.timerContainer}>
+              {/* Flowmato character, optionally ringed by circular progress */}
+              {isCircularVisual ? (
+                <View style={styles.circularFlowmatoSection}>
+                  <View style={styles.characterRingContainer}>
+                    <View style={styles.circularRingOverlay} pointerEvents="none">
+                      <CircularTimer
+                        progress={progress}
+                        isBreakSession={isBreakSession}
+                        reduceMotion={reduceMotion}
+                        size={104}
+                        strokeWidth={8}
+                      />
+                    </View>
+                    <FlowmatoAnimated
+                      key={currentSessionIndex}
+                      imageSrc={getFlowmatoImageSrc()}
+                      label={getFlowmatoLabel()}
+                      hideLabel
+                      isPaused={status === 'paused'}
+                      currentSessionType={currentSession?.type}
+                    />
+                  </View>
+                  <Text allowFontScaling={false} style={styles.circularFlowmatoLabel}>
+                    {getFlowmatoLabel()}
+                  </Text>
+                </View>
+              ) : (
                 <FlowmatoAnimated
                   key={currentSessionIndex}
                   imageSrc={getFlowmatoImageSrc()}
                   label={getFlowmatoLabel()}
-                  hideLabel
                   isPaused={status === 'paused'}
                   currentSessionType={currentSession?.type}
                 />
-              </View>
-              <Text allowFontScaling={false} style={styles.circularFlowmatoLabel}>
-                {getFlowmatoLabel()}
-              </Text>
-            </View>
-          ) : (
-            <FlowmatoAnimated
-              key={currentSessionIndex}
-              imageSrc={getFlowmatoImageSrc()}
-              label={getFlowmatoLabel()}
-              isPaused={status === 'paused'}
-              currentSessionType={currentSession?.type}
-            />
-          )}
+              )}
 
-          <TimerDisplay
-            timeRemaining={timeRemaining}
-            totalTime={totalTime}
-          />
-
-          {/* Display session intent if present - truncated, tap to expand */}
-          {sessionDraft?.intent && (
-            <TouchableOpacity
-              style={styles.intentContainer}
-              onPress={() => {
-                if (!reduceMotion) {
-                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                }
-                setIntentExpanded(!intentExpanded);
-              }}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[styles.intentText, { color: theme.colors.textSecondary }]}
-                numberOfLines={intentExpanded ? undefined : 2}
-              >
-                {sessionDraft.intent}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Display task breakdown steps - collapsible */}
-          {sessionDraft?.steps?.length > 0 && (
-            <ActiveSteps
-              steps={sessionDraft.steps}
-              onToggleStep={handleToggleStep}
-            />
-          )}
-
-          {/* Early completion banner when all steps are done */}
-          {showEarlyCompletionBanner && (
-            <EarlyCompletionBanner
-              onEndEarly={handleEarlyComplete}
-              onDismiss={handleDismissEarlyCompletion}
-            />
-          )}
-
-          {/* Transition warning - "wrapping up" indicator */}
-          <TransitionWarning
-            isActive={isInTransitionZone}
-            secondsRemaining={transitionSecondsRemaining}
-            sessionType={currentSession?.type || null}
-          />
-
-          {!isCircularVisual && (
-            <View style={styles.progressContainer}>
-              <TimerVisual
-                progress={progress}
-                isBreakSession={isBreakSession}
+              <TimerDisplay
+                timeRemaining={timeRemaining}
+                totalTime={totalTime}
               />
+
+              {/* Intent - tappable to expand, pencil to edit */}
+              {(sessionDraft?.intent || isEditingIntent) && (
+                <View style={styles.intentRow}>
+                  {isEditingIntent ? (
+                    <TextInput
+                      style={[styles.intentInput, styles.intentInputFull, { color: theme.colors.text, borderBottomColor: theme.colors.primary }]}
+                      value={intentDraft}
+                      onChangeText={setIntentDraft}
+                      onBlur={handleSaveIntent}
+                      autoFocus
+                      multiline
+                      maxLength={120}
+                      returnKeyType="done"
+                    />
+                  ) : (
+                    <>
+                      <TouchableOpacity
+                        style={styles.intentContainer}
+                        onPress={() => {
+                          if (!reduceMotion) {
+                            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                          }
+                          setIntentExpanded(!intentExpanded);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[styles.intentText, { color: theme.colors.textSecondary }]}
+                          numberOfLines={intentExpanded ? undefined : 2}
+                        >
+                          {sessionDraft?.intent}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => { setIntentDraft(sessionDraft?.intent ?? ''); setIsEditingIntent(true); }}
+                        style={styles.pencilButton}
+                        activeOpacity={0.6}
+                      >
+                        <Text allowFontScaling={false} style={[styles.pencilIcon, { color: theme.colors.textTertiary }]}>✏</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              )}
+
+              {/* Current step card - tapping expands the full steps panel */}
+              {sessionDraft?.steps && sessionDraft.steps.length > 0 && (
+                <CurrentStepCard
+                  steps={sessionDraft.steps}
+                  onToggleCurrentStep={handleToggleStep}
+                  onExpand={() => setStepsExpanded(true)}
+                />
+              )}
+
+              {/* Early completion banner when all steps are done */}
+              {showEarlyCompletionBanner && (
+                <EarlyCompletionBanner
+                  onEndEarly={handleEarlyComplete}
+                  onDismiss={handleDismissEarlyCompletion}
+                />
+              )}
+
+              {/* Transition warning - "wrapping up" indicator */}
+              <TransitionWarning
+                isActive={isInTransitionZone}
+                secondsRemaining={transitionSecondsRemaining}
+                sessionType={currentSession?.type || null}
+              />
+
+              {!isCircularVisual && (
+                <View style={styles.progressContainer}>
+                  <TimerVisual
+                    progress={progress}
+                    isBreakSession={isBreakSession}
+                  />
+                </View>
+              )}
+
+              {!isLocked && (
+                <TimerAdjustments
+                  onAddTime={handleAddTime}
+                  onSubtractTime={handleSubtractTime}
+                  onAddPomodoro={handleAddPomodoro}
+                  onRemovePomodoro={handleRemovePomodoro}
+                  disabled={status === 'completed'}
+                  canRemovePomodoro={canRemovePomodoro}
+                  showPomodoroControls={isPomodoroStyle}
+                />
+              )}
             </View>
           )}
-
-          {!isLocked && (
-            <TimerAdjustments
-              onAddTime={handleAddTime}
-              onSubtractTime={handleSubtractTime}
-              onAddPomodoro={handleAddPomodoro}
-              onRemovePomodoro={handleRemovePomodoro}
-              disabled={status === 'completed'}
-              canRemovePomodoro={canRemovePomodoro}
-              showPomodoroControls={isPomodoroStyle}
-            />
-          )}
-        </View>
         </View>
 
         <View style={styles.controlsContainer}>
@@ -1016,6 +1155,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  mainAreaExpanded: {
+    justifyContent: 'flex-start',
+  },
+  compactTimerRow: {
+    alignItems: 'center',
+  },
   timerContainer: {
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -1041,10 +1186,21 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginTop: 8,
   },
-  intentContainer: {
+  intentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginTop: 12,
     paddingHorizontal: 16,
     maxWidth: '100%',
+  },
+  intentRowCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 4,
+  },
+  intentContainer: {
+    flex: 1,
   },
   intentText: {
     fontSize: 16,
@@ -1052,6 +1208,34 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     letterSpacing: 0.2,
+  },
+  intentTextCompact: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '400',
+    lineHeight: 18,
+    letterSpacing: 0.1,
+  },
+  intentInput: {
+    fontSize: 14,
+    lineHeight: 20,
+    borderBottomWidth: 1,
+    paddingVertical: 2,
+    flex: 1,
+  },
+  intentInputFull: {
+    textAlign: 'center',
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  pencilButton: {
+    paddingLeft: 6,
+    paddingVertical: 4,
+    minWidth: 30,
+    alignItems: 'center',
+  },
+  pencilIcon: {
+    fontSize: 13,
   },
   progressContainer: {
     width: '100%',

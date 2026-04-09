@@ -48,12 +48,12 @@ interface TimerContextValue {
   transitionSecondsRemaining: number;
 
   // Callbacks
-  onSessionComplete?: (session: Session, sessionIndex: number) => void;
+  onSessionComplete?: (session: Session, sessionIndex: number, actualTotalSeconds: number) => void;
   onAllSessionsComplete?: () => void;
-  onSessionSkip?: (session: Session, elapsedSeconds: number) => void;
-  setSessionCompleteCallback: (callback: (session: Session, sessionIndex: number) => void) => void;
+  onSessionSkip?: (session: Session, elapsedSeconds: number, actualTotalSeconds: number) => void;
+  setSessionCompleteCallback: (callback: (session: Session, sessionIndex: number, actualTotalSeconds: number) => void) => void;
   setAllSessionsCompleteCallback: (callback: () => void) => void;
-  setSessionSkipCallback: (callback: (session: Session, elapsedSeconds: number) => void) => void;
+  setSessionSkipCallback: (callback: (session: Session, elapsedSeconds: number, actualTotalSeconds: number) => void) => void;
 }
 
 const TimerContext = createContext<TimerContextValue | undefined>(undefined);
@@ -78,12 +78,16 @@ export function TimerProvider({ children }: TimerProviderProps) {
   const [sessionEndTime, setSessionEndTime] = useState(0);
 
   // Callbacks stored in refs to avoid re-renders
-  const onSessionCompleteRef = useRef<((session: Session, sessionIndex: number) => void) | undefined>(undefined);
+  const onSessionCompleteRef = useRef<((session: Session, sessionIndex: number, actualTotalSeconds: number) => void) | undefined>(undefined);
   const onAllSessionsCompleteRef = useRef<(() => void) | undefined>(undefined);
-  const onSessionSkipRef = useRef<((session: Session, elapsedSeconds: number) => void) | undefined>(undefined);
+  const onSessionSkipRef = useRef<((session: Session, elapsedSeconds: number, actualTotalSeconds: number) => void) | undefined>(undefined);
+
+  // Track cumulative time adjustments for the current session (add/subtract time)
+  const [timeAdjustment, setTimeAdjustment] = useState(0);
+  const timeAdjustmentRef = useRef(0);
 
   const currentSession = sessions[currentSessionIndex] || null;
-  const totalTime = currentSession ? currentSession.durationMinutes * 60 : 0;
+  const totalTime = currentSession ? currentSession.durationMinutes * 60 + timeAdjustment : 0;
   const progress = totalTime > 0 ? (totalTime - timeRemaining) / totalTime : 0;
   const isActive = status === 'running' || status === 'paused';
 
@@ -167,10 +171,15 @@ export function TimerProvider({ children }: TimerProviderProps) {
             // Capture end time for session recording
             setSessionEndTime(Date.now());
 
-            // Call session complete callback
+            // Call session complete callback with the actual total seconds (including adjustments)
             if (onSessionCompleteRef.current && currentSession) {
-              onSessionCompleteRef.current(currentSession, currentSessionIndex);
+              const actualTotalSeconds = currentSession.durationMinutes * 60 + timeAdjustmentRef.current;
+              onSessionCompleteRef.current(currentSession, currentSessionIndex, actualTotalSeconds);
             }
+
+            // Reset time adjustment for next session
+            timeAdjustmentRef.current = 0;
+            setTimeAdjustment(0);
 
             // Move to next session or complete
             if (currentSessionIndex < sessions.length - 1) {
@@ -240,6 +249,8 @@ export function TimerProvider({ children }: TimerProviderProps) {
   const startTimer = useCallback((newSessions: Session[], mode: TimerMode, type: TimerType, draft?: SessionDraft) => {
     if (newSessions.length === 0) return;
 
+    timeAdjustmentRef.current = 0;
+    setTimeAdjustment(0);
     setSessions(newSessions);
     setCurrentSessionIndex(0);
     setTimeRemaining(newSessions[0].durationMinutes * 60);
@@ -275,6 +286,8 @@ export function TimerProvider({ children }: TimerProviderProps) {
       intervalRef.current = null;
     }
     endTimeRef.current = null;
+    timeAdjustmentRef.current = 0;
+    setTimeAdjustment(0);
 
     // Reset audio announcement tracking for fresh start
     audioService.resetAnnouncementTracking();
@@ -302,10 +315,14 @@ export function TimerProvider({ children }: TimerProviderProps) {
     // Calculate elapsed time for the skipped session
     const currentSession = sessions[currentSessionIndex];
     if (currentSession && onSessionSkipRef.current) {
-      const totalSeconds = currentSession.durationMinutes * 60;
-      const elapsedSeconds = totalSeconds - timeRemaining;
-      onSessionSkipRef.current(currentSession, elapsedSeconds);
+      const actualTotalSeconds = currentSession.durationMinutes * 60 + timeAdjustmentRef.current;
+      const elapsedSeconds = actualTotalSeconds - timeRemaining;
+      onSessionSkipRef.current(currentSession, elapsedSeconds, actualTotalSeconds);
     }
+
+    // Reset time adjustment for next session
+    timeAdjustmentRef.current = 0;
+    setTimeAdjustment(0);
 
     if (currentSessionIndex < sessions.length - 1) {
       const nextIndex = currentSessionIndex + 1;
@@ -325,6 +342,8 @@ export function TimerProvider({ children }: TimerProviderProps) {
 
   const addTime = useCallback((seconds: number) => {
     setTimeRemaining((prev) => prev + seconds);
+    timeAdjustmentRef.current += seconds;
+    setTimeAdjustment((prev) => prev + seconds);
 
     // If timer is running, update the end time
     if (status === 'running' && endTimeRef.current) {
@@ -335,6 +354,9 @@ export function TimerProvider({ children }: TimerProviderProps) {
   const subtractTime = useCallback((seconds: number) => {
     setTimeRemaining((prev) => {
       const newTime = Math.max(0, prev - seconds);
+      const actualSubtracted = prev - newTime;
+      timeAdjustmentRef.current -= actualSubtracted;
+      setTimeAdjustment((a) => a - actualSubtracted);
 
       // If timer is running, update the end time
       if (status === 'running' && endTimeRef.current) {
@@ -374,7 +396,7 @@ export function TimerProvider({ children }: TimerProviderProps) {
     });
   }, [currentSessionIndex]);
 
-  const setSessionCompleteCallback = useCallback((callback: (session: Session, sessionIndex: number) => void) => {
+  const setSessionCompleteCallback = useCallback((callback: (session: Session, sessionIndex: number, actualTotalSeconds: number) => void) => {
     onSessionCompleteRef.current = callback;
   }, []);
 
@@ -382,7 +404,7 @@ export function TimerProvider({ children }: TimerProviderProps) {
     onAllSessionsCompleteRef.current = callback;
   }, []);
 
-  const setSessionSkipCallback = useCallback((callback: (session: Session, elapsedSeconds: number) => void) => {
+  const setSessionSkipCallback = useCallback((callback: (session: Session, elapsedSeconds: number, actualTotalSeconds: number) => void) => {
     onSessionSkipRef.current = callback;
   }, []);
 
